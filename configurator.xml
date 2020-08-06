@@ -1,0 +1,183 @@
+<tryton>
+    <data>
+        <menuitem name="Configurator" sequence="0" id="menu_configurator"
+            icon="tryton-settings"/>
+        <!-- Property -->
+        <record model="ir.ui.view" id="property_view_form">
+            <field name="model">configurator.property</field>
+            <field name="type">form</field>
+            <field name="name">property_form</field>
+        </record>
+        <record model="ir.ui.view" id="property_view_list">
+            <field name="model">configurator.property</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="10"/>
+            <field name="name">property_list</field>
+        </record>
+        <record model="ir.ui.view" id="property_view_tree">
+            <field name="model">configurator.property</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="20"/>
+            <field name="field_childs">childs</field>
+            <field name="name">property_list</field>
+        </record>
+        <record model="ir.action.act_window" id="act_property_tree">
+            <field name="name">Properties</field>
+            <field name="res_model">configurator.property</field>
+            <field name="domain" eval="[('parent', '=', None)]" pyson="1"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_property_tree_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="property_view_tree"/>
+            <field name="act_window" ref="act_property_tree"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_property_tree_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="property_view_form"/>
+            <field name="act_window" ref="act_property_tree"/>
+        </record>
+        <record model="ir.action.act_window" id="act_property_form">
+            <field name="name">Properties</field>
+            <field name="res_model">configurator.property</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_property_form_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="property_view_list"/>
+            <field name="act_window" ref="act_property_form"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_property_form_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="property_view_form"/>
+            <field name="act_window" ref="act_property_form"/>
+        </record>
+        <menuitem parent="menu_configurator" sequence="1"
+            action="act_property_tree" id="menu_property_form"/>
+        <!-- Function -->
+        <record model="ir.ui.view" id="function_view_form">
+            <field name="model">configurator.function</field>
+            <field name="type">form</field>
+            <field name="name">function_form</field>
+        </record>
+        <record model="ir.ui.view" id="function_view_list">
+            <field name="model">configurator.function</field>
+            <field name="type">tree</field>
+            <field name="name">function_list</field>
+        </record>
+        <record model="ir.action.act_window" id="act_function_form">
+            <field name="name">Functions</field>
+            <field name="res_model">configurator.function</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_function_form_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="function_view_list"/>
+            <field name="act_window" ref="act_function_form"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_function_form_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="function_view_form"/>
+            <field name="act_window" ref="act_function_form"/>
+        </record>
+        <menuitem parent="menu_configurator" sequence="1"
+            action="act_function_form" id="menu_function"/>
+
+        <!-- Design -->
+        <record model="ir.ui.view" id="design_view_form">
+            <field name="model">configurator.design</field>
+            <field name="type">form</field>
+            <field name="name">design_form</field>
+        </record>
+        <record model="ir.ui.view" id="design_view_list">
+            <field name="model">configurator.design</field>
+            <field name="type">tree</field>
+            <field name="name">design_list</field>
+        </record>
+        <record model="ir.action.act_window" id="act_design_form">
+            <field name="name">Designs</field>
+            <field name="res_model">configurator.design</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_design_form_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="design_view_list"/>
+            <field name="act_window" ref="act_design_form"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_design_form_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="design_view_form"/>
+            <field name="act_window" ref="act_design_form"/>
+        </record>
+        <menuitem parent="menu_configurator" sequence="1"
+            action="act_design_form" id="menu_design"/>
+
+        <record model="ir.model.button" id="design_update_button">
+            <field name="name">update</field>
+            <field name="string">Update</field>
+            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+        </record>
+        <record model="ir.model.button" id="design_process_button">
+            <field name="name">process</field>
+            <field name="string">Process</field>
+            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+        </record>
+
+        <record model="ir.model.button" id="design_create_button">
+            <field name="name">create_prices</field>
+            <field name="string">Create Prices</field>
+            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+        </record>
+
+        <record model="ir.ui.view" id="design_line_view_form">
+            <field name="model">configurator.design.line</field>
+            <field name="type">form</field>
+            <field name="name">design_line_form</field>
+        </record>
+        <record model="ir.ui.view" id="design_line_view_list">
+            <field name="model">configurator.design.line</field>
+            <field name="type">tree</field>
+            <field name="field_childs" eval="None" />
+            <field name="name">design_line_list</field>
+        </record>
+
+        <record model="ir.ui.view" id="design_attribute_view_form">
+            <field name="model">configurator.design.attribute</field>
+            <field name="type">form</field>
+            <field name="name">design_attribute_form</field>
+        </record>
+        <record model="ir.ui.view" id="design_attribute_view_list">
+            <field name="model">configurator.design.attribute</field>
+            <field name="type">tree</field>
+            <field name="name">design_attribute_list</field>
+        </record>
+
+        <record model="ir.ui.view" id="quotation_line_view_form">
+            <field name="model">configurator.quotation.line</field>
+            <field name="type">form</field>
+            <field name="name">quotation_line_form</field>
+        </record>
+        <record model="ir.ui.view" id="quotation_line_view_list">
+            <field name="model">configurator.quotation.line</field>
+            <field name="type">tree</field>
+            <field name="name">quotation_line_list</field>
+        </record>
+
+        <!-- Object -->
+        <record model="ir.ui.view" id="object_view_list">
+            <field name="model">configurator.object</field>
+            <field name="type">tree</field>
+            <field name="name">object_list</field>
+        </record>
+        <record model="ir.action.act_window" id="act_object_form">
+            <field name="name">Objects</field>
+            <field name="res_model">configurator.object</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_object_form_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="object_view_list"/>
+            <field name="act_window" ref="act_object_form"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_object_form_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="object_view_list"/>
+            <field name="act_window" ref="act_object_form"/>
+        </record>
+    </data>
+</tryton>

@@ -1,0 +1,8 @@
+<tree>
+    <field name="parent"/>
+    <field name="child"/>
+    <field name="position"/>
+    <field name="formula"/>
+    <field name="readonly"/>
+    <field name="function_"/>
+</tree>

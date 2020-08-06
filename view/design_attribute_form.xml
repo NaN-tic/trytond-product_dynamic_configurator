@@ -1,0 +1,16 @@
+<form>
+    <label name="design"/>
+    <field name="design"/>
+    <label name="property"/>
+    <field name="property"/>
+    <label name="property_type"/>
+    <field name="property_type"/>
+    <label name="option"/>
+    <field name="option"/>
+    <label name="number"/>
+    <field name="number"/>
+    <label name="text"/>
+    <field name="text"/>
+    <label name="property_options"/>
+    <field name="property_options"/>
+</form>

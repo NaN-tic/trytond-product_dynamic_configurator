@@ -1,0 +1,38 @@
+<form>
+    <label name="name"/>
+    <field name="name"/>
+    <label name="code"/>
+    <field name="code"/>
+    <label name="template"/>
+    <field name="template"/>
+    <label name="currency"/>
+    <field name="currency"/>
+    <button name="update" colspan="2"/>
+    <newline/>
+
+<!--    <label name="list_price"/>-->
+<!--    <field name="list_price"/>-->
+<!--    <label name="cost_price"/>-->
+<!--    <field name="cost_price"/>-->
+<!--    <label name="margin"/>-->
+<!--    <field name="margin" factor="100" xexpand="0" xfill="0"/>-->
+<!--    <label name="unit_price"/>-->
+<!--    <field name="unit_price"/>-->
+
+    <notebook colspan="4">
+        <page name="attributes">
+            <field name="attributes" colspan="2"/>
+        </page>
+        <page name="prices">
+            <field name="prices" colspan="4"/>
+        </page>
+        <page name="summary">
+            <field name="summary" colspan="4"/>
+        </page>
+        <page name="objects">
+            <field name="objects" colspan="4"/>
+        </page>
+    </notebook>
+    <button name="process" colspan="2"/>
+    <button name="create_prices" colspan="2"/>
+</form>

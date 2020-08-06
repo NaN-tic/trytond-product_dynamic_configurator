@@ -1,0 +1,15 @@
+<form>
+<!--    <label name="design"/>-->
+<!--    <field name="design"/>-->
+    <newline/>
+    <label name="property"/>
+    <field name="property"/>
+    <label name="quantity"/>
+    <field name="quantity"/>
+    <label name="unit_price"/>
+    <field name="unit_price"/>
+    <label name="margin"/>
+    <field name="margin"/>
+    <label name="amount"/>
+    <field name="amount"/>
+</form>

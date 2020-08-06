@@ -1,0 +1,43 @@
+<form>
+    <label name="name"/>
+    <field name="name"/>
+    <label name="code"/>
+    <field name="code"/>
+    <label name="type"/>
+    <field name="type"/>
+    <label name="user_input"/>
+    <field name="user_input"/>
+    <label name="parent"/>
+    <field name="parent"/>
+    <label name="template"/>
+    <field name="template"/>
+    <label name="product"/>
+    <field name="product"/>
+    <label name="uom"/>
+    <field name="uom"/>
+    <label name="work_center_category"/>
+    <field name="work_center_category"/>
+    <label name="operation_type"/>
+    <field name="operation_type"/>
+    <label name="price_category"/>
+    <field name="price_category"/>
+    <label name="quantity"/>
+    <field name="quantity"/>
+    <label name="object_expression"/>
+    <field name="object_expression"/>
+    <label name="product_attribute"/>
+    <field name="product_attribute"/>
+    <label name="product_attribute_value"/>
+    <field name="product_attribute_value"/>
+    <notebook colspan="4">
+        <page name="Childs">
+            <field name="childs" colspan="4"/>
+        </page>
+        <!-- <page name="formula">
+            <field name="formula" colspan="4"/>
+        </page> -->
+        <page name="summary">
+            <field name="summary" colspan="4"/>
+        </page>
+    </notebook>
+</form>

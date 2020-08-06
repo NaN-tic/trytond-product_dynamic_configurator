@@ -1,0 +1,9 @@
+<tree editable="top">
+<!--    <field name="design"/>-->
+    <field name="category"/>
+    <field name="property"/>
+    <field name="quantity"/>
+    <field name="unit_price"/>
+    <field name="margin"/>
+    <field name="amount"/>
+</tree>

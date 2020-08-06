@@ -1,0 +1,9 @@
+<tree editable="top">
+    <field name="quantity"/>
+    <field name="uom"/>
+    <field name="cost_price"/>
+    <field name="list_price"/>
+    <field name="global_margin"/>
+    <field name="margin"/>
+    <field name="unit_price"/>
+</tree>

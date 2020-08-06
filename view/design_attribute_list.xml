@@ -1,0 +1,10 @@
+<tree editable="top">
+    <field name="property" expand="2"/>
+    <field name="property_type"/>
+    <field name="use_property"/>
+    <field name="option"/>
+    <field name="number"/>
+    <field name="text"/>
+    <field name="design"/>
+    <field name="property_options"/>
+</tree>

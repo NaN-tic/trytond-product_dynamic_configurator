@@ -1,0 +1,17 @@
+<form>
+    <label name="quantity"/>
+    <field name="quantity"/>
+    <label name="uom"/>
+    <field name="uom"/>
+    <label name="unit_price"/>
+    <field name="unit_price"/>
+    <label name="cost_price"/>
+    <field name="cost_price"/>
+    <label name="list_price"/>
+    <field name="list_price"/>
+    <label name="margin"/>
+    <field name="margin" factor="100" xexpand="0" xfill="0"/>
+    <field name="prices" colspan="4"/>
+    <label name="state"/>
+    <field name="state"/>
+</form>
