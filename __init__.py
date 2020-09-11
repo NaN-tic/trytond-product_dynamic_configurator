@@ -3,7 +3,7 @@
 # the full copyright notices and license terms.
 from trytond.pool import Pool
 from . import configurator
-
+from . import product
 
 def register():
     Pool.register(
@@ -15,4 +15,5 @@ def register():
         configurator.Design,
         configurator.DesignLine,
         configurator.DesignAttribute,
+        product.Template,
         module='product_dynamic_configurator', type_='model')

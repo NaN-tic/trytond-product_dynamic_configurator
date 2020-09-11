@@ -13,5 +13,4 @@
 
     <separator name="formula" colspan="4"/>
     <field name="formula" colspan="4"/>
-<!--    <field name="children" colspan="4"/> -->
 </form>

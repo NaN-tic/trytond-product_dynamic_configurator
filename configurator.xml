@@ -52,33 +52,6 @@
         </record>
         <menuitem parent="menu_configurator" sequence="1"
             action="act_property_tree" id="menu_property_form"/>
-        <!-- Function -->
-        <record model="ir.ui.view" id="function_view_form">
-            <field name="model">configurator.function</field>
-            <field name="type">form</field>
-            <field name="name">function_form</field>
-        </record>
-        <record model="ir.ui.view" id="function_view_list">
-            <field name="model">configurator.function</field>
-            <field name="type">tree</field>
-            <field name="name">function_list</field>
-        </record>
-        <record model="ir.action.act_window" id="act_function_form">
-            <field name="name">Functions</field>
-            <field name="res_model">configurator.function</field>
-        </record>
-        <record model="ir.action.act_window.view" id="act_function_form_view1">
-            <field name="sequence" eval="10"/>
-            <field name="view" ref="function_view_list"/>
-            <field name="act_window" ref="act_function_form"/>
-        </record>
-        <record model="ir.action.act_window.view" id="act_function_form_view2">
-            <field name="sequence" eval="20"/>
-            <field name="view" ref="function_view_form"/>
-            <field name="act_window" ref="act_function_form"/>
-        </record>
-        <menuitem parent="menu_configurator" sequence="1"
-            action="act_function_form" id="menu_function"/>
 
         <!-- Design -->
         <record model="ir.ui.view" id="design_view_form">

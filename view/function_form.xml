@@ -1,6 +1,0 @@
-<form>
-    <label name="name"/>
-    <field name="name" colspan="3"/>
-    <separator name="expression" colspan="4"/>
-    <field name="expression" colspan="4"/>
-</form>
