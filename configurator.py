@@ -4,6 +4,7 @@ from trytond.pyson import Eval, Not
 from trytond.pool import Pool
 from trytond.transaction import Transaction
 from copy import copy
+from datetime import datetime
 
 _ZERO = Decimal(0)
 TYPE = [
@@ -11,7 +12,7 @@ TYPE = [
     ('bom', 'BoM'),
     ('product', 'Product'),
     ('purchase_product', 'Purchase Product'),
-    ('operation', 'Operation'),
+#    ('operation', 'Operation'),
     ('options', 'Options'),
     ('number', 'Number'),
     ('text', 'Text'),
@@ -145,7 +146,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if res is None:
                 continue
             created_obj.update(res)
-
         res = getattr(self, 'get_%s' % self.type)(
             design, values, created_obj)
         if res is None:
@@ -221,56 +221,74 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             name = template.attribute_set.render_expression(template.attribute_set.product_name_template,
                     template.attributes)
             product.template.name = name
-
+        return product
 
     def get_product_template_object_copy(self, template):
         Template = Pool().get('product.template')
         template = Template()
         for f in self.product_template._fields:
             setattr(template, f, getattr(self.product_template, f))
+        template.configurator_template = False
         return template
+
+    def get_product_product_object_copy(self, product):
+        Product = Pool().get('product.product')
+        nproduct = Product()
+        for f in product._fields:
+            if not hasattr(product, f):
+                continue
+            setattr(nproduct, f, getattr(product, f))
+        return nproduct
+
+    def get_field_name_from_attributes(self, attribute_set, name, record):
+        BomInput = Pool().get('production.bom.input')
+        values = {}
+        for key, val in record.items():
+            if isinstance(val, BomInput):
+                values[key] = val.product.name
+            else:
+                values[key] = val
+        name_field = getattr(attribute_set, name)
+        return attribute_set.render_expression_record(name_field, values)
 
     def get_purchase_product(self, design, values, created_obj):
         pool = Pool()
-        Template = pool.get('product.template')
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
         Product = pool.get('product.product')
-        ProductAttributeValue = pool.get('product.attribute')
 
-        template = None
-        product = self.product
-        if not product:
-            custom_locals = copy(locals())
-            custom_locals.update({prop.code: attr.number
-                for prop, attr in values.items()})
-            for child, child_res in created_obj.items():
-                custom_locals[child.code] = child_res[0]
+        if not self.product_template:
+            return
 
-            if self.product_template:
-                template = self.get_product_template_object_copy(self.product_template)
+        template = self.get_product_template_object_copy(self.product_template)
+        template.products = []
+        product = self.get_product_product_object_copy(self.product_template.products[0])
+        product.template = template
+        product.default_uom = self.uom
+        product.list_price = 0
+        product.code = self.code
+        for prop, child_res in created_obj.items():
+            if prop.parent != self:
+                continue
+            child_res = child_res[0]
+            if prop.type == 'attribute':
+                if not hasattr(template, 'attributes'):
+                    template.attributes = tuple()
+                template.attribute_set = prop.product_attribute.sets[0]
+                type_, value = self.get_product_attribute_typed(prop,
+                    self.evaluate(prop.product_attribute_value, values))
+                setattr(child_res, 'value_' + type_, value)
+                setattr(child_res, 'value', value)
+                template.attributes += (child_res,)
 
-            if template:
-                template.name = self.name + "(" + design.name + ")"
-                template.products = []
-                product = Product()
-                product.template = template
-                product.default_uom = self.uom
-                for prop, child_res in created_obj.items():
-                    child_res = child_res[0]
-                    if prop.type == 'attribute':
-                        if not hasattr(template, 'attributes'):
-                            template.attributes = tuple()
-                        template.attribute_set = prop.product_attribute.sets[0]
-                        type_, value = self.get_product_attribute_typed(prop,
-                            self.evaluate(prop.product_attribute_value, values))
-                        # TODO: Many2one ( options )
-                        setattr(child_res, 'value_' + type_, value)
-                        setattr(child_res, 'value', value)
-                        template.attributes += (child_res,)
-                self.set_template_fields(product)
-            else:
-                return
+        if self.object_expression:
+            template.info_ratio = self.evaluate(self.object_expression, values)
+
+        if len(template.attributes):
+            product = self.set_template_fields(product)
+        exists_product = Product.search([('code', '=', product.code)])
+        if exists_product:
+            product = exists_product[0]
 
         bom_input = BomInput()
         bom_input.product = product
@@ -288,50 +306,24 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             cost_price += (Decimal(obj.quantity) * obj.product.cost_price) / Decimal(bom_input.quantity)
 
         product.cost_price = cost_price.quantize(Decimal('.0001'))  # TODO
-
         return {self: (bom_input, [])}
 
     def get_product(self, design, values, created_obj):
         pool = Pool()
         BomInput = pool.get('production.bom.input')
-        Template = pool.get('product.template')
-        Product = pool.get('product.product')
         Uom = pool.get('product.uom')
-        ProductAttributeValue = pool.get('product.attribute')
 
-        product = None
-        if self.product:
-            product = self.product
-        else:
-            template = None
-            if self.product_template:
-                template = self.get_product_template_object_copy(self.product_template)
-
-            if template:
-                # for field, method in Template._defaults.items():
-                #     if not getattr(template, field, None):
-                #         setattr(template, field, method())
-                # template.default_uom = self.uom
-                template.name = self.name
-                product = Product()
-                product.template = template
-                product.salable = True
-                product.consumable = True
-                product_attributes = [child_res for _, child_res[0]
-                    in created_obj.items() if isinstance(child_res,
-                        ProductAttributeValue)]
-                if product_attributes:
-                    product.attributes = (tuple(product.attributes or []) + tuple(product_attributes))
-                self.set_template_fields(product)
-        if product:
-            quantity = Uom.compute_qty(product.default_uom, self.evaluate(self.quantity, values), product.default_uom)
-            if product.type != 'service':
-                bom_input = BomInput()
-                bom_input.product = product
-                bom_input.quantity = quantity
-                bom_input.uom = product.default_uom
-                return {self: (bom_input, [])}
-            return {self: (product, [])}
+        if not self.product:
+            return
+        product = self.product
+        quantity = Uom.compute_qty(product.default_uom, self.evaluate(self.quantity, values), product.default_uom)
+        if product.type != 'service':
+            bom_input = BomInput()
+            bom_input.product = product
+            bom_input.quantity = quantity
+            bom_input.uom = product.default_uom
+            return {self: (bom_input, [])}
+        return {self: (product, [])}
 
     def get_bom(self, design, values, created_obj):
         pool = Pool()
@@ -339,7 +331,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         Bom = pool.get('production.bom')
         BomInput = pool.get('production.bom.input')
         BomOutput = pool.get('production.bom.output')
-        Template = pool.get('product.template')
         ProductBom = pool.get('product.product-production.bom')
         Operation = pool.get('production.route.operation')
         Route = pool.get('production.route')
@@ -369,7 +360,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 continue
             child_res, _ = child_res
             if isinstance(child_res, BomInput):
-                if child.type == 'product':  # and self == child.parent : # create_bom_input(child.parent):
+                if child.type == 'product':
                     bom.inputs += (child_res,)
                 elif child.type == 'purchase_product':
                     bom.inputs += (child_res,)
@@ -394,35 +385,37 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             route.operations = operations_route
             res_obj.append(route)
 
-        product = self.product
-        if not product:
-            template = Template()
-            for field, method in Template._defaults.items():
-                if not getattr(template, field, None):
-                    setattr(template, field, method())
-            template.products = []
-            template.default_uom = self.uom
-            template.name = self.name
-            template.sale_uom = self.uom
-            template.salable = True
-            template.producible = True
-            template.list_price = 0
-            template.account_category = 1
-            product = Product()
-            product.template = template
-            product.default_uom = self.uom
-            for prop, child_res in created_obj.items():
-                child_res = child_res[0]
-                if prop.type == 'attribute':
-                    if not hasattr(template, 'attributes'):
-                        template.attributes = tuple()
-                    template.attribute_set = prop.product_attribute.sets[0]
-                    type_, value = self.get_product_attribute_typed(prop,
-                        self.evaluate(prop.product_attribute_value, values))
-                    setattr(child_res, 'value_' + type_, value)
-                    template.attributes += (child_res,)
+        template = None
+        if not self.product_template:
+            return
+        template = self.get_product_template_object_copy(self.product_template)
+        template.products = []
+        template.account_category = 1
+        product = self.get_product_product_object_copy(self.product_template.products[0])
+        product.template = template
+        product.default_uom = self.uom
+        product.list_price = 0
+        product.code = self.code
+        for prop, child_res in created_obj.items():
+            if prop.parent != self:
+                continue
+            child_res = child_res[0]
+            if prop.type == 'attribute':
+                if not hasattr(template, 'attributes'):
+                    template.attributes = tuple()
+                template.attribute_set = prop.product_attribute.sets[0]
+                type_, value = self.get_product_attribute_typed(prop,
+                    self.evaluate(prop.product_attribute_value, values))
+                setattr(child_res, 'value_' + type_, value)
+                setattr(child_res, 'value', value)
+                template.attributes += (child_res,)
 
-            self.set_template_fields(product)
+        if len(template.attributes):
+            product = self.set_template_fields(product)
+
+        exists_product = Product.search([('code', '=', product.code)])
+        if exists_product:
+            product = exists_product[0]
 
         output = BomOutput()
         output.bom = bom
@@ -431,22 +424,22 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         output.quantity = Uom.compute_qty(output.product.default_uom, self.evaluate(self.quantity, values),
             product.default_uom)
         bom.outputs += (output,)
-
+        bom.name = product.template.name
         product_bom = ProductBom()
         product_bom.product = product
         product_bom.bom = bom
         if route:
             product_bom.route = route
-
         res_obj.append(product_bom)
-
+        exists_bom = Bom.search([('name', '=', product.name)])
+        if exists_bom:
+            return {self: (exists_bom[0], res_obj)}
         return {self: (bom, res_obj)}
 
     def create_design_line(self, quantity, uom, unit_price, quote):
         DesignLine = Pool().get('configurator.design.line')
         dl = DesignLine()
         dl.quotation = quote
-        #dl.property = self
         dl.quantity = quantity
         dl.uom = uom
         dl.unit_price = unit_price
@@ -616,6 +609,8 @@ class Design(ModelSQL, ModelView):
                         prices[key] = dl
                     else:
                         cost_price = (Decimal(dl.quantity) * dl.unit_price + Decimal(quantity)*cost_price)/Decimal(dl.quantity + quantity)
+                        quantize = Decimal(10) ** -Decimal(4)
+                        cost_price = Decimal(cost_price).quantize(quantize)
                         dl.quantity += quantity
                         dl.unit_price = cost_price
 
@@ -628,7 +623,9 @@ class Design(ModelSQL, ModelView):
     def process(cls, designs):
         CreatedObject = Pool().get('configurator.object')
         references = []
+        to_delete = []
         for design in designs:
+            to_delete += [x for x in design.objects]
             res = design.template.create_prices(design, design.as_dict())
             for prop, objs in res.items():
                 obj, additional = objs
@@ -649,6 +646,7 @@ class Design(ModelSQL, ModelView):
                     ref = design.create_object(obj)
                     ref.save()
 
+        CreatedObject.delete(to_delete)
 class QuotationLine(ModelSQL, ModelView):
     """  Quotation Line """
     __name__ = 'configurator.quotation.line'
