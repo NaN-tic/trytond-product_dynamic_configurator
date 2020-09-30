@@ -305,7 +305,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             obj, _ = created_obj[child]
             cost_price += (Decimal(obj.quantity) * obj.product.cost_price) / Decimal(bom_input.quantity)
 
-        product.cost_price = cost_price.quantize(Decimal('.0001'))  # TODO
+        product.cost_price = cost_price.quantize(Decimal('.000001'))  # TODO
         return {self: (bom_input, [])}
 
     def get_product(self, design, values, created_obj):
@@ -647,6 +647,7 @@ class Design(ModelSQL, ModelView):
                     ref.save()
 
         CreatedObject.delete(to_delete)
+
 class QuotationLine(ModelSQL, ModelView):
     """  Quotation Line """
     __name__ = 'configurator.quotation.line'
@@ -707,10 +708,6 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     def get_currency(self, name=None):
         return self.quotation.design.currency
 
-# El producte de compra te un escalat pero es en base al material, pero
-# realment el que comprem es la bobina, que el client ens fa a mida.
-
-
 class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
     'Design Attribute'
     __name__ = 'configurator.design.attribute'
@@ -750,4 +747,3 @@ class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
             return []
         res = [x.id for x in self.property.childs]
         return res
-

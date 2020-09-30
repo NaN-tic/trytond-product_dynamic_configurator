@@ -1,7 +1,7 @@
 <tree editable="top">
 <!--    <field name="design"/>-->
     <field name="category"/>
-    <field name="property"/>
+    <field name="property" expand="1"/>
     <field name="quantity"/>
     <field name="uom"/>
     <field name="unit_price"/>
