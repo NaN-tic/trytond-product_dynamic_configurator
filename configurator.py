@@ -2,9 +2,13 @@ from decimal import Decimal
 from trytond.model import ModelView, ModelSQL, fields, sequence_ordered, tree
 from trytond.pyson import Eval, Not
 from trytond.pool import Pool
+from trytond.config import config
 from trytond.transaction import Transaction
 from copy import copy
 from datetime import datetime
+
+price_digits = (16, config.getint('product', 'price_decimal', default=4))
+
 
 _ZERO = Decimal(0)
 TYPE = [
@@ -350,14 +354,14 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         res_obj = []
 
         bom = Bom()
-        bom.name = self.name + "(" + design.code + ")"
+        bom.name = self.name + " ( " + design.code + " ) "
         bom.active = True
         bom.inputs = ()
         bom.outputs = ()
         operations_route = ()
         for child, child_res in created_obj.items():
             if child.parent != self:
-                continue
+                 continue
             child_res, _ = child_res
             if isinstance(child_res, BomInput):
                 if child.type == 'product':
@@ -372,7 +376,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 child_output, = child_res.outputs
                 bom_input.product = child_output.product
                 bom_input.quantity = child_output.quantity
-                bom_input.uom = child_output.uom
+                bom_input.uom = child_output.product.default_uom
                 bom.inputs += (bom_input,)
             elif isinstance(child_res, Operation):
                 operations_route += (child_res,)
@@ -391,6 +395,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         template = self.get_product_template_object_copy(self.product_template)
         template.products = []
         template.account_category = 1
+        template.name = self.name + "(" + design.code + ")"
         product = self.get_product_product_object_copy(self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
@@ -416,7 +421,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         exists_product = Product.search([('code', '=', product.code)])
         if exists_product:
             product = exists_product[0]
-
         output = BomOutput()
         output.bom = bom
         output.product = product
@@ -424,14 +428,14 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         output.quantity = Uom.compute_qty(output.product.default_uom, self.evaluate(self.quantity, values),
             product.default_uom)
         bom.outputs += (output,)
-        bom.name = product.template.name
+        bom.name = template.name
         product_bom = ProductBom()
         product_bom.product = product
         product_bom.bom = bom
         if route:
             product_bom.route = route
         res_obj.append(product_bom)
-        exists_bom = Bom.search([('name', '=', product.name)])
+        exists_bom = Bom.search([('name', '=', bom.name)])
         if exists_bom:
             return {self: (exists_bom[0], res_obj)}
         return {self: (bom, res_obj)}
@@ -658,14 +662,14 @@ class QuotationLine(ModelSQL, ModelView):
     uom = fields.Many2One('product.uom', 'UoM')
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
     global_margin = fields.Float('Global Margin', digits=(16, 4))
-    cost_price = fields.Function(fields.Numeric('Cost Price', digits=(16, 4)),
-        'get_prices')
-    list_price = fields.Function(fields.Numeric('List Price', digits=(16, 4)),
-        'get_prices')
+    cost_price = fields.Function(fields.Numeric('Cost Price',
+        digits=price_digits), 'get_prices')
+    list_price = fields.Function(fields.Numeric('List Price',
+        digits=price_digits), 'get_prices')
     margin = fields.Function(fields.Numeric('Margin', digits=(16, 4)),
         'get_prices')
-    unit_price = fields.Function(fields.Numeric('Unit Price', digits=(16, 6)),
-        'get_prices')
+    unit_price = fields.Function(fields.Numeric('Unit Price',
+        digits=price_digits), 'get_prices')
 
     @classmethod
     def get_prices(cls, quotations, names):
@@ -693,7 +697,7 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     property = fields.Many2One('configurator.property', 'Property')
     quantity = fields.Float('Quantity')
     uom = fields.Many2One('product.uom', 'UoM')
-    unit_price = fields.Numeric('Unit Price', digits=(16, 6))
+    unit_price = fields.Numeric('Unit Price', digits=price_digits)
     margin = fields.Float('Margin', digits=(16, 4))
     amount = fields.Function(fields.Numeric('Amount', digits=(16, 2)), 'on_change_with_amount')
     currency = fields.Function(fields.Many2One('currency.currency', 'Currency'),
