@@ -5,6 +5,7 @@
     <field name="template"/>
     <field name="product"/>
     <field name="quantity"/>
+    <field name="product_uom_category"/>
     <field name="uom"/>
     <field name="price_category"/>
     <field name="user_input"/>

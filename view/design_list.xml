@@ -2,4 +2,5 @@
     <field name="code"/>
     <field name="name"/>
     <field name="template"/>
+    <field name="state"/>
 </tree>

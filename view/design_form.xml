@@ -24,6 +24,9 @@
             <field name="objects" colspan="4"/>
         </page>
     </notebook>
-    <button name="process" colspan="2"/>
-    <button name="create_prices" colspan="2"/>
+    <label name="state"/>
+    <field name="state"/>
+    <button name="process" />
+    <button name="cancel"/>
+    <button name="create_prices"/>
 </form>

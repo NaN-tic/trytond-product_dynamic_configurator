@@ -132,6 +132,13 @@
             <field name="name">quotation_line_list</field>
         </record>
 
+        <record model="ir.model.button" id="design_cancel_button">
+            <field name="name">cancel</field>
+            <field name="string">Cancel</field>
+            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+        </record>
+
+
         <!-- Object -->
         <record model="ir.ui.view" id="object_view_list">
             <field name="model">configurator.object</field>

@@ -1,6 +1,6 @@
 from decimal import Decimal
-from trytond.model import ModelView, ModelSQL, fields, sequence_ordered, tree
-from trytond.pyson import Eval, Not
+from trytond.model import Workflow, ModelView, ModelSQL, fields, sequence_ordered, tree
+from trytond.pyson import Eval, Not, If, Bool
 from trytond.pool import Pool
 from trytond.config import config
 from trytond.transaction import Transaction
@@ -37,24 +37,47 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     # Code may not contain spaces or special characters (usable in formulas)
     code = fields.Char('Code', required=True)
     name = fields.Char('Name', required=True)
-    type = fields.Selection(TYPE, 'Type')
-    user_input = fields.Boolean('User Input')
-    template = fields.Boolean('Template')
+    type = fields.Selection(TYPE, 'Type', required=True)
+    user_input = fields.Boolean('User Input',
+        states={
+            'invisible': Not(Eval('type').in_(['number', 'options', 'text'])),
+        })
+    template = fields.Boolean('Template',
+        states={
+            'invisible': Not(Eval('type').in_(['bom', 'purchase_product']))
+        })
     product = fields.Many2One('product.product', 'Product',
         states={
             'invisible': Eval('type') != 'product',
         }
     )
     uom = fields.Many2One('product.uom', 'UoM', states={
-        'required': Eval('type').in_(['bom', 'product'])
-        }, depends=['type'])
-    childs = fields.One2Many('configurator.property', 'parent', 'childs')
+        'invisible': Eval('type').in_(['function', 'text', 'number',
+            'options']),
+        'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
+        },
+        domain=[
+            If(Bool(Eval('product_uom_category')),
+                ('category', '=', Eval('product_uom_category')),
+                ('category', '!=', -1)),
+                ],
+        depends=['product_uom_category', 'type'])
+    childs = fields.One2Many('configurator.property', 'parent', 'childs',
+        states={
+            'invisible': Not(Eval('type').in_(['bom', 'purchase_product']))
+        })
     parent = fields.Many2One('configurator.property', 'Parent', select=True)
     quantity = fields.Text('Quantity', states={
-        'required': Eval('type').in_(['bom', 'product'])
+        'invisible': Not(Eval('type').in_(['purchase_product',
+            'bom', 'product'])),
+        'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
     }, depends=['type'])
     function_ = fields.Many2One('configurator.function', 'Function')
-    price_category = fields.Many2One('configurator.property.price_category', 'Price Category')
+    price_category = fields.Many2One('configurator.property.price_category',
+        'Price Category',
+        states={
+            'invisible': Eval('type').in_(['function', 'text', 'number']),
+        },)
     object_expression = fields.Text('Object Expression',
         states={
             'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
@@ -81,13 +104,21 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     product_template = fields.Many2One('product.template', 'Product Template',
         domain=[('configurator_template', '=', True)],
         states={
-            'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
-        }
+            'invisible': Not(Eval('type').in_(['purchase_product', 'bom'])),
+            'required': Eval('type').in_(['purchase_product', 'bom'])
+        }, depends =['type']
     )
+    product_uom_category = fields.Function(
+        fields.Many2One('product.uom.category', 'Product Uom Category'),
+        'get_product_uom_category')
 
     # Summary should be a Jinja2 template
     summary = fields.Text('Summary')
     cost_price = fields.Numeric('Cost Price')
+
+    @staticmethod
+    def default_sequence():
+        return 99
 
     def get_rec_name(self, name):
         res = ''
@@ -95,6 +126,22 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             res = '[%s] ' % self.code
         res += self.name
         return res
+
+    def get_product_uom_category(self, name=None):
+        if self.product:
+            return self.product.default_uom_category.id
+        if self.product_template:
+            return self.product_template.default_uom_category.id
+
+    @fields.depends('product')
+    def on_change_with_product_uom_category(self, name=None):
+        if self.product:
+            return self.product.default_uom_category.id
+
+    @fields.depends('product_template')
+    def on_change_with_product_template_uom_category(self, name=None):
+        if self.product_template:
+            return self.product_template.default_uom_category.id
 
     def compute_attributes(self, design, attributes=None):
         Attribute = Pool().get('configurator.design.attribute')
@@ -489,33 +536,73 @@ class CreatedObject(ModelSQL, ModelView):
     def get_rec_name(self, name):
         return self.object and self.object.rec_name
 
+READONLY_STATE = {
+    'readonly': (Eval('state') != 'draft') | Eval('lines', [0]),
+    }
 
-class Design(ModelSQL, ModelView):
+class Design(Workflow, ModelSQL, ModelView):
     'Design'
     __name__ = 'configurator.design'
-    code = fields.Char('Code')
-    name = fields.Char('Name')
-    party = fields.Many2One('party.party',  'Party')
-    template = fields.Many2One('configurator.property', 'Template', domain=[('template', '=', True),])
-    currency = fields.Many2One('currency.currency', 'Currency')
-    attributes = fields.One2Many('configurator.design.attribute', 'design', 'Attributes')
-    lines = fields.One2Many('configurator.design.line', 'design', 'Lines')
-    prices = fields.One2Many('configurator.quotation.line', 'design', 'Quotations')
+    code = fields.Char('Code' , states=READONLY_STATE, depends=['state'])
+    name = fields.Char('Name', states=READONLY_STATE, depends=['state'])
+    party = fields.Many2One('party.party', 'Party', states=READONLY_STATE,
+        depends=['state'])
+    template = fields.Many2One('configurator.property', 'Template',
+        domain=[('template', '=', True),],
+        states=READONLY_STATE, depends=['state', 'template'])
+    currency = fields.Many2One('currency.currency', 'Currency',
+        states=READONLY_STATE, depends=['state'])
+    attributes = fields.One2Many('configurator.design.attribute', 'design',
+        'Attributes', states=READONLY_STATE, depends=['state'])
+    lines = fields.One2Many('configurator.design.line', 'design', 'Lines',
+        states=READONLY_STATE, depends=['state'])
+    prices = fields.One2Many('configurator.quotation.line', 'design',
+        'Quotations', states=READONLY_STATE, depends=['state'])
     summary = fields.Function(fields.Text('Summary'), 'get_summary')
-    objects = fields.One2Many('configurator.object', 'design', 'Objects')
+    objects = fields.One2Many('configurator.object', 'design', 'Objects',
+        readonly=True)
+    state = fields.Selection([('draft', 'draft'), ('done', 'Done'),
+        ('cancel', 'Cancel')], 'State', readonly=True, required=True)
 
     @classmethod
     def __setup__(cls):
         super(Design, cls).__setup__()
+        cls._transitions |= set((
+            ('draft', 'done'),
+            ('draft', 'cancel'),
+        ))
         cls._buttons.update({
-            'update': {},
-            'process': {},
-            'create_prices': {},
+            'cancel': {
+                'invisible': ~Eval('state').in_(['draft']),
+                'depends': ['state'],
+                },
+            'update': {
+                'invisible': ~Eval('state').in_(['draft']),
+                'depends': ['state'],
+            },
+            'process': {
+                'invisible': Eval('state').in_(['done', 'cancel']),
+                'depends': ['state'],
+            },
+            'create_prices': {
+                'invisible': ~Eval('state').in_(['draft']),
+                'depends': ['state'],
+            },
         })
 
+    @staticmethod
+    def default_state():
+        return 'draft'
 
     def get_summary(self, name):
         return
+
+
+    @classmethod
+    @ModelView.button
+    @Workflow.transition('cancel')
+    def cancel(cls, designs):
+        pass
 
     def as_dict(self):
         res = {}
@@ -624,6 +711,7 @@ class Design(ModelSQL, ModelView):
 
     @classmethod
     @ModelView.button
+    @Workflow.transition('done')
     def process(cls, designs):
         CreatedObject = Pool().get('configurator.object')
         references = []
@@ -659,7 +747,13 @@ class QuotationLine(ModelSQL, ModelView):
 
     design = fields.Many2One('configurator.design', 'Design', required=True)
     quantity = fields.Float('Quantity', digits=(16, 4))
-    uom = fields.Many2One('product.uom', 'UoM')
+    uom = fields.Many2One('product.uom', 'UoM',
+        domain=[
+            If(Bool(Eval('product_uom_category')),
+                ('category', '=', Eval('product_uom_category')),
+                ('category', '!=', -1)),
+                ],
+            depends=['product_uom_category'])
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
     global_margin = fields.Float('Global Margin', digits=(16, 4))
     cost_price = fields.Function(fields.Numeric('Cost Price',
@@ -670,6 +764,15 @@ class QuotationLine(ModelSQL, ModelView):
         'get_prices')
     unit_price = fields.Function(fields.Numeric('Unit Price',
         digits=price_digits), 'get_prices')
+    product_uom_category = fields.Function(
+        fields.Many2One('product.uom.category', 'Product Uom Category'),
+        'get_product_uom_category')
+
+
+    def get_product_uom_category(self, name=None):
+        if self.design and self.design.template:
+            return self.design.template.uom.category.id
+
 
     @classmethod
     def get_prices(cls, quotations, names):
@@ -691,15 +794,17 @@ class QuotationLine(ModelSQL, ModelView):
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     'Design Line'
     __name__ = 'configurator.design.line'
-   # design = fields.Many2One('configurator.design', 'Design', required=True)
     quotation = fields.Many2One('configurator.quotation.line', 'Quotation')
-    category = fields.Many2One('configurator.property.price_category', 'Category')
-    property = fields.Many2One('configurator.property', 'Property')
+    category = fields.Many2One('configurator.property.price_category',
+        'Category', readonly=True)
+    property = fields.Many2One('configurator.property', 'Property',
+        readonly=True)
     quantity = fields.Float('Quantity')
-    uom = fields.Many2One('product.uom', 'UoM')
-    unit_price = fields.Numeric('Unit Price', digits=price_digits)
+    uom = fields.Many2One('product.uom', 'UoM', readonly=True)
+    unit_price = fields.Numeric('Unit Price', digits=price_digits, readonly=True)
     margin = fields.Float('Margin', digits=(16, 4))
-    amount = fields.Function(fields.Numeric('Amount', digits=(16, 2)), 'on_change_with_amount')
+    amount = fields.Function(fields.Numeric('Amount', digits=(16, 2)),
+        'on_change_with_amount')
     currency = fields.Function(fields.Many2One('currency.currency', 'Currency'),
         'get_currency')
 
