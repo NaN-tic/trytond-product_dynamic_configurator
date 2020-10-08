@@ -537,7 +537,7 @@ class CreatedObject(ModelSQL, ModelView):
         return self.object and self.object.rec_name
 
 READONLY_STATE = {
-    'readonly': (Eval('state') != 'draft') | Eval('lines', [0]),
+    'readonly': (Eval('state') != 'draft'),
     }
 
 class Design(Workflow, ModelSQL, ModelView):
@@ -563,6 +563,9 @@ class Design(Workflow, ModelSQL, ModelView):
         readonly=True)
     state = fields.Selection([('draft', 'draft'), ('done', 'Done'),
         ('cancel', 'Cancel')], 'State', readonly=True, required=True)
+    product = fields.Many2One('product.product', 'Product Designed',
+        readonly=True)
+
 
     @classmethod
     def __setup__(cls):
@@ -596,7 +599,6 @@ class Design(Workflow, ModelSQL, ModelView):
 
     def get_summary(self, name):
         return
-
 
     @classmethod
     @ModelView.button
@@ -732,6 +734,9 @@ class Design(Workflow, ModelSQL, ModelView):
                     for output_ in obj.outputs:
                         ref = design.create_object(output_)
                         ref.save()
+                        if prop.parent == None:
+                            design.product = output_.product
+                            design.save()
 
                 for obj in additional:
                     obj.save()

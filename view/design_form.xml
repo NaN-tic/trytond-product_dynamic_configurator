@@ -4,11 +4,18 @@
     <label name="code"/>
     <field name="code"/>
 
-    <label name="template"/>
-    <field name="template"/>
+    <group id="templates" colspan="2">
+      <label name="template"/>
+      <field name="template"/>
+      <button name="update"/>
+    </group>
+
     <label name="currency"/>
     <field name="currency"/>
-    <button name="update" colspan="2"/>
+
+    <label name="product"/>
+    <field name="product"/>
+
     <newline/>
     <notebook colspan="6">
         <page name="attributes">
