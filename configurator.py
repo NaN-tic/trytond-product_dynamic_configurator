@@ -217,6 +217,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             res = attribute.option.create_prices(design, values)
             res.update({self: (res[attribute.option][0], [])})
             return res
+        return {self:(None,[])}
 
     def get_attribute(self, design, values, created_obj):
         pool = Pool()
@@ -354,9 +355,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if child.type in ('number', 'char', 'attribute'):
                 continue
             obj, _ = created_obj[child]
+            if not obj:
+                continue
             cost_price += (Decimal(obj.quantity) * obj.product.cost_price) / Decimal(bom_input.quantity)
 
-        product.cost_price = cost_price.quantize(Decimal('.000001'))  # TODO
+        quantize = Decimal(str(10.0 ** -price_digits[1]))
+        product.cost_price = cost_price.quantize(quantize)
         return {self: (bom_input, [])}
 
     def get_product(self, design, values, created_obj):
@@ -702,8 +706,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         prices[key] = dl
                     else:
                         cost_price = (Decimal(dl.quantity) * dl.unit_price + Decimal(quantity)*cost_price)/Decimal(dl.quantity + quantity)
-                        quantize = Decimal(10) ** -Decimal(4)
-                        cost_price = Decimal(cost_price).quantize(quantize)
+                        cost_price = Decimal(cost_price).quantize(Decimal(str(10.0 ** -price_digits[1])))
                         dl.quantity += quantity
                         dl.unit_price = cost_price
 
@@ -782,6 +785,7 @@ class QuotationLine(ModelSQL, ModelView):
     @classmethod
     def get_prices(cls, quotations, names):
         res = {}
+        quantize = Decimal(str(10.0 ** -price_digits[1]))
         for name in {'cost_price', 'list_price', 'margin', 'unit_price'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
         for quote in quotations:
@@ -790,10 +794,10 @@ class QuotationLine(ModelSQL, ModelView):
                 res['list_price'][quote.id] += line.amount
             if res['list_price'].get(quote.id, 0):
                 if res['cost_price'][quote.id]:
-                    res['margin'][quote.id] = res['list_price'].get(quote.id, 0) / res['cost_price'][quote.id] - 1
+                    res['margin'][quote.id] = (res['list_price'].get(quote.id, 0) / res['cost_price'][quote.id] - 1).quantize(quantize)
                 res['list_price'][quote.id] = (res['list_price'][quote.id] or 0 ) * Decimal(
-                        1 + ((quote.global_margin or 0) / 100) or 0)
-                res['unit_price'][quote.id] = res['list_price'].get(quote.id, 0) / Decimal(quote.quantity)
+                        1 + ((quote.global_margin or 0) / 100) or 0).quantize(quantize)
+                res['unit_price'][quote.id] = (res['list_price'].get(quote.id, 0) / Decimal(quote.quantity)).quantize(quantize)
         return res
 
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):
