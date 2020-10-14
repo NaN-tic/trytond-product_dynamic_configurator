@@ -64,7 +64,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         depends=['product_uom_category', 'type'])
     childs = fields.One2Many('configurator.property', 'parent', 'childs',
         states={
-            'invisible': Not(Eval('type').in_(['bom', 'purchase_product']))
+            'invisible': Not(Eval('type').in_(['bom', 'purchase_product',
+                'options']))
         })
     parent = fields.Many2One('configurator.property', 'Parent', select=True)
     quantity = fields.Text('Quantity', states={
@@ -334,7 +335,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 template.attributes += (child_res,)
 
         if self.object_expression:
-            template.info_ratio = self.evaluate(self.object_expression, values)
+            expressions = eval(self.object_expression)
+            for key, value in expressions.items():
+                val = self.evaluate(value, values)
+                setattr(template, key, val)        
 
         if len(template.attributes):
             product = self.set_template_fields(product)
@@ -803,16 +807,18 @@ class QuotationLine(ModelSQL, ModelView):
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     'Design Line'
     __name__ = 'configurator.design.line'
-    quotation = fields.Many2One('configurator.quotation.line', 'Quotation')
+    quotation = fields.Many2One('configurator.quotation.line', 'Quotation',
+        readonly=True, required=True)
     category = fields.Many2One('configurator.property.price_category',
         'Category', readonly=True)
     property = fields.Many2One('configurator.property', 'Property',
         readonly=True)
     quantity = fields.Float('Quantity')
     uom = fields.Many2One('product.uom', 'UoM', readonly=True)
-    unit_price = fields.Numeric('Unit Price', digits=price_digits, readonly=True)
+    unit_price = fields.Numeric('Unit Price', digits=price_digits,
+        readonly=True)
     margin = fields.Float('Margin', digits=(16, 4))
-    amount = fields.Function(fields.Numeric('Amount', digits=(16, 2)),
+    amount = fields.Function(fields.Numeric('Amount', digits=price_digits),
         'on_change_with_amount')
     currency = fields.Function(fields.Many2One('currency.currency', 'Currency'),
         'get_currency')
