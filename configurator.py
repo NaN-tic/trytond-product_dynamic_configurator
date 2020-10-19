@@ -117,6 +117,11 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     summary = fields.Text('Summary')
     cost_price = fields.Numeric('Cost Price')
 
+    @classmethod
+    def __setup__(cls):
+        super().__setup__()
+        cls._order.insert(0, ('code', 'ASC'))
+
     @staticmethod
     def default_sequence():
         return 99
@@ -338,7 +343,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             expressions = eval(self.object_expression)
             for key, value in expressions.items():
                 val = self.evaluate(value, values)
-                setattr(template, key, val)        
+                setattr(template, key, val)
 
         if len(template.attributes):
             product = self.set_template_fields(product)
