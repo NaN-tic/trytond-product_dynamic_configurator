@@ -67,7 +67,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             'invisible': Not(Eval('type').in_(['bom', 'purchase_product',
                 'options']))
         })
-    parent = fields.Many2One('configurator.property', 'Parent', select=True)
+    parent = fields.Many2One('configurator.property', 'Parent', select=True,
+        ondelete='CASCADE')
     quantity = fields.Text('Quantity', states={
         'invisible': Not(Eval('type').in_(['purchase_product',
             'bom', 'product'])),
