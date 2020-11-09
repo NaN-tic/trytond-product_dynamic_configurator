@@ -653,15 +653,6 @@ class Design(Workflow, ModelSQL, ModelView):
             values[attribute.property.code] = attribute
         return self.template.compute_attributes(self, values)
 
-    @fields.depends('template')
-    def on_change_template(self):
-        # TODO: Remove the created attributes by the update button
-        if not self.template:
-            self.attributes = None
-
-    @fields.depends('attributes', 'template')
-    def on_change_attributes(self):
-        self.attributes = self.get_attributes()
 
     @classmethod
     @ModelView.button
