@@ -568,8 +568,6 @@ class Design(Workflow, ModelSQL, ModelView):
         states=READONLY_STATE, depends=['state'])
     attributes = fields.One2Many('configurator.design.attribute', 'design',
         'Attributes', states=READONLY_STATE, depends=['state'])
-    lines = fields.One2Many('configurator.design.line', 'design', 'Lines',
-        states=READONLY_STATE, depends=['state'])
     prices = fields.One2Many('configurator.quotation.line', 'design',
         'Quotations', states=READONLY_STATE, depends=['state'])
     summary = fields.Function(fields.Text('Summary'), 'get_summary')
@@ -613,6 +611,19 @@ class Design(Workflow, ModelSQL, ModelView):
 
     def get_summary(self, name):
         return
+
+
+    @classmethod
+    def copy(cls, designs, default=None):
+        if default is None:
+            default = {}
+        else:
+            default = default.copy()
+        default.setdefault('quotations', None)
+        default.setdefault('lines', None)
+        default.setdefault('prices', None)
+        return super(Design, cls).copy(designs, default=default)
+
 
     @classmethod
     @ModelView.button
@@ -763,7 +774,8 @@ class QuotationLine(ModelSQL, ModelView):
     __name__ = 'configurator.quotation.line'
     _rec_name = 'quantity'
 
-    design = fields.Many2One('configurator.design', 'Design', required=True)
+    design = fields.Many2One('configurator.design', 'Design', required=True,
+        ondelete='CASCADE')
     quantity = fields.Float('Quantity', digits=(16, 4))
     uom = fields.Many2One('product.uom', 'UoM',
         domain=[
@@ -814,7 +826,8 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     'Design Line'
     __name__ = 'configurator.design.line'
     quotation = fields.Many2One('configurator.quotation.line', 'Quotation',
-        readonly=True, required=True)
+        readonly=True, required=True,
+        ondelete='CASCADE')
     category = fields.Many2One('configurator.property.price_category',
         'Category', readonly=True)
     property = fields.Many2One('configurator.property', 'Property',
@@ -841,7 +854,8 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
 class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
     'Design Attribute'
     __name__ = 'configurator.design.attribute'
-    design = fields.Many2One('configurator.design', 'Design', required=True)
+    design = fields.Many2One('configurator.design', 'Design', required=True,
+        ondelete='CASCADE')
     property = fields.Many2One('configurator.property',
         'Property', required=True)
     property_type = fields.Function(fields.Selection(TYPE, 'Type'),
