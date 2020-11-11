@@ -71,7 +71,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         ondelete='CASCADE')
     quantity = fields.Text('Quantity', states={
         'invisible': Not(Eval('type').in_(['purchase_product',
-            'bom', 'product'])),
+            'bom', 'product', 'function'])),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
     }, depends=['type'])
     function_ = fields.Many2One('configurator.function', 'Function')
@@ -156,7 +156,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             attributes = {}
         res = []
         attribute = attributes.get(self.code)
+        print(self.code, self.user_input, self.type)
         if self.user_input:
+            print("1")
             if not attribute:
                 attribute = Attribute()
                 attribute.design = design
@@ -174,6 +176,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 res += attribute.option.compute_attributes(design,
                     attributes)
         else:
+            print("2")
             for child in self.childs:
                 res += child.compute_attributes(design, attributes)
         return res
