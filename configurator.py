@@ -212,11 +212,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def create_prices(self, design, values):
 
         created_obj = {}
-        for prop in self.childs:
-            res = prop.create_prices(design, values)
-            if res is None:
-                continue
-            created_obj.update(res)
+        if self.type != 'options':
+            for prop in self.childs:
+                res = prop.create_prices(design, values)
+                if res is None:
+                    continue
+                created_obj.update(res)
         res = getattr(self, 'get_%s' % self.type)(
             design, values, created_obj)
         if res is None:
