@@ -6,6 +6,9 @@ from trytond.config import config
 from trytond.transaction import Transaction
 from copy import copy
 from datetime import datetime
+from trytond.exceptions import UserError
+from trytond.i18n import gettext
+import sys
 
 price_digits = (16, config.getint('product', 'price_decimal', default=4))
 
@@ -193,11 +196,18 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if to_create:
             CreatedObject.save(to_create)
 
+
     def evaluate(self, expression, values):
         custom_locals = copy(locals())
         custom_locals.update({prop.code: attr.number or attr.option
             for prop, attr in values.items()})
-        return eval(expression, custom_locals)
+        try:
+            return eval(expression, custom_locals)
+        except BaseException as e:
+            raise UserError(gettext(
+                'product_dynamic_configurator.msg_expression_error',
+                 property=self.name, expression=self.quantity,
+                 invalid=str(e)))
 
     def create_prices(self, design, values):
 
