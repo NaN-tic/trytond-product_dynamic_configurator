@@ -294,15 +294,17 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             name = template.attribute_set.render_expression(template.attribute_set.product_name_template,
                     template.attributes)
             product.template.name = name
+
         return product
 
     def get_product_template_object_copy(self, template):
         Template = Pool().get('product.template')
-        template = Template()
-        for f in self.product_template._fields:
-            setattr(template, f, getattr(self.product_template, f))
-        template.configurator_template = False
-        return template
+        ntemplate = Template()
+        for f in template._fields:
+            setattr(ntemplate, f, getattr(template, f))
+        ntemplate.configurator_template = False
+        ntemplate.categories_all =  None
+        return ntemplate
 
     def get_product_product_object_copy(self, product):
         Product = Pool().get('product.product')
@@ -311,6 +313,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if not hasattr(product, f):
                 continue
             setattr(nproduct, f, getattr(product, f))
+
+        nproduct.account_category = None
+        nproduct.template = None
         return nproduct
 
     def get_field_name_from_attributes(self, attribute_set, name, record):
@@ -340,6 +345,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product.default_uom = self.uom
         product.list_price = 0
         product.code = self.code
+        template.products = [product]
         for prop, child_res in created_obj.items():
             if prop.parent != self:
                 continue
@@ -385,6 +391,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         product.cost_price = cost_price.quantize(quantize)
+        bom_input.product = product
         return {self: (bom_input, [])}
 
     def get_product(self, design, values, created_obj):
@@ -469,7 +476,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return
         template = self.get_product_template_object_copy(self.product_template)
         template.products = []
-        template.account_category = 1
         template.name = self.name + "(" + design.code + ")"
         product = self.get_product_product_object_copy(self.product_template.products[0])
         product.template = template
