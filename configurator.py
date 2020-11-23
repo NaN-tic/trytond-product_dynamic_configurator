@@ -19,6 +19,7 @@ TYPE = [
     ('bom', 'BoM'),
     ('product', 'Product'),
     ('purchase_product', 'Purchase Product'),
+    ('group', 'Group'),
 #    ('operation', 'Operation'),
     ('options', 'Options'),
     ('number', 'Number'),
@@ -56,7 +57,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     )
     uom = fields.Many2One('product.uom', 'UoM', states={
         'invisible': Eval('type').in_(['function', 'text', 'number',
-            'options']),
+            'options', 'group']),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
         },
         domain=[
@@ -68,7 +69,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     childs = fields.One2Many('configurator.property', 'parent', 'childs',
         states={
             'invisible': Not(Eval('type').in_(['bom', 'purchase_product',
-                'options']))
+                'options', 'group']))
         })
     parent = fields.Many2One('configurator.property', 'Parent', select=True,
         ondelete='CASCADE')
@@ -159,9 +160,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             attributes = {}
         res = []
         attribute = attributes.get(self.code)
-        print(self.code, self.user_input, self.type)
         if self.user_input:
-            print("1")
             if not attribute:
                 attribute = Attribute()
                 attribute.design = design
@@ -179,7 +178,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 res += attribute.option.compute_attributes(design,
                     attributes)
         else:
-            print("2")
             for child in self.childs:
                 res += child.compute_attributes(design, attributes)
         return res
@@ -228,16 +226,21 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def get_number(self, design, values, created_obj):
         pass
 
+    def get_text(self, design, values, created_obj):
+        pass
+
     def get_function(self, design, values, created_obj):
         value = self.evaluate(self.quantity, values),
         return {self: (value, [])}
 
     def get_options(self, design, values, created_obj):
         attribute = values.get(self)
-        if attribute.option:
+        if attribute and attribute.option:
             res = attribute.option.create_prices(design, values)
-            res.update({self: (res[attribute.option][0], [])})
-            return res
+            option = res.get(attribute.option, None)
+            if option :
+                res.update({self:(option[0], [])})
+                return res
         return {self:(None,[])}
 
     def get_attribute(self, design, values, created_obj):
@@ -304,6 +307,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             setattr(ntemplate, f, getattr(template, f))
         ntemplate.configurator_template = False
         ntemplate.categories_all =  None
+        ntemplate.products = []
         return ntemplate
 
     def get_product_product_object_copy(self, product):
@@ -337,15 +341,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         if not self.product_template:
             return
-
         template = self.get_product_template_object_copy(self.product_template)
-        template.products = []
+        template.name =  self.name + "(" + design.name + ")"
         product = self.get_product_product_object_copy(self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
-        product.code = self.code
-        template.products = [product]
+        product.code = design.code
         for prop, child_res in created_obj.items():
             if prop.parent != self:
                 continue
@@ -381,18 +383,28 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         # Calculate cost_price for purchase_product
         cost_price = 0
+        qty = 0
         for child in self.childs:
-            if child.type in ('number', 'char', 'attribute'):
+            if child.type in ('number', 'char', 'attribute','text', 'bom'):
                 continue
             obj, _ = created_obj[child]
-            if not obj:
-                continue
-            cost_price += (Decimal(obj.quantity) * obj.product.cost_price) / Decimal(bom_input.quantity)
+
+            if isinstance(obj, BomInput):
+                cost_price += (Decimal(obj.quantity) * obj.product.cost_price)
+                qty += obj.quantity
 
         quantize = Decimal(str(10.0 ** -price_digits[1]))
-        product.cost_price = cost_price.quantize(quantize)
+        product.cost_price = (Decimal(cost_price)/Decimal(qty)).quantize(quantize)
         bom_input.product = product
         return {self: (bom_input, [])}
+
+    def get_group(self, design, values, created_obj):
+        res = {}
+        for child in self.childs:
+            r = getattr(child, 'get_%s' % child.type)(
+                design, values, created_obj)
+            res.update(r)
+        return res
 
     def get_product(self, design, values, created_obj):
         pool = Pool()
@@ -403,13 +415,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return
         product = self.product
         quantity = Uom.compute_qty(product.default_uom, self.evaluate(self.quantity, values), product.default_uom)
-        if product.type != 'service':
-            bom_input = BomInput()
-            bom_input.product = product
-            bom_input.quantity = quantity
-            bom_input.uom = product.default_uom
-            return {self: (bom_input, [])}
-        return {self: (product, [])}
+        bom_input = BomInput()
+        bom_input.product = product
+        bom_input.quantity = quantity
+        bom_input.uom = product.default_uom
+        return {self: (bom_input, [])}
+
 
     def get_bom(self, design, values, created_obj):
         pool = Pool()
@@ -446,6 +457,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                  continue
             child_res, _ = child_res
             if isinstance(child_res, BomInput):
+                # TODO: needed to make purchase_product a composite of products
+                # then we need to avoid on bom.
+                if child_res.product.type == 'service':
+                    continue
                 if child.type == 'product':
                     bom.inputs += (child_res,)
                 elif child.type == 'purchase_product':
@@ -475,13 +490,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
-        template.products = []
         template.name = self.name + "(" + design.code + ")"
         product = self.get_product_product_object_copy(self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
-        product.code = self.code
+        product.code = self.code + "(" +  design.code + ")"
         for prop, child_res in created_obj.items():
             if prop.parent != self:
                 continue
@@ -506,8 +520,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         output.bom = bom
         output.product = product
         output.uom = product.default_uom
-        output.quantity = Uom.compute_qty(output.product.default_uom, self.evaluate(self.quantity, values),
-            product.default_uom)
+        output.quantity = Uom.compute_qty(output.product.default_uom,
+            self.evaluate(self.quantity, values), product.default_uom)
         bom.outputs += (output,)
         bom.name = template.name
         product_bom = ProductBom()
@@ -702,7 +716,7 @@ class Design(Workflow, ModelSQL, ModelView):
                     v = v[0]
                     key = (r.price_category or r.id, quote )
                     dl = prices.get(key)
-                    quantity = None
+                    quantity = 0
                     uom = None
                     cost_price = None
                     if r.type not in ('product', 'operation', ):
@@ -730,6 +744,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         # dl = r.create_design_line(quantity, r.uom, cost, design)
                         # dl.save()
                     dl = prices.get(key)
+
                     if not dl:
                         dl = r.create_design_line(quote.quantity*quantity, r.uom, cost_price, quote)
                         dl.category = r.price_category
