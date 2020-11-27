@@ -823,7 +823,7 @@ class QuotationLine(ModelSQL, ModelView):
 
     def get_rec_name(self, name):
         return '%s(%s) - %s' % (str(self.quantity), str(self.uom.symbol),
-            self.desing.name)
+            self.design.name)
 
 
     def get_product_uom_category(self, name=None):
