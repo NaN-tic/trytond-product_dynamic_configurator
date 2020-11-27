@@ -134,11 +134,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     summary = fields.Text('Summary')
     cost_price = fields.Numeric('Cost Price')
 
-    @classmethod
-    def __setup__(cls):
-        super().__setup__()
-        cls._order.insert(0, ('code', 'ASC'))
-
     @staticmethod
     def default_sequence():
         return 99
