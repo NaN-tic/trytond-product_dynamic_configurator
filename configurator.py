@@ -57,8 +57,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     )
     uom = fields.Many2One('product.uom', 'UoM', states={
         'invisible': Eval('type').in_(['function', 'text', 'number',
-            'options', 'group']),
-        'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
+            'options', 'group', 'attribute']),
+        'required': Eval('type').in_(['bom', 'product', 'purchase_product',
+            'product_attribute'])
         },
         domain=[
             If(Bool(Eval('product_uom_category')),
@@ -82,7 +83,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     price_category = fields.Many2One('configurator.property.price_category',
         'Price Category',
         states={
-            'invisible': Eval('type').in_(['function', 'text', 'number']),
+            'invisible': Eval('type').in_(['function', 'text', 'number',
+                'attribute']),
         },)
     object_expression = fields.Text('Object Expression',
         states={
@@ -99,13 +101,23 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             'invisible': Eval('type') != 'operation',
             'required': Eval('type').in_(['operation'])
         }, depends=['type'])
-    product_attribute = fields.Many2One('product.attribute',
-        'Product Attribute',
+
+    attribute_set = fields.Many2One('product.attribute.set', 'Attribute Set',
         states={
             'invisible': Eval('type') != 'attribute',
+            'required': Eval('type') == 'attribute',
+        })
+    product_attribute = fields.Many2One('product.attribute',
+        'Product Attribute',
+        domain = [('sets', '=', Eval('attribute_set'))],
+        depends = ['attribute_set'],
+        states={
+            'invisible': Eval('type') != 'attribute',
+            'required': Eval('type') == 'attribute',
         })
     product_attribute_value = fields.Char('Product Attribute Value', states={
         'invisible': Eval('type') != 'attribute',
+        'required': Eval('type') == 'attribute',
     })
     product_template = fields.Many2One('product.template', 'Product Template',
         domain=[('configurator_template', '=', True)],
@@ -150,7 +162,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return self.product.default_uom_category.id
 
     @fields.depends('product_template')
-    def on_change_with_product_template_uom_category(self, name=None):
+    def on_change_with_product_uom_category(self, name=None):
         if self.product_template:
             return self.product_template.default_uom_category.id
 
@@ -282,23 +294,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         elif prop.product_attribute.type_ == 'selection':
             raise 'Not Implemented'
 
-    def set_template_fields(self, product):
-        template = product.template
-        if not hasattr(template, 'attribute_set'):
-            return
-        if not template.attribute_set:
-            return
-
-        if template.attribute_set.product_code_template:
-            code = template.attribute_set.render_expression(template.attribute_set.product_code_template,
-                template.attributes)
-            product.code = code
-        if template.attribute_set.product_name_template:
-            name = template.attribute_set.render_expression(template.attribute_set.product_name_template,
-                    template.attributes)
-            product.template.name = name
-
-        return product
 
     def get_product_template_object_copy(self, template):
         Template = Pool().get('product.template')
@@ -338,16 +333,19 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
         Product = pool.get('product.product')
+        Template = pool.get('product.template')
 
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
         template.name =  self.name + "(" + design.name + ")"
+        template.list_price = 0
         product = self.get_product_product_object_copy(self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
         product.code = design.code
+
         for prop, child_res in created_obj.items():
             if prop.parent != self:
                 continue
@@ -355,7 +353,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if prop.type == 'attribute':
                 if not hasattr(template, 'attributes'):
                     template.attributes = tuple()
-                template.attribute_set = prop.product_attribute.sets[0]
+                template.attribute_set = prop.attribute_set
                 type_, value = self.get_product_attribute_typed(prop,
                     self.evaluate(prop.product_attribute_value, values))
                 setattr(child_res, 'value_' + type_, value)
@@ -368,8 +366,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 val = self.evaluate(value, values)
                 setattr(template, key, val)
 
-        if len(template.attributes):
-            product = self.set_template_fields(product)
+        template.products = (product,)
+        template._update_attributes_values()
+        template.products = None
+
         exists_product = Product.search([('code', '=', product.code)])
         if exists_product:
             product = exists_product[0]
@@ -388,13 +388,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if child.type in ('number', 'char', 'attribute','text', 'bom'):
                 continue
             obj, _ = created_obj[child]
-
             if isinstance(obj, BomInput):
                 cost_price += (Decimal(obj.quantity) * obj.product.cost_price)
                 qty += obj.quantity
 
         quantize = Decimal(str(10.0 ** -price_digits[1]))
-        product.cost_price = (Decimal(cost_price)/Decimal(qty)).quantize(quantize)
+        product.cost_price = (Decimal(qty)/Decimal(cost_price)).quantize(quantize)
+        print("Cost_price:", product.cost_price)
         bom_input.product = product
         return {self: (bom_input, [])}
 
@@ -425,6 +425,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def get_bom(self, design, values, created_obj):
         pool = Pool()
         Product = pool.get('product.product')
+        Template = pool.get('product.template')
         Bom = pool.get('production.bom')
         BomInput = pool.get('production.bom.input')
         BomOutput = pool.get('production.bom.output')
@@ -503,16 +504,16 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if prop.type == 'attribute':
                 if not hasattr(template, 'attributes'):
                     template.attributes = tuple()
-                template.attribute_set = prop.product_attribute.sets[0]
+                template.attribute_set = prop.attribute_sets
                 type_, value = self.get_product_attribute_typed(prop,
                     self.evaluate(prop.product_attribute_value, values))
                 setattr(child_res, 'value_' + type_, value)
                 setattr(child_res, 'value', value)
                 template.attributes += (child_res,)
 
-        if len(template.attributes):
-            product = self.set_template_fields(product)
-
+        # if len(template.attributes):
+        #     product = self.set_template_fields(product)
+        Template.update_attributes_values([template])
         exists_product = Product.search([('code', '=', product.code)])
         if exists_product:
             product = exists_product[0]
@@ -752,7 +753,9 @@ class Design(Workflow, ModelSQL, ModelView):
                             dl.property = r
                         prices[key] = dl
                     else:
-                        cost_price = (Decimal(dl.quantity) * dl.unit_price + Decimal(quantity)*cost_price)/Decimal(dl.quantity + quantity)
+                        cost_price = (Decimal(dl.quantity + quantity)/(
+                            Decimal(dl.quantity) * dl.unit_price +
+                                Decimal(quantity)*cost_price))
                         cost_price = Decimal(cost_price).quantize(Decimal(str(10.0 ** -price_digits[1])))
                         dl.quantity += quantity
                         dl.unit_price = cost_price
@@ -798,7 +801,6 @@ class Design(Workflow, ModelSQL, ModelView):
 class QuotationLine(ModelSQL, ModelView):
     """  Quotation Line """
     __name__ = 'configurator.quotation.line'
-    _rec_name = 'quantity'
 
     design = fields.Many2One('configurator.design', 'Design', required=True,
         ondelete='CASCADE')
@@ -823,6 +825,10 @@ class QuotationLine(ModelSQL, ModelView):
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'get_product_uom_category')
+
+    def get_rec_name(self, name):
+        return '%s(%s) - %s' % (str(self.quantity), str(self.uom.symbol),
+            self.desing.name)
 
 
     def get_product_uom_category(self, name=None):

@@ -37,6 +37,8 @@
     <label name="object_expression"/>
     <field name="object_expression"/>
     <newline/>
+    <label name="attribute_set"/>
+    <field name="attribute_set"/>
     <label name="product_attribute"/>
     <field name="product_attribute"/>
     <label name="product_attribute_value"/>
