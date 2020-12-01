@@ -398,6 +398,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         for child in self.childs:
             r = getattr(child, 'get_%s' % child.type)(
                 design, values, created_obj)
+            if not r:
+                continue
             res.update(r)
         return res
 
