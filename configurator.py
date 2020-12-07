@@ -380,7 +380,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         cost_price = 0
         qty = 0
         for child in self.childs:
-            if child.type in ('number', 'char', 'attribute','text', 'bom'):
+            if child.type in ('number', 'char', 'attribute','text', 'bom', 'group'):
                 continue
             obj, _ = created_obj[child]
             if isinstance(obj, BomInput):
@@ -389,7 +389,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         product.cost_price = (Decimal(qty)/Decimal(cost_price)).quantize(quantize)
-        print("Cost_price:", product.cost_price)
         bom_input.product = product
         return {self: (bom_input, [])}
 
