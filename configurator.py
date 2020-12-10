@@ -230,6 +230,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         created_obj.update(res)
         return created_obj
 
+
     def get_number(self, design, values, created_obj):
         pass
 
@@ -372,8 +373,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         bom_input = BomInput()
         bom_input.product = product
         bom_input.product.default_uom = self.uom
-        bom_input.quantity = Uom.compute_qty(product.default_uom, self.evaluate(self.quantity, values),
-            product.default_uom)
+        bom_input.quantity = Uom.compute_qty(product.default_uom,
+            self.evaluate(self.quantity, values),  product.default_uom)
         bom_input.uom = bom_input.product.default_uom
 
         # Calculate cost_price for purchase_product
@@ -531,6 +532,15 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if exists_bom:
             return {self: (exists_bom[0], res_obj)}
         return {self: (bom, res_obj)}
+
+    def get_ratio_for_prices(self, values, ratio):
+        if not self.parent:
+            return ratio
+
+        parent = self.parent
+        ratio_parent = self.evaluate(parent.quantity or '1', values)
+        return parent.get_ratio_for_prices(values, ratio*ratio_parent)
+
 
     def create_design_line(self, quantity, uom, unit_price, quote):
         DesignLine = Pool().get('configurator.design.line')
@@ -692,6 +702,7 @@ class Design(Workflow, ModelSQL, ModelView):
             design.attributes = design.get_attributes()
         cls.save(designs)
 
+
     @classmethod
     @ModelView.button
     def create_prices(cls, designs):
@@ -700,6 +711,7 @@ class Design(Workflow, ModelSQL, ModelView):
         remove_lines = []
         BomInput = pool.get('production.bom.input')
         Product = pool.get('product.product')
+        Uom = pool.get('product.uom')
         to_save = []
         for design in designs:
             prices = {}
@@ -707,7 +719,9 @@ class Design(Workflow, ModelSQL, ModelView):
             for price in design.prices:
                 remove_lines += price.prices
 
-            res = design.template.create_prices(design, design.as_dict())
+            values = design.as_dict()
+            res = design.template.create_prices(design, values)
+
             for quote in design.prices:
                 for r, v in res.items():
                     v = v[0]
@@ -720,37 +734,40 @@ class Design(Workflow, ModelSQL, ModelView):
                         continue
                     if r.type == 'product':
                         if isinstance(v, BomInput):
-                            quantity = v.quantity
+                            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity, design.template.uom)
+                            quantity = v.quantity*quote_quantity
                             uom = v.uom
                             cost_price = v.product.cost_price
                             # dl = r.create_design_line(v.quantity, v.uom,  v.product.cost_price, design)
                         elif isinstance(v, Product):
                             quantity = r.evaluate(r.quantity, design.as_dict())
-                            # TODO: take care uom conversions.
-                            quantity = quantity * quote.quantity
+                            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity, design.template.uom)
+                            quantity = quantity * quote_quantity
                             uom = v.default_uom
                             cost_price = v.cost_price
                             # dl = r.create_design_line(quantity, v.default_uom,
                             #     v.cost_price, design)
                             # dl.save()
-                    if r.type == 'operation':
-                        quantity = r.evaluate(r.quantity, design.as_dict())
-                        quantity = quantity * quote.quantity
-                        quantity = v.compute_time(quantity, v.time_uom)
-                        cost_price = r.work_center_category.cost_price
+                    # if r.type == 'operation':
+                    #     quantity = r.evaluate(r.quantity, design.as_dict())
+                    #     quantity = quantity * quote.quantity
+                    #     quantity = v.compute_time(quantity, v.time_uom)
+                    #     cost_price = r.work_center_category.cost_price
                         # dl = r.create_design_line(quantity, r.uom, cost, design)
                         # dl.save()
                     dl = prices.get(key)
 
                     if not dl:
-                        dl = r.create_design_line(quote.quantity*quantity, r.uom, cost_price, quote)
+                        dl = r.create_design_line(quantity, r.uom, cost_price, quote)
+                        qty_ratio = r.get_ratio_for_prices(values, 1)
                         dl.category = r.price_category
+                        dl.qty_ratio = qty_ratio
                         if not r.price_category:
                             dl.property = r
                         prices[key] = dl
                     else:
-                        cost_price = (Decimal(dl.quantity + quantity)/(
-                            Decimal(dl.quantity) * dl.unit_price +
+                        cost_price = (Decimal(quantity)/(
+                                dl.unit_price +
                                 Decimal(quantity)*cost_price))
                         cost_price = Decimal(cost_price).quantize(Decimal(str(10.0 ** -price_digits[1])))
                         dl.quantity += quantity
@@ -834,20 +851,29 @@ class QuotationLine(ModelSQL, ModelView):
 
     @classmethod
     def get_prices(cls, quotations, names):
+        Uom = Pool().get('product.uom')
         res = {}
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         for name in {'cost_price', 'list_price', 'margin', 'unit_price'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
         for quote in quotations:
             for line in quote.prices:
-                res['cost_price'][quote.id] += Decimal(line.quantity or 0) * (line.unit_price or 0)
-                res['list_price'][quote.id] += line.amount
-            if res['list_price'].get(quote.id, 0):
-                if res['cost_price'][quote.id]:
-                    res['margin'][quote.id] = (res['list_price'].get(quote.id, 0) / res['cost_price'][quote.id] - 1).quantize(quantize)
-                res['list_price'][quote.id] = (res['list_price'][quote.id] or 0 ) * Decimal(
-                        1 + ((quote.global_margin or 0) / 100) or 0).quantize(quantize)
-                res['unit_price'][quote.id] = (res['list_price'].get(quote.id, 0) / Decimal(quote.quantity)).quantize(quantize)
+                res['cost_price'][quote.id] += (Decimal(line.quantity or 0) *
+                    (line.unit_price or 0) * Decimal(line.qty_ratio))
+                res['list_price'][quote.id] += line.amount* Decimal(line.qty_ratio)
+
+            list_price = res['list_price'].get(quote.id, 0)
+            cost_price = res['cost_price'].get(quote.id, 0)
+
+            if list_price and cost_price:
+                res['margin'][quote.id] = (list_price / cost_price -1
+                    ).quantize(quantize)
+            res['list_price'][quote.id] = (list_price
+                * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
+                )).quantize(quantize)
+
+            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity, quote.design.template.uom)
+            res['unit_price'][quote.id] = (cost_price / Decimal(quote_quantity)).quantize(quantize)
         return res
 
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):
@@ -861,6 +887,7 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     property = fields.Many2One('configurator.property', 'Property',
         readonly=True)
     quantity = fields.Float('Quantity')
+    qty_ratio = fields.Float('Quantity')
     uom = fields.Many2One('product.uom', 'UoM', readonly=True)
     unit_price = fields.Numeric('Unit Price', digits=price_digits,
         readonly=True)

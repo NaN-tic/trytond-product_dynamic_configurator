@@ -4,6 +4,7 @@
     <field name="property" expand="1"/>
     <field name="quantity"/>
     <field name="uom"/>
+    <field name="qty_ratio"/>
     <field name="unit_price"/>
     <field name="margin"/>
     <field name="amount"/>
