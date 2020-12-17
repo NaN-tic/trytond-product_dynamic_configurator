@@ -109,8 +109,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         })
     product_attribute = fields.Many2One('product.attribute',
         'Product Attribute',
-        domain = [('sets', '=', Eval('attribute_set'))],
-        depends = ['attribute_set'],
+        domain=[('sets', '=', Eval('attribute_set'))],
+        depends=['attribute_set'],
         states={
             'invisible': Eval('type') != 'attribute',
             'required': Eval('type') == 'attribute',
@@ -124,7 +124,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         states={
             'invisible': Not(Eval('type').in_(['purchase_product', 'bom'])),
             'required': Eval('type').in_(['purchase_product', 'bom'])
-        }, depends =['type']
+        }, depends=['type']
     )
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
@@ -140,8 +140,11 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     def get_rec_name(self, name):
         res = ''
+        parent = self.get_parent()
         if self.code:
             res = '[%s] ' % self.code
+        if self.code and parent:
+            res = '[%s/%s] ' % (parent.code, self.code)
         res += self.name
         return res
 
@@ -156,10 +159,18 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if self.product:
             return self.product.default_uom_category.id
 
-    @fields.depends('product_template')
-    def on_change_with_product_uom_category(self, name=None):
-        if self.product_template:
-            return self.product_template.default_uom_category.id
+    # TODO: Remove
+    # @fields.depends('product_template')
+    # def on_change_with_product_uom_category(self, name=None):
+    #     if self.product_template:
+    #         return self.product_template.default_uom_category.id
+
+    def get_parent(self):
+        if self.type in ('bom'):
+            return self
+        if not self.parent:
+            return self
+        return self.parent.get_parent()
 
     def compute_attributes(self, design, attributes=None):
         Attribute = Pool().get('configurator.design.attribute')
@@ -201,7 +212,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if to_create:
             CreatedObject.save(to_create)
 
-
     def evaluate(self, expression, values):
         custom_locals = copy(locals())
         custom_locals.update({prop.code: attr.number or attr.option
@@ -209,27 +219,36 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         try:
             return eval(expression, custom_locals)
         except BaseException as e:
+            #print(self.name, self.parent.name, self.quantity)
             raise UserError(gettext(
                 'product_dynamic_configurator.msg_expression_error',
-                 property=self.name, expression=self.quantity,
-                 invalid=str(e)))
+                property=self.name, expression=self.quantity,
+                invalid=str(e)))
 
     def create_prices(self, design, values):
 
         created_obj = {}
         if self.type != 'options':
             for prop in self.childs:
-                res = prop.create_prices(design, values)
+                parent = prop.get_parent()
+                val = values
+                if parent in values:
+                    val = values[parent]
+                res = prop.create_prices(design, val)
                 if res is None:
                     continue
                 created_obj.update(res)
+
+        parent = self.get_parent()
+        val = values
+        if parent in values:
+            val = values[parent]
         res = getattr(self, 'get_%s' % self.type)(
-            design, values, created_obj)
+            design, val, created_obj)
         if res is None:
             return created_obj
         created_obj.update(res)
         return created_obj
-
 
     def get_number(self, design, values, created_obj):
         pass
@@ -246,10 +265,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if attribute and attribute.option:
             res = attribute.option.create_prices(design, values)
             option = res.get(attribute.option, None)
-            if option :
-                res.update({self:(option[0], [])})
+            if option:
+                res.update({self: (option[0], [])})
                 return res
-        return {self:(None,[])}
+        return {self: (None, [])}
 
     def get_attribute(self, design, values, created_obj):
         pool = Pool()
@@ -373,15 +392,16 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         bom_input = BomInput()
         bom_input.product = product
         bom_input.product.default_uom = self.uom
-        bom_input.quantity = Uom.compute_qty(product.default_uom,
-            self.evaluate(self.quantity, values),  product.default_uom)
+        bom_input.quantity = Uom.compute_qty(self.uom,
+            self.evaluate(self.quantity, values), product.default_uom)
         bom_input.uom = bom_input.product.default_uom
 
         # Calculate cost_price for purchase_product
         cost_price = 0
         qty = 0
         for child in self.childs:
-            if child.type in ('number', 'char', 'attribute','text', 'bom', 'group'):
+            if child.type in ('number', 'char', 'attribute', 'text',
+                    'bom', 'group'):
                 continue
             obj, _ = created_obj[child]
             if isinstance(obj, BomInput):
@@ -389,7 +409,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 qty += obj.quantity
 
         quantize = Decimal(str(10.0 ** -price_digits[1]))
-        product.cost_price = (Decimal(qty)/Decimal(cost_price)).quantize(quantize)
+        product.cost_price = (Decimal(qty)/Decimal(cost_price)
+            ).quantize(quantize)
         bom_input.product = product
         return {self: (bom_input, [])}
 
@@ -411,13 +432,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not self.product:
             return
         product = self.product
-        quantity = Uom.compute_qty(product.default_uom, self.evaluate(self.quantity, values), product.default_uom)
+        quantity = Uom.compute_qty(self.uom, self.evaluate(
+            self.quantity, values), product.default_uom)
         bom_input = BomInput()
         bom_input.product = product
         bom_input.quantity = quantity
         bom_input.uom = product.default_uom
         return {self: (bom_input, [])}
-
 
     def get_bom(self, design, values, created_obj):
         pool = Pool()
@@ -443,7 +464,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return {self: bom}
 
         res_obj = []
-
         bom = Bom()
         bom.name = self.name + " ( " + design.code + " ) "
         bom.active = True
@@ -452,7 +472,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         operations_route = ()
         for child, child_res in created_obj.items():
             if child.parent != self:
-                 continue
+                continue
             child_res, _ = child_res
             if isinstance(child_res, BomInput):
                 # TODO: needed to make purchase_product a composite of products
@@ -489,11 +509,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return
         template = self.get_product_template_object_copy(self.product_template)
         template.name = self.name + "(" + design.code + ")"
-        product = self.get_product_product_object_copy(self.product_template.products[0])
+        product = self.get_product_product_object_copy(
+            self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
-        product.code = self.code + "(" +  design.code + ")"
+        product.code = self.code + "(" + design.code + ")"
         for prop, child_res in created_obj.items():
             if prop.parent != self:
                 continue
@@ -518,7 +539,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         output.bom = bom
         output.product = product
         output.uom = product.default_uom
-        output.quantity = Uom.compute_qty(output.product.default_uom,
+        output.quantity = Uom.compute_qty(self.uom,
             self.evaluate(self.quantity, values), product.default_uom)
         bom.outputs += (output,)
         bom.name = template.name
@@ -540,7 +561,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         parent = self.parent
         ratio_parent = self.evaluate(parent.quantity or '1', values)
         return parent.get_ratio_for_prices(values, ratio*ratio_parent)
-
 
     def create_design_line(self, quantity, uom, unit_price, quote):
         DesignLine = Pool().get('configurator.design.line')
@@ -598,12 +618,12 @@ READONLY_STATE = {
 class Design(Workflow, ModelSQL, ModelView):
     'Design'
     __name__ = 'configurator.design'
-    code = fields.Char('Code' , states=READONLY_STATE, depends=['state'])
+    code = fields.Char('Code', states=READONLY_STATE, depends=['state'])
     name = fields.Char('Name', states=READONLY_STATE, depends=['state'])
     party = fields.Many2One('party.party', 'Party', states=READONLY_STATE,
         depends=['state'])
     template = fields.Many2One('configurator.property', 'Template',
-        domain=[('template', '=', True),],
+        domain=[('template', '=', True)],
         states=READONLY_STATE, depends=['state', 'template'])
     currency = fields.Many2One('currency.currency', 'Currency',
         states=READONLY_STATE, depends=['state'])
@@ -618,7 +638,6 @@ class Design(Workflow, ModelSQL, ModelView):
         ('cancel', 'Cancel')], 'State', readonly=True, required=True)
     product = fields.Many2One('product.product', 'Product Designed',
         readonly=True)
-
 
     @classmethod
     def __setup__(cls):
@@ -653,7 +672,6 @@ class Design(Workflow, ModelSQL, ModelView):
     def get_summary(self, name):
         return
 
-
     @classmethod
     def copy(cls, designs, default=None):
         if default is None:
@@ -665,17 +683,25 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('prices', None)
         return super(Design, cls).copy(designs, default=default)
 
-
     @classmethod
     @ModelView.button
     @Workflow.transition('cancel')
     def cancel(cls, designs):
         pass
 
-    def as_dict(self):
+    def as_dict2(self):
         res = {}
         for attribute in self.attributes:
             res[attribute.property] = attribute
+        return res
+
+    def as_dict(self):
+        res = {}
+        for attribute in self.attributes:
+            parent = attribute.property.get_parent()
+            if parent not in res:
+                res[parent] = {}
+            res[parent][attribute.property] = attribute
         return res
 
     def create_object(self, object):
@@ -694,14 +720,12 @@ class Design(Workflow, ModelSQL, ModelView):
             values[attribute.property.code] = attribute
         return self.template.compute_attributes(self, values)
 
-
     @classmethod
     @ModelView.button
     def update(cls, designs):
         for design in designs:
             design.attributes = design.get_attributes()
         cls.save(designs)
-
 
     @classmethod
     @ModelView.button
@@ -725,41 +749,37 @@ class Design(Workflow, ModelSQL, ModelView):
             for quote in design.prices:
                 for r, v in res.items():
                     v = v[0]
-                    key = (r.price_category or r.id, quote )
+                    key = (r.price_category or r.id, quote)
                     dl = prices.get(key)
                     quantity = 0
-                    uom = None
                     cost_price = None
                     if r.type not in ('product', 'operation', ):
                         continue
                     if r.type == 'product':
                         if isinstance(v, BomInput):
-                            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity, design.template.uom)
+                            quote_quantity = Uom.compute_qty(quote.uom,
+                                quote.quantity, design.template.uom)
                             quantity = v.quantity*quote_quantity
-                            uom = v.uom
                             cost_price = v.product.cost_price
-                            # dl = r.create_design_line(v.quantity, v.uom,  v.product.cost_price, design)
                         elif isinstance(v, Product):
-                            quantity = r.evaluate(r.quantity, design.as_dict())
-                            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity, design.template.uom)
+                            parent = r.get_parent()
+                            quantity = r.evaluate(r.quantity,
+                                design.as_dict()[parent])
+                            quote_quantity = Uom.compute_qty(quote.uom,
+                                quote.quantity, design.template.uom)
                             quantity = quantity * quote_quantity
-                            uom = v.default_uom
                             cost_price = v.cost_price
-                            # dl = r.create_design_line(quantity, v.default_uom,
-                            #     v.cost_price, design)
-                            # dl.save()
                     # if r.type == 'operation':
                     #     quantity = r.evaluate(r.quantity, design.as_dict())
                     #     quantity = quantity * quote.quantity
                     #     quantity = v.compute_time(quantity, v.time_uom)
                     #     cost_price = r.work_center_category.cost_price
-                        # dl = r.create_design_line(quantity, r.uom, cost, design)
-                        # dl.save()
                     dl = prices.get(key)
-
                     if not dl:
-                        dl = r.create_design_line(quantity, r.uom, cost_price, quote)
-                        qty_ratio = r.get_ratio_for_prices(values, 1)
+                        dl = r.create_design_line(quantity, r.uom, cost_price,
+                            quote)
+                        parent = r.get_parent()
+                        qty_ratio = r.get_ratio_for_prices(values[parent], 1)
                         dl.category = r.price_category
                         dl.qty_ratio = qty_ratio
                         if not r.price_category:
@@ -769,7 +789,8 @@ class Design(Workflow, ModelSQL, ModelView):
                         cost_price = (Decimal(quantity)/(
                                 dl.unit_price +
                                 Decimal(quantity)*cost_price))
-                        cost_price = Decimal(cost_price).quantize(Decimal(str(10.0 ** -price_digits[1])))
+                        cost_price = Decimal(cost_price).quantize(Decimal(
+                            str(10.0 ** -price_digits[1])))
                         dl.quantity += quantity
                         dl.unit_price = cost_price
 
@@ -782,7 +803,6 @@ class Design(Workflow, ModelSQL, ModelView):
     @Workflow.transition('done')
     def process(cls, designs):
         CreatedObject = Pool().get('configurator.object')
-        references = []
         to_delete = []
         for design in designs:
             to_delete += [x for x in design.objects]
@@ -843,15 +863,12 @@ class QuotationLine(ModelSQL, ModelView):
         return '%s(%s) - %s' % (str(self.quantity), str(self.uom.symbol),
             self.design.name)
 
-
     def get_product_uom_category(self, name=None):
         if self.design and self.design.template:
             return self.design.template.uom.category.id
 
-
     @classmethod
     def get_prices(cls, quotations, names):
-        Uom = Pool().get('product.uom')
         res = {}
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         for name in {'cost_price', 'list_price', 'margin', 'unit_price'}:
@@ -859,21 +876,21 @@ class QuotationLine(ModelSQL, ModelView):
         for quote in quotations:
             for line in quote.prices:
                 res['cost_price'][quote.id] += (Decimal(line.quantity or 0) *
-                    (line.unit_price or 0) * Decimal(line.qty_ratio))
-                res['list_price'][quote.id] += line.amount* Decimal(line.qty_ratio)
+                    (line.unit_price or 0) * Decimal(line.qty_ratio or 0))
+                res['list_price'][quote.id] += line.amount * Decimal(
+                    line.qty_ratio or 0)
 
             list_price = res['list_price'].get(quote.id, 0)
             cost_price = res['cost_price'].get(quote.id, 0)
 
             if list_price and cost_price:
-                res['margin'][quote.id] = (list_price / cost_price -1
+                res['margin'][quote.id] = (list_price / cost_price - 1
                     ).quantize(quantize)
             res['list_price'][quote.id] = (list_price
                 * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
                 )).quantize(quantize)
-
-            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity, quote.design.template.uom)
-            res['unit_price'][quote.id] = (cost_price / Decimal(quote_quantity)).quantize(quantize)
+            res['unit_price'][quote.id] = Decimal(float(cost_price) /
+                quote.quantity*quote.uom.rate).quantize(quantize)
         return res
 
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):
@@ -901,7 +918,8 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     def on_change_with_amount(self, name=None):
         if not self.quantity or not self.unit_price:
             return _ZERO
-        return Decimal(str(self.quantity)) * self.unit_price * Decimal(self.margin and 1 + self.margin / 100.0 or 1)
+        return Decimal(str(self.quantity)) * self.unit_price * Decimal(
+            self.margin and 1 + self.margin / 100.0 or 1)
 
     def get_currency(self, name=None):
         return self.quotation.design.currency
