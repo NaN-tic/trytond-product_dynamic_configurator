@@ -159,12 +159,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if self.product:
             return self.product.default_uom_category.id
 
-    # TODO: Remove
-    # @fields.depends('product_template')
-    # def on_change_with_product_uom_category(self, name=None):
-    #     if self.product_template:
-    #         return self.product_template.default_uom_category.id
-
     def get_parent(self):
         if self.type in ('bom'):
             return self
@@ -219,7 +213,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         try:
             return eval(expression, custom_locals)
         except BaseException as e:
-            #print(self.name, self.parent.name, self.quantity)
             raise UserError(gettext(
                 'product_dynamic_configurator.msg_expression_error',
                 property=self.name, expression=self.quantity,
@@ -309,14 +302,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         elif prop.product_attribute.type_ == 'selection':
             raise 'Not Implemented'
 
-
     def get_product_template_object_copy(self, template):
         Template = Pool().get('product.template')
         ntemplate = Template()
         for f in template._fields:
             setattr(ntemplate, f, getattr(template, f))
         ntemplate.configurator_template = False
-        ntemplate.categories_all =  None
+        ntemplate.categories_all = None
         ntemplate.products = []
         return ntemplate
 
@@ -348,14 +340,14 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
         Product = pool.get('product.product')
-        Template = pool.get('product.template')
 
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
-        template.name =  self.name + "(" + design.name + ")"
+        template.name = self.name + "(" + design.name + ")"
         template.list_price = 0
-        product = self.get_product_product_object_copy(self.product_template.products[0])
+        product = self.get_product_product_object_copy(
+            self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
@@ -431,9 +423,17 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         if not self.product:
             return
+
+        attribute = None
+        if self.parent and self.parent.type == 'options':
+            attribute = values.get(self.parent)
         product = self.product
-        quantity = Uom.compute_qty(self.uom, self.evaluate(
-            self.quantity, values), product.default_uom)
+        if attribute and attribute.number:
+            quantity = attribute.number
+        else:
+            quantity = self.evaluate(self.quantity, values)
+
+        quantity = Uom.compute_qty(self.uom, quantity, product.default_uom)
         bom_input = BomInput()
         bom_input.product = product
         bom_input.quantity = quantity
@@ -611,9 +611,11 @@ class CreatedObject(ModelSQL, ModelView):
     def get_rec_name(self, name):
         return self.object and self.object.rec_name
 
+
 READONLY_STATE = {
     'readonly': (Eval('state') != 'draft'),
     }
+
 
 class Design(Workflow, ModelSQL, ModelView):
     'Design'
@@ -688,12 +690,6 @@ class Design(Workflow, ModelSQL, ModelView):
     @Workflow.transition('cancel')
     def cancel(cls, designs):
         pass
-
-    def as_dict2(self):
-        res = {}
-        for attribute in self.attributes:
-            res[attribute.property] = attribute
-        return res
 
     def as_dict(self):
         res = {}
@@ -946,7 +942,7 @@ class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
         'invisible': Eval('property_type') != 'options',
     }, depends=['property_type', 'property_options'])
     number = fields.Float('Number', states={
-        'invisible': Eval('property_type') != 'number',
+        'invisible': Eval('property_type') not in ('number', 'options'),
     }, depends=['property_type'])
     text = fields.Char('Text', states={
         'invisible': Eval('property_type') != 'text',
