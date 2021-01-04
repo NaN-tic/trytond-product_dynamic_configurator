@@ -1,14 +1,14 @@
 from decimal import Decimal
-from trytond.model import Workflow, ModelView, ModelSQL, fields, sequence_ordered, tree
+from trytond.model import (Workflow, ModelView, ModelSQL, fields,
+    sequence_ordered, tree)
 from trytond.pyson import Eval, Not, If, Bool
 from trytond.pool import Pool
 from trytond.config import config
 from trytond.transaction import Transaction
 from copy import copy
-from datetime import datetime
 from trytond.exceptions import UserError
 from trytond.i18n import gettext
-import sys
+import math # Import to use with formulas. Do not remove.
 
 price_digits = (16, config.getint('product', 'price_decimal', default=4))
 
