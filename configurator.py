@@ -208,8 +208,11 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     def evaluate(self, expression, values):
         custom_locals = copy(locals())
-        custom_locals.update({prop.code: attr.number or attr.option
-            for prop, attr in values.items()})
+        for prop, attr in values.items():
+            if prop.type == 'function':
+                custom_locals[prop.code] = attr
+            else:
+                custom_locals[prop.code] = attr.number or attr.option
         try:
             return eval(expression, custom_locals)
         except BaseException as e:
@@ -692,12 +695,20 @@ class Design(Workflow, ModelSQL, ModelView):
         pass
 
     def as_dict(self):
+        Function = Pool().get('configurator.property')
+        functions = Function.search([('type', '=', 'function'),
+            ('parent', 'child_of', [self.template.id])])
         res = {}
         for attribute in self.attributes:
             parent = attribute.property.get_parent()
             if parent not in res:
                 res[parent] = {}
             res[parent][attribute.property] = attribute
+
+        for function_ in functions:
+            parent = function_.get_parent()
+            res[parent][function_] = function_.evaluate(function_.quantity,
+                    res[parent])
         return res
 
     def create_object(self, object):
