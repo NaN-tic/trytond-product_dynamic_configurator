@@ -44,7 +44,7 @@
     <label name="product_attribute_value"/>
     <field name="product_attribute_value"/>
     <notebook colspan="6">
-        <page name="Childs">
+        <page name="childs">
             <field name="childs" colspan="4"/>
         </page>
         <page name="summary">

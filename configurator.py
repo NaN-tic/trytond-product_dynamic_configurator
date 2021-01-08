@@ -20,7 +20,7 @@ TYPE = [
     ('product', 'Product'),
     ('purchase_product', 'Purchase Product'),
     ('group', 'Group'),
-#    ('operation', 'Operation'),
+    # ('operation', 'Operation'),
     ('options', 'Options'),
     ('number', 'Number'),
     ('text', 'Text'),
