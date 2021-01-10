@@ -128,7 +128,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     )
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
-        'get_product_uom_category')
+        'on_change_with_product_uom_category')
 
     # Summary should be a Jinja2 template
     summary = fields.Text('Summary')
@@ -148,16 +148,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         res += self.name
         return res
 
-    def get_product_uom_category(self, name=None):
+    @fields.depends('product', 'product_template')
+    def on_change_with_product_uom_category(self, name=None):
         if self.product:
             return self.product.default_uom_category.id
         if self.product_template:
             return self.product_template.default_uom_category.id
-
-    @fields.depends('product')
-    def on_change_with_product_uom_category(self, name=None):
-        if self.product:
-            return self.product.default_uom_category.id
 
     def get_parent(self):
         if self.type in ('bom'):
@@ -222,7 +218,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 invalid=str(e)))
 
     def create_prices(self, design, values):
-
         created_obj = {}
         if self.type != 'options':
             for prop in self.childs:
