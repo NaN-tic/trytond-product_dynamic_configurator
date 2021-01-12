@@ -80,7 +80,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         'Price Category',
         states={
             'invisible': Eval('type').in_(['function', 'text', 'number',
-                'attribute']),
+                'attribute', 'group']),
         },)
     object_expression = fields.Text('Object Expression',
         states={
@@ -143,6 +143,24 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             res = '[%s/%s] ' % (parent.code, self.code)
         res += self.name
         return res
+
+    @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
+        'price_category', 'object_expression', 'attribute_set',
+        'work_center_category', 'operation_type', 'product_attribute',
+        'product_attribute_value', 'product_template')
+    def on_change_type(self):
+        self.quantity = None
+        self.uom = None
+        self.template = None
+        self.product = None
+        self.price_category = None
+        self.object_expression = None
+        self.attribute_set = None
+        self.work_center_category = None
+        self.operation_type = None
+        self.product_attribute = None
+        self.product_attribute_value = None
+        self.product_template = None
 
     @fields.depends('product')
     def on_change_product(self):
