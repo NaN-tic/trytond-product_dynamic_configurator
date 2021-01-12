@@ -1,0 +1,443 @@
+#
+msgid ""
+msgstr "Content-Type: text/plain; charset=utf-8\n"
+
+msgctxt "field:configurator.design,attributes:"
+msgid "Attributes"
+msgstr "Attributs"
+
+msgctxt "field:configurator.design,code:"
+msgid "Code"
+msgstr "Codi"
+
+msgctxt "field:configurator.design,currency:"
+msgid "Currency"
+msgstr "Moneda"
+
+msgctxt "field:configurator.design,lines:"
+msgid "Lines"
+msgstr "Línies"
+
+msgctxt "field:configurator.design,name:"
+msgid "Name"
+msgstr "Nom"
+
+msgctxt "field:configurator.design,objects:"
+msgid "Objects"
+msgstr "Objectes"
+
+msgctxt "field:configurator.design,party:"
+msgid "Party"
+msgstr "Tercer"
+
+msgctxt "field:configurator.design,prices:"
+msgid "Quotations"
+msgstr "Cotizació"
+
+msgctxt "field:configurator.design,product:"
+msgid "Product Designed"
+msgstr "Producte disenyat"
+
+msgctxt "field:configurator.design,state:"
+msgid "State"
+msgstr "Estat"
+
+msgctxt "field:configurator.design,summary:"
+msgid "Summary"
+msgstr "Sumari"
+
+msgctxt "field:configurator.design,template:"
+msgid "Template"
+msgstr "Plantilla"
+
+msgctxt "field:configurator.design.attribute,design:"
+msgid "Design"
+msgstr "Disseny"
+
+msgctxt "field:configurator.design.attribute,number:"
+msgid "Number"
+msgstr "Número"
+
+msgctxt "field:configurator.design.attribute,option:"
+msgid "Option"
+msgstr "Opcions"
+
+msgctxt "field:configurator.design.attribute,property:"
+msgid "Property"
+msgstr "Propietat"
+
+msgctxt "field:configurator.design.attribute,property_options:"
+msgid "Options"
+msgstr "Opcions"
+
+msgctxt "field:configurator.design.attribute,property_type:"
+msgid "Type"
+msgstr "Tipus"
+
+msgctxt "field:configurator.design.attribute,text:"
+msgid "Text"
+msgstr "Text"
+
+msgctxt "field:configurator.design.attribute,use_property:"
+msgid "Add"
+msgstr "Afegir"
+
+msgctxt "field:configurator.design.line,amount:"
+msgid "Amount"
+msgstr "Import"
+
+msgctxt "field:configurator.design.line,category:"
+msgid "Category"
+msgstr "Categoria"
+
+msgctxt "field:configurator.design.line,currency:"
+msgid "Currency"
+msgstr "Moneda"
+
+msgctxt "field:configurator.design.line,margin:"
+msgid "Margin"
+msgstr "Marge"
+
+msgctxt "field:configurator.design.line,property:"
+msgid "Property"
+msgstr "Propietat"
+
+msgctxt "field:configurator.design.line,qty_ratio:"
+msgid "Quantity"
+msgstr "Quantitat"
+
+msgctxt "field:configurator.design.line,quantity:"
+msgid "Quantity"
+msgstr "Quantitat"
+
+msgctxt "field:configurator.design.line,quotation:"
+msgid "Quotation"
+msgstr "Pressupost"
+
+msgctxt "field:configurator.design.line,unit_price:"
+msgid "Unit Price"
+msgstr "Preu unitari"
+
+msgctxt "field:configurator.design.line,uom:"
+msgid "UoM"
+msgstr "Unidad de mesura"
+
+msgctxt "field:configurator.function,expression:"
+msgid "Expression"
+msgstr "Expressió"
+
+msgctxt "field:configurator.function,name:"
+msgid "Name"
+msgstr "Nom"
+
+msgctxt "field:configurator.object,design:"
+msgid "Design"
+msgstr "Disseny"
+
+msgctxt "field:configurator.object,object:"
+msgid "Object"
+msgstr "Object"
+
+msgctxt "field:configurator.property,attribute_set:"
+msgid "Attribute Set"
+msgstr "Conjunt Attributs"
+
+msgctxt "field:configurator.property,childs:"
+msgid "childs"
+msgstr "Fills"
+
+msgctxt "field:configurator.property,code:"
+msgid "Code"
+msgstr "Codi"
+
+msgctxt "field:configurator.property,cost_price:"
+msgid "Cost Price"
+msgstr "Preu de cost"
+
+msgctxt "field:configurator.property,function_:"
+msgid "Function"
+msgstr "Funció"
+
+msgctxt "field:configurator.property,name:"
+msgid "Name"
+msgstr "Nom"
+
+msgctxt "field:configurator.property,object_expression:"
+msgid "Object Expression"
+msgstr "Expressió del objecte"
+
+msgctxt "field:configurator.property,operation_type:"
+msgid "Operation Type"
+msgstr "Tipus operació"
+
+msgctxt "field:configurator.property,parent:"
+msgid "Parent"
+msgstr "Pare"
+
+msgctxt "field:configurator.property,price_category:"
+msgid "Price Category"
+msgstr "Categoria de preus"
+
+msgctxt "field:configurator.property,product:"
+msgid "Product"
+msgstr "Producte"
+
+msgctxt "field:configurator.property,product_attribute:"
+msgid "Product Attribute"
+msgstr "Atribut de productes"
+
+msgctxt "field:configurator.property,product_attribute_value:"
+msgid "Product Attribute Value"
+msgstr "Valor  attribut de producte"
+
+msgctxt "field:configurator.property,product_template:"
+msgid "Product Template"
+msgstr "Plantilla de producte"
+
+msgctxt "field:configurator.property,product_uom_category:"
+msgid "Product Uom Category"
+msgstr "Categoria de la unitat de mesura"
+
+msgctxt "field:configurator.property,quantity:"
+msgid "Quantity"
+msgstr "Quantitat"
+
+msgctxt "field:configurator.property,summary:"
+msgid "Summary"
+msgstr "Sumari"
+
+msgctxt "field:configurator.property,template:"
+msgid "Template"
+msgstr "Plantilla"
+
+msgctxt "field:configurator.property,type:"
+msgid "Type"
+msgstr "Tipus"
+
+msgctxt "field:configurator.property,uom:"
+msgid "UoM"
+msgstr "Unidad de mesura"
+
+msgctxt "field:configurator.property,user_input:"
+msgid "User Input"
+msgstr "Entrada de usuari"
+
+msgctxt "field:configurator.property,work_center_category:"
+msgid "Work Center Category"
+msgstr "Categoria de centre de traball"
+
+msgctxt "field:configurator.property.price_category,name:"
+msgid "Name"
+msgstr "Nom"
+
+msgctxt "field:configurator.quotation.line,cost_price:"
+msgid "Cost Price"
+msgstr "Precu de cost"
+
+msgctxt "field:configurator.quotation.line,design:"
+msgid "Design"
+msgstr "Disseny"
+
+msgctxt "field:configurator.quotation.line,global_margin:"
+msgid "Global Margin"
+msgstr "Marge global"
+
+msgctxt "field:configurator.quotation.line,list_price:"
+msgid "List Price"
+msgstr "LLista de preu"
+
+msgctxt "field:configurator.quotation.line,margin:"
+msgid "Margin"
+msgstr "Marge"
+
+msgctxt "field:configurator.quotation.line,prices:"
+msgid "Prices"
+msgstr "Preus"
+
+msgctxt "field:configurator.quotation.line,product_uom_category:"
+msgid "Product Uom Category"
+msgstr "Categoria unidad de mesura"
+
+msgctxt "field:configurator.quotation.line,quantity:"
+msgid "Quantity"
+msgstr "Quantitat"
+
+msgctxt "field:configurator.quotation.line,unit_price:"
+msgid "Unit Price"
+msgstr "Preu unitari"
+
+msgctxt "field:configurator.quotation.line,uom:"
+msgid "UoM"
+msgstr "Unidad de mesura"
+
+msgctxt "field:product.template,configurator_template:"
+msgid "Template for Configurator"
+msgstr "Plantilla per a configurador"
+
+msgctxt "model:configurator.design,name:"
+msgid "Design"
+msgstr "Disseny"
+
+msgctxt "model:configurator.design.attribute,name:"
+msgid "Design Attribute"
+msgstr "Atribut de Disseny"
+
+msgctxt "model:configurator.design.line,name:"
+msgid "Design Line"
+msgstr "Linia de disseny"
+
+msgctxt "model:configurator.function,name:"
+msgid "Function"
+msgstr "Funció"
+
+msgctxt "model:configurator.object,name:"
+msgid "Created Object"
+msgstr "Objecte creat"
+
+msgctxt "model:configurator.property,name:"
+msgid "Property"
+msgstr "Propietat"
+
+msgctxt "model:configurator.property.price_category,name:"
+msgid "Price Category"
+msgstr "Categoria de preu"
+
+msgctxt "model:configurator.quotation.line,name:"
+msgid "Quotation Line"
+msgstr "Linia de pressupost"
+
+msgctxt "model:ir.action,name:act_design_form"
+msgid "Designs"
+msgstr "Dissenys"
+
+msgctxt "model:ir.action,name:act_object_form"
+msgid "Objects"
+msgstr "Objectes"
+
+msgctxt "model:ir.action,name:act_property_form"
+msgid "Properties"
+msgstr "Propietats"
+
+msgctxt "model:ir.action,name:act_property_tree"
+msgid "Properties"
+msgstr "Propietats"
+
+msgctxt "model:ir.message,text:msg_expression_error"
+msgid ""
+"The Property \"%(property)s\" has invalid formula \"%(expression)s with "
+"invalid: \"%(invalid)s\""
+msgstr ""
+"La Propietat \"%(property)s\" té una fórmula \"%(expression)s\" amb "
+"l'error \"%(invalid)s\""
+
+msgctxt "model:ir.model.button,string:design_cancel_button"
+msgid "Cancel"
+msgstr "Cancel·lar"
+
+msgctxt "model:ir.model.button,string:design_create_button"
+msgid "Create Prices"
+msgstr "Crear preus"
+
+msgctxt "model:ir.model.button,string:design_process_button"
+msgid "Process"
+msgstr "Processar"
+
+msgctxt "model:ir.model.button,string:design_update_button"
+msgid "Update"
+msgstr "Actualizar"
+
+msgctxt "model:ir.ui.menu,name:menu_configurator"
+msgid "Configurator"
+msgstr "Configurador"
+
+msgctxt "model:ir.ui.menu,name:menu_design"
+msgid "Designs"
+msgstr "Dissenys"
+
+msgctxt "model:ir.ui.menu,name:menu_property_form"
+msgid "Properties"
+msgstr "Propietats"
+
+msgctxt "selection:configurator.design,state:"
+msgid "Cancel"
+msgstr "Cancelat"
+
+msgctxt "selection:configurator.design,state:"
+msgid "Done"
+msgstr "Finalizat"
+
+msgctxt "selection:configurator.design,state:"
+msgid "draft"
+msgstr "Borrador"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "BoM"
+msgstr "Lista de material"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Function"
+msgstr "Funció"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Group"
+msgstr "Grup"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Number"
+msgstr "Número"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Options"
+msgstr "Opcions"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Product"
+msgstr "Producte"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Product Attribute"
+msgstr "Atribut de producte"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Purchase Product"
+msgstr "Producte de compra"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Text"
+msgstr "Text"
+
+msgctxt "selection:configurator.property,type:"
+msgid "BoM"
+msgstr "Lista de materials"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Function"
+msgstr "Funció"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Group"
+msgstr "Grup"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Number"
+msgstr "Número"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Options"
+msgstr "Opcions"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Product"
+msgstr "Producte"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Product Attribute"
+msgstr "Atribut de producte"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Purchase Product"
+msgstr "Producte de compra"
+
+msgctxt "selection:configurator.property,type:"
+msgid "Text"
+msgstr "Text"
