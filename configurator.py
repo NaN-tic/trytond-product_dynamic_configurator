@@ -61,11 +61,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         'required': Eval('type').in_(['bom', 'product', 'purchase_product',
             'product_attribute'])
         },
-        domain=[
-            If(Bool(Eval('product_uom_category')),
-                ('category', '=', Eval('product_uom_category')),
-                ('category', '!=', -1)),
-                ],
+        domain=[('category', '=', Eval('product_uom_category', -1))],
         depends=['product_uom_category', 'type'])
     childs = fields.One2Many('configurator.property', 'parent', 'childs',
         states={
@@ -148,6 +144,16 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         res += self.name
         return res
 
+    @fields.depends('product')
+    def on_change_product(self):
+        if self.product:
+            self.uom = self.product.default_uom
+
+    @fields.depends('product_template')
+    def on_change_product_template(self):
+        if self.product_template:
+            self.uom = self.product_template.default_uom
+
     @fields.depends('product', 'product_template')
     def on_change_with_product_uom_category(self, name=None):
         if self.product:
@@ -156,7 +162,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return self.product_template.default_uom_category.id
 
     def get_parent(self):
-        if self.type in ('bom'):
+        if self.type == 'bom':
             return self
         if not self.parent:
             return self
@@ -205,6 +211,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def evaluate(self, expression, values):
         custom_locals = copy(locals())
         for prop, attr in values.items():
+            if isinstance(attr, dict):
+                continue
             if prop.type == 'function':
                 custom_locals[prop.code] = attr
             else:
@@ -781,7 +789,8 @@ class Design(Workflow, ModelSQL, ModelView):
                         dl = r.create_design_line(quantity, r.uom, cost_price,
                             quote)
                         parent = r.get_parent()
-                        qty_ratio = r.get_ratio_for_prices(values[parent], 1)
+                        qty_ratio = r.get_ratio_for_prices(
+                            values.get(parent, {}), 1)
                         dl.category = r.price_category
                         dl.qty_ratio = qty_ratio
                         if not r.price_category:
