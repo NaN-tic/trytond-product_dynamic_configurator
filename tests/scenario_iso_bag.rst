@@ -685,3 +685,12 @@ Fill Quotation::
   >>> quotation.reload()
   >>> quotation.unit_price
   Decimal('8.0651')
+  >>> design.click('process')
+  >>> design.reload()
+  >>> design.product.name
+  'Bossa Isotermica(isotermica)'
+  >>> len(design.product.boms)
+  1
+  >>> bom, = design.product.boms
+  >>> len(bom.bom.inputs)
+  6
