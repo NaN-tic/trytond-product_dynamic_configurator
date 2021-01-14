@@ -11,7 +11,6 @@ def register():
         configurator.Property,
         configurator.PriceCategory,
         configurator.QuotationLine,
-        configurator.Function,
         configurator.Design,
         configurator.DesignLine,
         configurator.DesignAttribute,

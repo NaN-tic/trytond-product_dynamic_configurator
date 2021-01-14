@@ -9,13 +9,12 @@
       <field name="template"/>
       <button name="update"/>
     </group>
-
+    <label name="design_date"/>
+    <field name="design_date"/>
     <label name="currency"/>
     <field name="currency"/>
-
     <label name="product"/>
     <field name="product"/>
-
     <newline/>
     <notebook colspan="6">
         <page name="attributes">

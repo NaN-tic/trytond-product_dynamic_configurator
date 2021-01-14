@@ -8,7 +8,7 @@ from trytond.transaction import Transaction
 from copy import copy
 from trytond.exceptions import UserError
 from trytond.i18n import gettext
-import math # Import to use with formulas. Do not remove.
+import math
 
 price_digits = (16, config.getint('product', 'price_decimal', default=4))
 
@@ -75,7 +75,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             'bom', 'product', 'function'])),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
     }, depends=['type'])
-    function_ = fields.Many2One('configurator.function', 'Function')
     price_category = fields.Many2One('configurator.property.price_category',
         'Price Category',
         states={
@@ -128,7 +127,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     # Summary should be a Jinja2 template
     summary = fields.Text('Summary')
-    cost_price = fields.Numeric('Cost Price')
 
     @staticmethod
     def default_sequence():
@@ -228,6 +226,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     def evaluate(self, expression, values):
         custom_locals = copy(locals())
+        custom_locals['math'] = math
         for prop, attr in values.items():
             if isinstance(attr, dict):
                 continue
@@ -236,7 +235,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             else:
                 custom_locals[prop.code] = attr.number or attr.option
         try:
-            return eval(expression, custom_locals)
+            code = compile(expression, "<string>", "eval")
+            return eval(code, custom_locals)
         except BaseException as e:
             raise UserError(gettext(
                 'product_dynamic_configurator.msg_expression_error',
@@ -596,13 +596,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         return dl
 
 
-class Function(ModelSQL, ModelView):
-    'Function'
-    __name__ = 'configurator.function'
-    name = fields.Char('Name')
-    expression = fields.Text('Expression')
-
-
 class CreatedObject(ModelSQL, ModelView):
     """ Created Object """
     __name__ = 'configurator.object'
@@ -640,6 +633,7 @@ READONLY_STATE = {
     'readonly': (Eval('state') != 'draft'),
     }
 
+STATES = [('draft', 'draft'), ('done', 'Done'), ('cancel', 'Cancel')]
 
 class Design(Workflow, ModelSQL, ModelView):
     'Design'
@@ -651,6 +645,8 @@ class Design(Workflow, ModelSQL, ModelView):
     template = fields.Many2One('configurator.property', 'Template',
         domain=[('template', '=', True)],
         states=READONLY_STATE, depends=['state', 'template'])
+    design_date = fields.Date('Design Date', states=READONLY_STATE,
+        depends=['state'])
     currency = fields.Many2One('currency.currency', 'Currency',
         states=READONLY_STATE, depends=['state'])
     attributes = fields.One2Many('configurator.design.attribute', 'design',
@@ -660,8 +656,7 @@ class Design(Workflow, ModelSQL, ModelView):
     summary = fields.Function(fields.Text('Summary'), 'get_summary')
     objects = fields.One2Many('configurator.object', 'design', 'Objects',
         readonly=True)
-    state = fields.Selection([('draft', 'draft'), ('done', 'Done'),
-        ('cancel', 'Cancel')], 'State', readonly=True, required=True)
+    state = fields.Selection(STATES, 'State', readonly=True, required=True)
     product = fields.Many2One('product.product', 'Product Designed',
         readonly=True)
 
@@ -690,6 +685,18 @@ class Design(Workflow, ModelSQL, ModelView):
                 'depends': ['state'],
             },
         })
+
+    @staticmethod
+    def default_currency():
+        Company = Pool().get('company.company')
+        if Transaction().context.get('company'):
+            company = Company(Transaction().context['company'])
+            return company.currency.id
+
+    @staticmethod
+    def default_design_date():
+        Date = Pool().get('ir.date')
+        return Date.today()
 
     @staticmethod
     def default_state():
@@ -775,44 +782,45 @@ class Design(Workflow, ModelSQL, ModelView):
             res = design.template.create_prices(design, values)
 
             for quote in design.prices:
-                for r, v in res.items():
+                for prop, v in res.items():
                     v = v[0]
-                    key = (r.price_category or r.id, quote)
+                    key = (prop.price_category or prop.id, quote)
                     dl = prices.get(key)
                     quantity = 0
                     cost_price = None
-                    if r.type not in ('product', 'operation', ):
+                    if prop.type not in ('product', 'operation', ):
                         continue
-                    if r.type == 'product':
+                    if prop.type == 'product':
                         if isinstance(v, BomInput):
                             quote_quantity = Uom.compute_qty(quote.uom,
                                 quote.quantity, design.template.uom)
                             quantity = v.quantity*quote_quantity
-                            cost_price = v.product.cost_price
+                            cost_price = quote.get_unit_price(v.product,
+                                quantity)
                         elif isinstance(v, Product):
-                            parent = r.get_parent()
-                            quantity = r.evaluate(r.quantity,
+                            parent = prop.get_parent()
+                            quantity = prop.evaluate(prop.quantity,
                                 design.as_dict()[parent])
                             quote_quantity = Uom.compute_qty(quote.uom,
                                 quote.quantity, design.template.uom)
                             quantity = quantity * quote_quantity
-                            cost_price = v.cost_price
-                    # if r.type == 'operation':
-                    #     quantity = r.evaluate(r.quantity, design.as_dict())
+                            cost_price = quote.get_unit_price(v, quantity)
+                    # if prop.type == 'operation':
+                    #     quantity = prop.evaluate(prop.quantity, design.as_dict())
                     #     quantity = quantity * quote.quantity
                     #     quantity = v.compute_time(quantity, v.time_uom)
-                    #     cost_price = r.work_center_category.cost_price
+                    #     cost_price = prop.work_center_category.cost_price
                     dl = prices.get(key)
                     if not dl:
-                        dl = r.create_design_line(quantity, r.uom, cost_price,
-                            quote)
-                        parent = r.get_parent()
-                        qty_ratio = r.get_ratio_for_prices(
+                        dl = prop.create_design_line(quantity, prop.uom,
+                            cost_price, quote)
+                        parent = prop.get_parent()
+                        qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
-                        dl.category = r.price_category
+                        dl.category = prop.price_category
                         dl.qty_ratio = qty_ratio
-                        if not r.price_category:
-                            dl.property = r
+                        if not prop.price_category:
+                            dl.property = prop
                         prices[key] = dl
                     else:
                         cost_price = (Decimal(quantity)/(
@@ -849,7 +857,7 @@ class Design(Workflow, ModelSQL, ModelView):
                     for output_ in obj.outputs:
                         ref = design.create_object(output_)
                         ref.save()
-                        if prop.parent == None:
+                        if prop.parent is None:
                             design.product = output_.product
                             design.save()
 
@@ -866,16 +874,21 @@ class QuotationLine(ModelSQL, ModelView):
 
     design = fields.Many2One('configurator.design', 'Design', required=True,
         ondelete='CASCADE')
-    quantity = fields.Float('Quantity', digits=(16, 4))
+    quantity = fields.Float('Quantity', digits=(16, 4),
+        states={
+            'readonly': Bool(Eval('unit_price'))
+        }, depends=['unit_price'])
     uom = fields.Many2One('product.uom', 'UoM',
         domain=[
             If(Bool(Eval('product_uom_category')),
                 ('category', '=', Eval('product_uom_category')),
-                ('category', '!=', -1)),
-                ],
-            depends=['product_uom_category'])
+                ('category', '!=', -1))],
+        states={'readonly': Bool(Eval('unit_price'))},
+        depends=['product_uom_category', 'unit_price'])
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
-    global_margin = fields.Float('Global Margin', digits=(16, 4))
+    global_margin = fields.Float('Global Margin', digits=(16, 4),
+        states={'readonly': 'design_state' != 'draft'},
+        depends=['design_state'])
     cost_price = fields.Function(fields.Numeric('Cost Price',
         digits=price_digits), 'get_prices')
     list_price = fields.Function(fields.Numeric('List Price',
@@ -887,14 +900,40 @@ class QuotationLine(ModelSQL, ModelView):
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'get_product_uom_category')
+    design_state = fields.Function(fields.Selection(STATES, 'Design State'),
+        'on_change_with_design_state')
 
     def get_rec_name(self, name):
         return '%s(%s) - %s' % (str(self.quantity), str(self.uom.symbol),
             self.design.name)
 
+    @fields.depends('design', '_parent_design.state')
+    def on_change_with_design_state(self, name=None):
+        if self.design:
+            return self.design.state
+
     def get_product_uom_category(self, name=None):
         if self.design and self.design.template:
             return self.design.template.uom.category.id
+
+    def _get_context_purchase_price(self):
+        context = {}
+        context['currency'] = self.design.currency.id
+        context['purchase_date'] = self.design.design_date
+        if self.uom:
+            context['uom'] = self.uom.id
+        return context
+
+    def get_unit_price(self, product, quantity):
+        Product = Pool().get('product.product')
+
+        with Transaction().set_context(self._get_context_purchase_price()):
+            unit_price = Product.get_purchase_price(
+                [product], abs(quantity or 0))[product.id]
+            if unit_price:
+                unit_price = unit_price.quantize(
+                    Decimal(1) / 10 ** price_digits[1])
+            return unit_price
 
     @classmethod
     def get_prices(cls, quotations, names):
@@ -932,12 +971,12 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
         'Category', readonly=True)
     property = fields.Many2One('configurator.property', 'Property',
         readonly=True)
-    quantity = fields.Float('Quantity')
-    qty_ratio = fields.Float('Quantity')
+    quantity = fields.Float('Quantity', readonly=True)
+    qty_ratio = fields.Float('Quantity Ratio', readonly=True)
     uom = fields.Many2One('product.uom', 'UoM', readonly=True)
     unit_price = fields.Numeric('Unit Price', digits=price_digits,
         readonly=True)
-    margin = fields.Float('Margin', digits=(16, 4))
+    margin = fields.Float('Margin', digits=(16, 4), )
     amount = fields.Function(fields.Numeric('Amount', digits=price_digits),
         'on_change_with_amount')
     currency = fields.Function(fields.Many2One('currency.currency', 'Currency'),
@@ -959,7 +998,7 @@ class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
     design = fields.Many2One('configurator.design', 'Design', required=True,
         ondelete='CASCADE')
     property = fields.Many2One('configurator.property',
-        'Property', required=True)
+        'Property', required=True, readonly=True)
     property_type = fields.Function(fields.Selection(TYPE, 'Type'),
         'on_change_with_property_type')
     use_property = fields.Boolean('Add',
@@ -973,13 +1012,23 @@ class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
         ('id', 'in', Eval('property_options')),
     ], states={
         'invisible': Eval('property_type') != 'options',
-    }, depends=['property_type', 'property_options'])
+        'readonly': Eval('design_state') != 'draft',
+    }, depends=['property_type', 'property_options', 'design_state'])
     number = fields.Float('Number', states={
         'invisible': Eval('property_type') not in ('number', 'options'),
-    }, depends=['property_type'])
+        'readonly': Eval('design_state') != 'draft',
+    }, depends=['property_type', 'design_state'])
     text = fields.Char('Text', states={
         'invisible': Eval('property_type') != 'text',
-    }, depends=['property_type'])
+        'readonly': Eval('design_state') != 'draft',
+    }, depends=['property_type', 'design_state'])
+    design_state = fields.Function(fields.Selection(STATES, 'Design State'),
+        'on_change_with_design_state')
+
+    @fields.depends('design', '_parent_design.state')
+    def on_change_with_design_state(self, name=None):
+        if self.design:
+            return self.design.state
 
     @fields.depends('property')
     def on_change_with_property_type(self, name=None):
