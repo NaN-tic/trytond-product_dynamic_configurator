@@ -407,10 +407,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         bom_input = BomInput()
         bom_input.product = product
-        bom_input.product.default_uom = self.uom
+        bom_input.on_change_product()
         bom_input.quantity = Uom.compute_qty(self.uom,
             self.evaluate(self.quantity, values), product.default_uom)
-        bom_input.uom = bom_input.product.default_uom
 
         # Calculate cost_price for purchase_product
         cost_price = 0
@@ -462,8 +461,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         quantity = Uom.compute_qty(self.uom, quantity, product.default_uom)
         bom_input = BomInput()
         bom_input.product = product
+        bom_input.on_change_product()
         bom_input.quantity = quantity
-        bom_input.uom = product.default_uom
         return {self: (bom_input, [])}
 
     def get_bom(self, design, values, created_obj):
@@ -516,8 +515,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 bom_input = BomInput()
                 child_output, = child_res.outputs
                 bom_input.product = child_output.product
+                bom_input.on_change_product()
                 bom_input.quantity = child_output.quantity
-                bom_input.uom = child_output.product.default_uom
                 bom.inputs += (bom_input,)
             elif isinstance(child_res, Operation):
                 operations_route += (child_res,)
