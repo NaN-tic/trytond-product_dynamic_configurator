@@ -425,8 +425,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 qty += obj.quantity
 
         quantize = Decimal(str(10.0 ** -price_digits[1]))
-        product.cost_price = (Decimal(qty)/Decimal(cost_price)
-            ).quantize(quantize)
+        if cost_price:
+            product.cost_price = (Decimal(qty)/Decimal(cost_price)
+                ).quantize(quantize)
+
         bom_input.product = product
         return {self: (bom_input, [])}
 
@@ -918,7 +920,7 @@ class QuotationLine(ModelSQL, ModelView):
 
     def _get_context_purchase_price(self):
         context = {}
-        context['currency'] = self.design.currency.id
+        context['currency'] = self.design.currency and self.design.currency.id
         context['purchase_date'] = self.design.design_date
         if self.uom:
             context['uom'] = self.uom.id
