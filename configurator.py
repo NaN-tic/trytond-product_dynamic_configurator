@@ -137,9 +137,18 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         parent = self.get_parent()
         if self.code:
             res = '[%s] ' % self.code
-        if self.code and parent:
+        if self.code and parent and parent.parent:
             res = '[%s/%s] ' % (parent.code, self.code)
         res += self.name
+        return res
+
+    def get_full_code(self):
+        res = ''
+        parent = self.get_parent()
+        if self.code:
+            res = '%s' % self.code
+        if self.code and parent and parent.parent:
+            res = '%s_%s ' % (parent.code, self.code)
         return res
 
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
@@ -888,7 +897,7 @@ class QuotationLine(ModelSQL, ModelView):
         depends=['product_uom_category', 'unit_price'])
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
     global_margin = fields.Float('Global Margin', digits=(16, 4),
-        states={'readonly': 'design_state' != 'draft'},
+        # states={'readonly': 'design_state' != 'draft'},
         depends=['design_state'])
     cost_price = fields.Function(fields.Numeric('Cost Price',
         digits=price_digits), 'get_prices')
