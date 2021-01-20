@@ -822,23 +822,27 @@ class Design(Workflow, ModelSQL, ModelView):
                     #     cost_price = prop.work_center_category.cost_price
                     dl = prices.get(key)
                     if not dl:
-                        dl = prop.create_design_line(quantity, prop.uom,
-                            cost_price, quote)
                         parent = prop.get_parent()
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
-                        dl.category = prop.price_category
+                        dl = prop.create_design_line(quantity*qty_ratio,
+                            prop.uom, cost_price, quote)
                         dl.qty_ratio = qty_ratio
+                        dl.debug_quantity = quantity
                         if not prop.price_category:
                             dl.property = prop
                         prices[key] = dl
                     else:
-                        cost_price = (Decimal(quantity)/(
+                        parent = prop.get_parent()
+                        qty_ratio = prop.get_ratio_for_prices(
+                            values.get(parent, {}), 1)
+                        cost_price = (Decimal(qty_ratio*quantity)/(
                                 dl.unit_price +
-                                Decimal(quantity)*cost_price))
+                                Decimal(qty_ratio*quantity)*cost_price))
                         cost_price = Decimal(cost_price).quantize(Decimal(
                             str(10.0 ** -price_digits[1])))
-                        dl.quantity += quantity
+                        dl.quantity += quantity * qty_ratio
+                        dl.debug_quantity = quantity
                         dl.unit_price = cost_price
 
             to_save = prices.values()
@@ -982,7 +986,6 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     property = fields.Many2One('configurator.property', 'Property',
         readonly=True)
     quantity = fields.Float('Quantity', readonly=True)
-    qty_ratio = fields.Float('Quantity Ratio', readonly=True)
     uom = fields.Many2One('product.uom', 'UoM', readonly=True)
     unit_price = fields.Numeric('Unit Price', digits=price_digits,
         readonly=True)
@@ -991,12 +994,23 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
         'on_change_with_amount')
     currency = fields.Function(fields.Many2One('currency.currency', 'Currency'),
         'get_currency')
+    qty_ratio = fields.Float('Quantity Ratio', readonly=True)
+    debug_quantity = fields.Float('Debug Qty', readonly=True)  # TODO: remove
+    debug_amount = fields.Function(fields.Numeric('Debug Amount',
+        digits=price_digits), 'on_change_with_debug_amount')  # TODO: remove
 
     @fields.depends('quantity', 'unit_price')
     def on_change_with_amount(self, name=None):
         if not self.quantity or not self.unit_price:
             return _ZERO
         return Decimal(str(self.quantity)) * self.unit_price * Decimal(
+            self.margin and 1 + self.margin / 100.0 or 1)
+
+    @fields.depends('debug_quantity', 'unit_price')
+    def on_change_with_debug_amount(self, name=None):
+        if not self.debug_quantity or not self.unit_price:
+            return _ZERO
+        return Decimal(str(self.debug_quantity)) * self.unit_price * Decimal(
             self.margin and 1 + self.margin / 100.0 or 1)
 
     def get_currency(self, name=None):
