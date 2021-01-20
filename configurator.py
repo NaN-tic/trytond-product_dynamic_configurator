@@ -1025,7 +1025,7 @@ class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
         'readonly': Eval('design_state') != 'draft',
     }, depends=['property_type', 'property_options', 'design_state'])
     number = fields.Float('Number', states={
-        'invisible': Eval('property_type') not in ('number', 'options'),
+        'invisible': Eval('property_type') != 'number',
         'readonly': Eval('design_state') != 'draft',
     }, depends=['property_type', 'design_state'])
     text = fields.Char('Text', states={
