@@ -12,7 +12,6 @@ import math
 
 price_digits = (16, config.getint('product', 'price_decimal', default=4))
 
-
 _ZERO = Decimal(0)
 TYPE = [
     (None, ''),
@@ -806,7 +805,7 @@ class Design(Workflow, ModelSQL, ModelView):
                                 quote.quantity, design.template.uom)
                             quantity = v.quantity*quote_quantity
                             cost_price = quote.get_unit_price(v.product,
-                                quantity)
+                                quantity, prop.uom)
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
                             quantity = prop.evaluate(prop.quantity,
@@ -814,7 +813,8 @@ class Design(Workflow, ModelSQL, ModelView):
                             quote_quantity = Uom.compute_qty(quote.uom,
                                 quote.quantity, design.template.uom)
                             quantity = quantity * quote_quantity
-                            cost_price = quote.get_unit_price(v, quantity)
+                            cost_price = quote.get_unit_price(v, quantity,
+                                prop.uom)
                     # if prop.type == 'operation':
                     #     quantity = prop.evaluate(prop.quantity, design.as_dict())
                     #     quantity = quantity * quote.quantity
@@ -930,23 +930,31 @@ class QuotationLine(ModelSQL, ModelView):
         if self.design and self.design.template:
             return self.design.template.uom.category.id
 
-    def _get_context_purchase_price(self):
+    def _get_context_purchase_price(self, uom=None):
         context = {}
         context['currency'] = self.design.currency and self.design.currency.id
         context['purchase_date'] = self.design.design_date
-        if self.uom:
-            context['uom'] = self.uom.id
+        if uom:
+            context['uom'] = uom and uom.id
         return context
 
-    def get_unit_price(self, product, quantity):
-        Product = Pool().get('product.product')
+    def get_unit_price(self, product, quantity, uom):
+        pool = Pool()
+        Product = pool.get('product.product')
+        Uom = pool.get('product.uom')
 
-        with Transaction().set_context(self._get_context_purchase_price()):
+        context = self._get_context_purchase_price()
+        context[uom] = uom and uom.id
+        with Transaction().set_context(context):
+            quantity = Uom.compute_qty(uom,
+                abs(quantity), product.purchase_uom)
+
             unit_price = Product.get_purchase_price(
                 [product], abs(quantity or 0))[product.id]
             if unit_price:
                 unit_price = unit_price.quantize(
                     Decimal(1) / 10 ** price_digits[1])
+        #    print("a:", product.template.name, uom.name, product.purchase_uom.name,  quantity, product.cost_price, unit_price)
             return unit_price
 
     @classmethod
@@ -957,10 +965,10 @@ class QuotationLine(ModelSQL, ModelView):
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
         for quote in quotations:
             for line in quote.prices:
+                price = line.manual_unit_price or line.unit_price
                 res['cost_price'][quote.id] += (Decimal(line.quantity or 0) *
-                    (line.unit_price or 0) * Decimal(line.qty_ratio or 0))
-                res['list_price'][quote.id] += line.amount * Decimal(
-                    line.qty_ratio or 0)
+                    (price or 0))
+                res['list_price'][quote.id] += line.amount
 
             list_price = res['list_price'].get(quote.id, 0)
             cost_price = res['cost_price'].get(quote.id, 0)
@@ -989,6 +997,8 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     uom = fields.Many2One('product.uom', 'UoM', readonly=True)
     unit_price = fields.Numeric('Unit Price', digits=price_digits,
         readonly=True)
+    manual_unit_price = fields.Numeric('Manual Unit Price',
+        digits=price_digits)
     margin = fields.Float('Margin', digits=(16, 4), )
     amount = fields.Function(fields.Numeric('Amount', digits=price_digits),
         'on_change_with_amount')
@@ -999,18 +1009,21 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     debug_amount = fields.Function(fields.Numeric('Debug Amount',
         digits=price_digits), 'on_change_with_debug_amount')  # TODO: remove
 
-    @fields.depends('quantity', 'unit_price')
+    @fields.depends('quantity', 'unit_price', 'manual_unit_price')
     def on_change_with_amount(self, name=None):
-        if not self.quantity or not self.unit_price:
+        if not self.quantity or not (self.unit_price or self.manual_unit_price):
             return _ZERO
-        return Decimal(str(self.quantity)) * self.unit_price * Decimal(
+        price = self.manual_unit_price or self.unit_price
+        return Decimal(str(self.quantity)) * price * Decimal(
             self.margin and 1 + self.margin / 100.0 or 1)
 
-    @fields.depends('debug_quantity', 'unit_price')
+    @fields.depends('debug_quantity', 'unit_price', 'manual_unit_price')
     def on_change_with_debug_amount(self, name=None):
-        if not self.debug_quantity or not self.unit_price:
+        if not self.debug_quantity or not (self.unit_price or
+                self.manual_unit_price):
             return _ZERO
-        return Decimal(str(self.debug_quantity)) * self.unit_price * Decimal(
+        price = self.manual_unit_price or self.unit_price
+        return Decimal(str(self.debug_quantity)) * price * Decimal(
             self.margin and 1 + self.margin / 100.0 or 1)
 
     def get_currency(self, name=None):
