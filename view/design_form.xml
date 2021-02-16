@@ -23,9 +23,6 @@
         <page name="prices">
             <field name="prices" colspan="4"/>
         </page>
-        <page name="summary">
-            <field name="summary" colspan="4"/>
-        </page>
         <page name="objects">
             <field name="objects" colspan="4"/>
         </page>

@@ -47,8 +47,5 @@
         <page name="childs">
             <field name="childs" colspan="4"/>
         </page>
-        <page name="summary">
-            <field name="summary" colspan="4"/>
-        </page>
     </notebook>
 </form>

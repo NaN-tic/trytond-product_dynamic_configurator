@@ -130,8 +130,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'on_change_with_product_uom_category')
 
-    # Summary should be a Jinja2 template
-    summary = fields.Text('Summary')
 
     @staticmethod
     def default_sequence():
@@ -668,7 +666,6 @@ class Design(Workflow, ModelSQL, ModelView):
         'Attributes', states=READONLY_STATE, depends=['state'])
     prices = fields.One2Many('configurator.quotation.line', 'design',
         'Quotations', states=READONLY_STATE, depends=['state'])
-    summary = fields.Function(fields.Text('Summary'), 'get_summary')
     objects = fields.One2Many('configurator.object', 'design', 'Objects',
         readonly=True)
     state = fields.Selection(STATES, 'State', readonly=True, required=True)
@@ -716,9 +713,6 @@ class Design(Workflow, ModelSQL, ModelView):
     @staticmethod
     def default_state():
         return 'draft'
-
-    def get_summary(self, name):
-        return
 
     @classmethod
     def copy(cls, designs, default=None):
