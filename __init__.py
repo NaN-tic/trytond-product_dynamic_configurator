@@ -8,6 +8,7 @@ from . import product
 def register():
     Pool.register(
         configurator.CreatedObject,
+        configurator.Template,
         configurator.Property,
         configurator.PriceCategory,
         configurator.QuotationLine,

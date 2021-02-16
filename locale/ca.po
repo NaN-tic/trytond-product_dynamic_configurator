@@ -236,7 +236,7 @@ msgstr "Nom"
 
 msgctxt "field:configurator.quotation.line,cost_price:"
 msgid "Cost Price"
-msgstr "Precu de cost"
+msgstr "Preu de cost"
 
 msgctxt "field:configurator.quotation.line,design:"
 msgid "Design"

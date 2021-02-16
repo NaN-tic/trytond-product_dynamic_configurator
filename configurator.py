@@ -2,7 +2,7 @@ from decimal import Decimal
 from trytond.model import (Workflow, ModelView, ModelSQL, fields,
     sequence_ordered, tree)
 from trytond.pyson import Eval, Not, If, Bool
-from trytond.pool import Pool
+from trytond.pool import Pool, PoolMeta
 from trytond.config import config
 from trytond.transaction import Transaction
 from copy import copy
@@ -33,6 +33,12 @@ class PriceCategory(ModelSQL, ModelView):
 
     name = fields.Char('Name')
 
+
+class Template(metaclass=PoolMeta):
+    __name__ = 'product.template'
+
+    def get_purchase_context(self):
+        return {}
 
 class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     """ Property """
@@ -944,6 +950,8 @@ class QuotationLine(ModelSQL, ModelView):
         Uom = pool.get('product.uom')
 
         context = self._get_context_purchase_price()
+        context.update(product.template.get_purchase_context())
+
         context[uom] = uom and uom.id
         with Transaction().set_context(context):
             quantity = Uom.compute_qty(uom,
@@ -954,7 +962,6 @@ class QuotationLine(ModelSQL, ModelView):
             if unit_price:
                 unit_price = unit_price.quantize(
                     Decimal(1) / 10 ** price_digits[1])
-        #    print("a:", product.template.name, uom.name, product.purchase_uom.name,  quantity, product.cost_price, unit_price)
             return unit_price
 
     @classmethod
