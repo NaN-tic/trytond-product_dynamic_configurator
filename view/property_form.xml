@@ -41,6 +41,8 @@
     <field name="attribute_set"/>
     <label name="product_attribute"/>
     <field name="product_attribute"/>
+    <label name="attribute_search_op"/>
+    <field name="attribute_search_op"/>
     <label name="product_attribute_value"/>
     <field name="product_attribute_value"/>
     <notebook colspan="6">

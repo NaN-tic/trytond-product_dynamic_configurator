@@ -19,12 +19,13 @@ TYPE = [
     ('product', 'Product'),
     ('purchase_product', 'Purchase Product'),
     ('group', 'Group'),
+    ('match', 'Match'),
     # ('operation', 'Operation'),
     ('options', 'Options'),
     ('number', 'Number'),
     ('text', 'Text'),
     ('function', 'Function'),
-    ('attribute', 'Product Attribute')
+    ('attribute', 'Product Attribute'),
 ]
 
 class PriceCategory(ModelSQL, ModelView):
@@ -63,21 +64,21 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     uom = fields.Many2One('product.uom', 'UoM', states={
         'invisible': Eval('type').in_(['function', 'text', 'number',
             'options', 'group', 'attribute']),
-        'required': Eval('type').in_(['bom', 'product', 'purchase_product',
-            'product_attribute'])
+        'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
         },
-        domain=[('category', '=', Eval('product_uom_category', -1))],
+        domain=[If(Bool(Eval('product_uom_category')),
+            ('category', '=', Eval('product_uom_category', -1)), ())],
         depends=['product_uom_category', 'type'])
     childs = fields.One2Many('configurator.property', 'parent', 'childs',
         states={
             'invisible': Not(Eval('type').in_(['bom', 'purchase_product',
-                'options', 'group']))
+                'options', 'group', 'match']))
         })
     parent = fields.Many2One('configurator.property', 'Parent', select=True,
         ondelete='CASCADE')
     quantity = fields.Text('Quantity', states={
         'invisible': Not(Eval('type').in_(['purchase_product',
-            'bom', 'product', 'function'])),
+            'bom', 'product', 'function', 'match'])),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
     }, depends=['type'])
     price_category = fields.Many2One('configurator.property.price_category',
@@ -115,6 +116,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             'invisible': Eval('type') != 'attribute',
             'required': Eval('type') == 'attribute',
         })
+    attribute_search_op = fields.Char('Operator', states={
+        'invisible': Eval('type') != 'attribute',
+    })
     product_attribute_value = fields.Char('Product Attribute Value', states={
         'invisible': Eval('type') != 'attribute',
         'required': Eval('type') == 'attribute',
@@ -129,7 +133,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'on_change_with_product_uom_category')
-
 
     @staticmethod
     def default_sequence():
@@ -257,7 +260,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     def create_prices(self, design, values):
         created_obj = {}
-        if self.type != 'options':
+        if self.type not in ('options', 'match'):
             for prop in self.childs:
                 parent = prop.get_parent()
                 val = values
@@ -278,6 +281,51 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return created_obj
         created_obj.update(res)
         return created_obj
+
+    def get_match(self, design, values, created_obj):
+        pool = Pool()
+        Product = pool.get('product.product')
+        BomInput = pool.get('production.bom.input')
+        Uom = pool.get('product.uom')
+        domain = []
+
+        if not self.parent or self.parent.type not in (
+                'purchase_product', 'bom'):
+            return {self: (None, [])}
+
+        for child in self.childs:
+            attribute = child.product_attribute
+            value = self.evaluate(child.product_attribute_value, values)
+
+            if isinstance(value, Product):
+                val = None
+                for attr in value.attributes:
+                    if attr.attribute == attribute:
+                        val = attr.value
+                        break
+                if not val:
+                    return {self: (None, [])}
+                value = val
+            op = child.attribute_search_op or '='
+            type_ = attribute.type_
+            domain += [('template.attribute_set', '=', child.attribute_set.id),
+                ('attributes.attribute.id', '=', attribute.id),
+                ('attributes.value_%s' % type_, op, value),
+                ]
+        product = Product.search(domain, limit=1)
+        if not product:
+            return {self: (None, [])}
+
+        product, = product
+
+        quantity = self.evaluate(self.quantity, values)
+        quantity = Uom.compute_qty(self.uom, quantity,
+             product.default_uom)
+        bom_input = BomInput()
+        bom_input.product = product
+        bom_input.on_change_product()
+        bom_input.quantity = quantity
+        return {self: (bom_input, [])}
 
     def get_number(self, design, values, created_obj):
         pass
@@ -797,9 +845,9 @@ class Design(Workflow, ModelSQL, ModelView):
                     dl = prices.get(key)
                     quantity = 0
                     cost_price = None
-                    if prop.type not in ('product', 'operation', ):
+                    if prop.type not in ('product', 'match'):
                         continue
-                    if prop.type == 'product':
+                    if prop.type in ('product', 'match'):
                         if isinstance(v, BomInput):
                             quote_quantity = Uom.compute_qty(quote.uom,
                                 quote.quantity, design.template.uom)

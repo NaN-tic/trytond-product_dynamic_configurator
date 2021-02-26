@@ -8,10 +8,11 @@
             <field name="type">form</field>
             <field name="name">property_form</field>
         </record>
+
         <record model="ir.ui.view" id="property_view_list">
             <field name="model">configurator.property</field>
             <field name="type">tree</field>
-            <field name="priority" eval="10"/>
+            <field name="priority" eval="20"/>
             <field name="name">property_list</field>
         </record>
         <record model="ir.ui.view" id="property_view_tree">
@@ -19,13 +20,24 @@
             <field name="type">tree</field>
             <field name="priority" eval="20"/>
             <field name="field_childs">childs</field>
-            <field name="name">property_list</field>
+            <field name="name">property_tree</field>
         </record>
         <record model="ir.action.act_window" id="act_property_tree">
             <field name="name">Properties</field>
             <field name="res_model">configurator.property</field>
             <field name="domain" eval="[('parent', '=', None)]" pyson="1"/>
         </record>
+
+        <record model="ir.action.act_window" id="act_property_list">
+            <field name="name">Properties</field>
+            <field name="res_model">configurator.property</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_property_list_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="property_view_list"/>
+            <field name="act_window" ref="act_property_list"/>
+        </record>
+
         <record model="ir.action.act_window.view" id="act_property_tree_view1">
             <field name="sequence" eval="10"/>
             <field name="view" ref="property_view_tree"/>
@@ -53,6 +65,8 @@
         <menuitem parent="menu_configurator" sequence="1"
             action="act_property_tree" id="menu_property_form"/>
 
+        <menuitem parent="menu_property_form" sequence="1"
+            action="act_property_list" id="menu_property_list"/>
         <!-- Design -->
         <record model="ir.ui.view" id="design_view_form">
             <field name="model">configurator.design</field>
