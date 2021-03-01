@@ -282,6 +282,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         created_obj.update(res)
         return created_obj
 
+    def get_match_domain(self, design):
+        return []
+
     def get_match(self, design, values, created_obj):
         pool = Pool()
         Product = pool.get('product.product')
@@ -312,6 +315,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 ('attributes.attribute.id', '=', attribute.id),
                 ('attributes.value_%s' % type_, op, value),
                 ]
+
+        domain += self.get_match_domain(design)
         product = Product.search(domain, limit=1)
         if not product:
             return {self: (None, [])}
@@ -852,8 +857,7 @@ class Design(Workflow, ModelSQL, ModelView):
                             quote_quantity = Uom.compute_qty(quote.uom,
                                 quote.quantity, design.template.uom)
                             quantity = v.quantity*quote_quantity
-                            cost_price = quote.get_unit_price(v.product,
-                                quantity, prop.uom)
+                            product = v.product
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
                             quantity = prop.evaluate(prop.quantity,
@@ -861,8 +865,7 @@ class Design(Workflow, ModelSQL, ModelView):
                             quote_quantity = Uom.compute_qty(quote.uom,
                                 quote.quantity, design.template.uom)
                             quantity = quantity * quote_quantity
-                            cost_price = quote.get_unit_price(v, quantity,
-                                prop.uom)
+                            product = v
                     # if prop.type == 'operation':
                     #     quantity = prop.evaluate(prop.quantity, design.as_dict())
                     #     quantity = quantity * quote.quantity
@@ -873,6 +876,8 @@ class Design(Workflow, ModelSQL, ModelView):
                         parent = prop.get_parent()
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
+                        cost_price = quote.get_unit_price(product,
+                                quantity*qty_ratio, prop.uom)
                         dl = prop.create_design_line(quantity*qty_ratio,
                             prop.uom, cost_price, quote)
                         dl.qty_ratio = qty_ratio
