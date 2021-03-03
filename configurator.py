@@ -317,11 +317,18 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 ]
 
         domain += self.get_match_domain(design)
-        product = Product.search(domain, limit=1)
-        if not product:
+        products = Product.search(domain,)
+        if not products:
             return {self: (None, [])}
 
-        product, = product
+        product = None
+        for prod in products:
+            if len(prod.attributes) > len(self.childs):
+                continue
+            product = prod
+
+        if not product:
+            return {self: (None, [])}
 
         quantity = self.evaluate(self.quantity, values)
         quantity = Uom.compute_qty(self.uom, quantity,
@@ -654,6 +661,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     def create_design_line(self, quantity, uom, unit_price, quote):
         DesignLine = Pool().get('configurator.design.line')
+        Uom = Pool().get('product.uom')
+
+        quantity = Uom.compute_qty(self.uom, quantity, uom, round=False)
         dl = DesignLine()
         dl.quotation = quote
         dl.quantity = quantity
@@ -960,6 +970,8 @@ class QuotationLine(ModelSQL, ModelView):
         digits=price_digits), 'get_prices')
     list_price = fields.Function(fields.Numeric('List Price',
         digits=price_digits), 'get_prices')
+    manual_list_price = fields.Numeric('Manual List Price',
+        digits=price_digits)
     margin = fields.Function(fields.Numeric('Margin', digits=(16, 4)),
         'get_prices')
     unit_price = fields.Function(fields.Numeric('Unit Price',
@@ -1018,23 +1030,27 @@ class QuotationLine(ModelSQL, ModelView):
         for name in {'cost_price', 'list_price', 'margin', 'unit_price'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
         for quote in quotations:
+            cost_price = 0
+            list_price = 0
             for line in quote.prices:
                 price = line.manual_unit_price or line.unit_price
-                res['cost_price'][quote.id] += (Decimal(line.quantity or 0) *
+                cost_price += (Decimal(line.quantity or 0) *
                     (price or 0))
-                res['list_price'][quote.id] += line.amount
+                list_price += line.amount
 
-            list_price = res['list_price'].get(quote.id, 0)
-            cost_price = res['cost_price'].get(quote.id, 0)
-
-            if list_price and cost_price:
-                res['margin'][quote.id] = (list_price / cost_price - 1
-                    ).quantize(quantize)
-            res['list_price'][quote.id] = (list_price
+            list_price = (list_price
                 * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
                 )).quantize(quantize)
-            res['unit_price'][quote.id] = Decimal(float(cost_price) /
+            unit_price = Decimal(float(list_price) /
                 quote.quantity*quote.uom.rate).quantize(quantize)
+
+            res['list_price'][quote.id] = Decimal(quote.quantity) * (
+                quote.manual_list_price or unit_price)
+            res['cost_price'][quote.id] = cost_price
+            res['margin'][quote.id] = Decimal(quote.quantity) * (
+                quote.manual_list_price or unit_price) - cost_price
+            res['unit_price'][quote.id] = unit_price
+
         return res
 
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):

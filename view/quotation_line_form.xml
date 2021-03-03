@@ -1,15 +1,35 @@
-<form>
-    <label name="quantity"/>
-    <field name="quantity"/>
-    <label name="uom"/>
-    <field name="uom"/>
-    <label name="unit_price"/>
-    <field name="unit_price"/>
-    <label name="cost_price"/>
-    <field name="cost_price"/>
-    <label name="list_price"/>
-    <field name="list_price"/>
-    <label name="margin"/>
-    <field name="margin" factor="100" xexpand="0" xfill="0"/>
-    <field name="prices" colspan="4"/>
+<form col="8">
+    <group col="2" id="column1">
+      <label name="list_price"/>
+      <field name="list_price"/>
+      <!-- <field name="material_cost_price"/> -->
+      <!-- <field name="margin"/> -->
+    </group>
+    <group col="2" id="column2">
+      <!-- <label name="total_meters"/>
+      <field name="total_meters"/>
+      <label name="total_kgs"/>
+      <field name="total_kgs"/> -->
+    </group>
+    <group col="2" id="column3">
+      <label name="quantity"/>
+      <field name="quantity"/>
+      <!-- <field name="uom"/> -->
+
+      <label name="unit_price"/>
+      <field name="unit_price" />
+      <newline/>
+      <label name="manual_list_price"/>
+      <field name="manual_list_price"/>
+      <newline/>
+    </group>
+    <group col="2" id="column4">
+      <label name="list_price"/>
+      <field name="list_price"/>
+      <label name="cost_price"/>
+      <field name="cost_price"/>
+      <label name="margin"/>
+      <field name="margin"/>
+    </group>
+    <field name="prices" colspan="8"/>
 </form>
