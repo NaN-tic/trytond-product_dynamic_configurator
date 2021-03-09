@@ -292,9 +292,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         Uom = pool.get('product.uom')
         domain = []
 
-        if not self.parent or self.parent.type not in (
-                'purchase_product', 'bom'):
-            return {self: (None, [])}
+        # if not self.parent or self.parent.type not in (
+        #         'purchase_product', 'bom'):
+        #     return {self: (None, [])}
 
         for child in self.childs:
             attribute = child.product_attribute
@@ -317,7 +317,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 ]
 
         domain += self.get_match_domain(design)
-        products = Product.search(domain,)
+        products = Product.search(domain)
         if not products:
             return {self: (None, [])}
 
@@ -860,6 +860,7 @@ class Design(Workflow, ModelSQL, ModelView):
                     dl = prices.get(key)
                     quantity = 0
                     cost_price = None
+                    product = None
                     if prop.type not in ('product', 'match'):
                         continue
                     if prop.type in ('product', 'match'):
@@ -886,8 +887,11 @@ class Design(Workflow, ModelSQL, ModelView):
                         parent = prop.get_parent()
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
-                        cost_price = quote.get_unit_price(product,
+                        if product:
+                            cost_price = quote.get_unit_price(product,
                                 quantity*qty_ratio, prop.uom)
+                        else:
+                            cost_price = 0
                         dl = prop.create_design_line(quantity*qty_ratio,
                             prop.uom, cost_price, quote)
                         dl.qty_ratio = qty_ratio
