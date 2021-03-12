@@ -1,0 +1,4 @@
+<tree editable="top">
+    <field name="name"/>
+    <field name="type_"/>
+</tree>

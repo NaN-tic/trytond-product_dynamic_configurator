@@ -15,5 +15,7 @@ def register():
         configurator.Design,
         configurator.DesignLine,
         configurator.DesignAttribute,
+        configurator.QuotationCategory,
+        configurator.QuotationSupplier,
         product.Template,
         module='product_dynamic_configurator', type_='model')

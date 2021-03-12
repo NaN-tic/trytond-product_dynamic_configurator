@@ -34,6 +34,14 @@ class PriceCategory(ModelSQL, ModelView):
 
     name = fields.Char('Name')
 
+class QuotationCategory(ModelSQL, ModelView):
+    """ Price Category """
+    __name__ = 'configurator.property.quotation_category'
+
+    name = fields.Char('Name')
+    type_ = fields.Selection([('goods', 'Goods'),
+        ('works', 'Works'), ('other', 'Other')], 'Type')
+
 
 class Template(metaclass=PoolMeta):
     __name__ = 'product.template'
@@ -133,6 +141,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'on_change_with_product_uom_category')
+
+    quotation_category = fields.Many2One(
+        'configurator.property.quotation_category', 'Quoatation Category',
+        states={
+            'invisible': Eval('type').in_(['function', 'text', 'number',
+                'attribute', 'group']),
+        },)
 
     @staticmethod
     def default_sequence():
@@ -253,10 +268,11 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             code = compile(expression, "<string>", "eval")
             return eval(code, custom_locals)
         except BaseException as e:
-            raise UserError(gettext(
-                'product_dynamic_configurator.msg_expression_error',
-                property=self.name, expression=self.quantity,
-                invalid=str(e)))
+            pass
+            # raise UserError(gettext(
+            #     'product_dynamic_configurator.msg_expression_error',
+            #     property=self.name, expression=self.quantity,
+            #     invalid=str(e)))
 
     def create_prices(self, design, values):
         created_obj = {}
@@ -292,9 +308,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         Uom = pool.get('product.uom')
         domain = []
 
-        # if not self.parent or self.parent.type not in (
-        #         'purchase_product', 'bom'):
-        #     return {self: (None, [])}
+        suppliers = dict((x.category, x.supplier) for x in design.suppliers)
+        if self.quotation_category:
+            domain += [('product_suppliers.party', '=',
+                suppliers[self.quotation_category].id)]
 
         for child in self.childs:
             attribute = child.product_attribute
@@ -671,6 +688,19 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         dl.unit_price = unit_price
         return dl
 
+    def get_quotation_categories(self):
+        categories = []
+        if not self.childs:
+            if self.quotation_category:
+                return [self.quotation_category]
+            return []
+
+        for child in self.childs:
+            if child.quotation_category:
+                categories += [child.quotation_category]
+            categories += child.get_quotation_categories()
+        return categories
+
 
 class CreatedObject(ModelSQL, ModelView):
     """ Created Object """
@@ -734,6 +764,8 @@ class Design(Workflow, ModelSQL, ModelView):
     state = fields.Selection(STATES, 'State', readonly=True, required=True)
     product = fields.Many2One('product.product', 'Product Designed',
         readonly=True)
+    suppliers = fields.One2Many('configurator.quotation.supplier', 'design',
+        'Suppliers')
 
     @classmethod
     def __setup__(cls):
@@ -830,8 +862,17 @@ class Design(Workflow, ModelSQL, ModelView):
     @classmethod
     @ModelView.button
     def update(cls, designs):
+        QuotationSupplier = Pool().get(
+            'configurator.quotation.supplier')
         for design in designs:
             design.attributes = design.get_attributes()
+            categories = design.template.get_quotation_categories()
+            suppliers = []
+            for category in set(categories):
+                q = QuotationSupplier(category=category)
+                suppliers.append(q)
+            design.suppliers = suppliers
+
         cls.save(designs)
 
     @classmethod
@@ -853,6 +894,7 @@ class Design(Workflow, ModelSQL, ModelView):
             values = design.as_dict()
             res = design.template.create_prices(design, values)
 
+            suppliers = dict((x.category, x.supplier) for x in design.suppliers)
             for quote in design.prices:
                 for prop, v in res.items():
                     v = v[0]
@@ -884,12 +926,15 @@ class Design(Workflow, ModelSQL, ModelView):
                     #     cost_price = prop.work_center_category.cost_price
                     dl = prices.get(key)
                     if not dl:
+                        supplier = None
+                        if prop.quotation_category:
+                            supplier = suppliers[prop.quotation_category]
                         parent = prop.get_parent()
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
                         if product:
                             cost_price = quote.get_unit_price(product,
-                                quantity*qty_ratio, prop.uom)
+                                quantity*qty_ratio, prop.uom, supplier)
                         else:
                             cost_price = 0
                         dl = prop.create_design_line(quantity*qty_ratio,
@@ -949,6 +994,15 @@ class Design(Workflow, ModelSQL, ModelView):
 
         CreatedObject.delete(to_delete)
 
+class QuotationSupplier(ModelSQL, ModelView):
+    """ Quotation Supplier """
+    __name__ = 'configurator.quotation.supplier'
+
+    design = fields.Many2One('configurator.design', 'Design')
+    category = fields.Many2One('configurator.property.quotation_category',
+        'Category')
+    supplier = fields.Many2One('party.party', 'Supplier')
+
 class QuotationLine(ModelSQL, ModelView):
     """  Quotation Line """
     __name__ = 'configurator.quotation.line'
@@ -1007,24 +1061,29 @@ class QuotationLine(ModelSQL, ModelView):
             context['uom'] = uom and uom.id
         return context
 
-    def get_unit_price(self, product, quantity, uom):
+    def get_unit_price(self, product, quantity, uom, supplier):
         pool = Pool()
         Product = pool.get('product.product')
         Uom = pool.get('product.uom')
 
         context = self._get_context_purchase_price()
         context.update(product.template.get_purchase_context())
+        if supplier:
+            context['supplier'] = supplier.id
+        elif context.get('supplier'):
+            del context['supplier']
 
         context[uom] = uom and uom.id
         with Transaction().set_context(context):
-            quantity = Uom.compute_qty(uom,
+            quantity2 = Uom.compute_qty(uom,
                 abs(quantity), product.purchase_uom)
 
             unit_price = Product.get_purchase_price(
-                [product], abs(quantity or 0))[product.id]
+                [product], abs(quantity2 or 0))[product.id]
             if unit_price:
                 unit_price = unit_price.quantize(
                     Decimal(1) / 10 ** price_digits[1])
+
             return unit_price
 
     @classmethod

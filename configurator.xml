@@ -28,15 +28,7 @@
             <field name="domain" eval="[('parent', '=', None)]" pyson="1"/>
         </record>
 
-        <record model="ir.action.act_window" id="act_property_list">
-            <field name="name">Properties</field>
-            <field name="res_model">configurator.property</field>
-        </record>
-        <record model="ir.action.act_window.view" id="act_property_list_view1">
-            <field name="sequence" eval="10"/>
-            <field name="view" ref="property_view_list"/>
-            <field name="act_window" ref="act_property_list"/>
-        </record>
+
 
         <record model="ir.action.act_window.view" id="act_property_tree_view1">
             <field name="sequence" eval="10"/>
@@ -65,8 +57,24 @@
         <menuitem parent="menu_configurator" sequence="1"
             action="act_property_tree" id="menu_property_form"/>
 
+        <record model="ir.action.act_window" id="act_property_list">
+            <field name="name">Properties</field>
+            <field name="res_model">configurator.property</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_property_list_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="property_view_list"/>
+            <field name="act_window" ref="act_property_list"/>
+        </record>
+
+        <record model="ir.action.act_window.view" id="act_property_list_view2">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="property_view_form"/>
+            <field name="act_window" ref="act_property_list"/>
+        </record>
         <menuitem parent="menu_property_form" sequence="1"
             action="act_property_list" id="menu_property_list"/>
+
         <!-- Design -->
         <record model="ir.ui.view" id="design_view_form">
             <field name="model">configurator.design</field>
@@ -152,6 +160,35 @@
             <field name="model" search="[('model', '=', 'configurator.design')]"/>
         </record>
 
+
+        <!-- Quotation Supplier -->
+        <record model="ir.ui.view" id="quotation_supplier_view_list">
+            <field name="model">configurator.quotation.supplier</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="20"/>
+            <field name="name">quotation_supplier_list</field>
+        </record>
+
+        <record model="ir.ui.view" id="quotation_category_view_list">
+            <field name="model">configurator.property.quotation_category</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="20"/>
+            <field name="name">quotation_category_list</field>
+        </record>
+
+        <record model="ir.action.act_window" id="act_quotation_category_list">
+            <field name="name">Quotation Category</field>
+            <field name="res_model">configurator.property.quotation_category</field>
+        </record>
+
+        <record model="ir.action.act_window.view" id="act_property_quotation_category_list_view">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="quotation_category_view_list"/>
+            <field name="act_window" ref="act_quotation_category_list"/>
+        </record>
+        <menuitem parent="menu_configurator" sequence="1"
+            action="act_quotation_category_list"
+            id="menu_property_quotation_category"/>
 
         <!-- Object -->
         <record model="ir.ui.view" id="object_view_list">

@@ -50,6 +50,11 @@ msgctxt "field:configurator.design,summary:"
 msgid "Summary"
 msgstr "Sumari"
 
+#, fuzzy
+msgctxt "field:configurator.design,suppliers:"
+msgid "Suppliers"
+msgstr "Proveïdors"
+
 msgctxt "field:configurator.design,template:"
 msgid "Template"
 msgstr "Plantilla"
@@ -57,6 +62,10 @@ msgstr "Plantilla"
 msgctxt "field:configurator.design.attribute,design:"
 msgid "Design"
 msgstr "Disseny"
+
+msgctxt "field:configurator.design.attribute,design_state:"
+msgid "Design State"
+msgstr "Estat disseny"
 
 msgctxt "field:configurator.design.attribute,number:"
 msgid "Number"
@@ -98,6 +107,18 @@ msgctxt "field:configurator.design.line,currency:"
 msgid "Currency"
 msgstr "Moneda"
 
+msgctxt "field:configurator.design.line,debug_amount:"
+msgid "Debug Amount"
+msgstr ""
+
+msgctxt "field:configurator.design.line,debug_quantity:"
+msgid "Debug Qty"
+msgstr ""
+
+msgctxt "field:configurator.design.line,manual_unit_price:"
+msgid "Manual Unit Price"
+msgstr ""
+
 msgctxt "field:configurator.design.line,margin:"
 msgid "Margin"
 msgstr "Marge"
@@ -107,8 +128,8 @@ msgid "Property"
 msgstr "Propietat"
 
 msgctxt "field:configurator.design.line,qty_ratio:"
-msgid "Quantity"
-msgstr "Quantitat"
+msgid "Quantity Ratio"
+msgstr "Quantitat Ratio"
 
 msgctxt "field:configurator.design.line,quantity:"
 msgid "Quantity"
@@ -141,6 +162,10 @@ msgstr "Disseny"
 msgctxt "field:configurator.object,object:"
 msgid "Object"
 msgstr "Object"
+
+msgctxt "field:configurator.property,attribute_search_op:"
+msgid "Operator"
+msgstr "Operació"
 
 msgctxt "field:configurator.property,attribute_set:"
 msgid "Attribute Set"
@@ -206,6 +231,10 @@ msgctxt "field:configurator.property,quantity:"
 msgid "Quantity"
 msgstr "Quantitat"
 
+msgctxt "field:configurator.property,quotation_category:"
+msgid "Quoatation Category"
+msgstr ""
+
 msgctxt "field:configurator.property,summary:"
 msgid "Summary"
 msgstr "Sumari"
@@ -234,6 +263,14 @@ msgctxt "field:configurator.property.price_category,name:"
 msgid "Name"
 msgstr "Nom"
 
+msgctxt "field:configurator.property.quotation_category,name:"
+msgid "Name"
+msgstr "Nom"
+
+msgctxt "field:configurator.property.quotation_category,type_:"
+msgid "Type"
+msgstr "Tipus"
+
 msgctxt "field:configurator.quotation.line,cost_price:"
 msgid "Cost Price"
 msgstr "Preu de cost"
@@ -242,6 +279,10 @@ msgctxt "field:configurator.quotation.line,design:"
 msgid "Design"
 msgstr "Disseny"
 
+msgctxt "field:configurator.quotation.line,design_state:"
+msgid "Design State"
+msgstr "Estat disseny"
+
 msgctxt "field:configurator.quotation.line,global_margin:"
 msgid "Global Margin"
 msgstr "Marge global"
@@ -249,6 +290,10 @@ msgstr "Marge global"
 msgctxt "field:configurator.quotation.line,list_price:"
 msgid "List Price"
 msgstr "LLista de preu"
+
+msgctxt "field:configurator.quotation.line,manual_list_price:"
+msgid "Manual List Price"
+msgstr ""
 
 msgctxt "field:configurator.quotation.line,margin:"
 msgid "Margin"
@@ -273,6 +318,24 @@ msgstr "Preu unitari"
 msgctxt "field:configurator.quotation.line,uom:"
 msgid "UoM"
 msgstr "Unidad de mesura"
+
+#, fuzzy
+msgctxt "field:configurator.quotation.supplier,category:"
+msgid "Category"
+msgstr "Categoria"
+
+#, fuzzy
+msgctxt "field:configurator.quotation.supplier,code:"
+msgid "Code"
+msgstr "Codi"
+
+msgctxt "field:configurator.quotation.supplier,design:"
+msgid "Design"
+msgstr "Disseny"
+
+msgctxt "field:configurator.quotation.supplier,supplier:"
+msgid "Supplier"
+msgstr "Proveïdor"
 
 msgctxt "field:product.template,configurator_template:"
 msgid "Template for Configurator"
@@ -306,9 +369,18 @@ msgctxt "model:configurator.property.price_category,name:"
 msgid "Price Category"
 msgstr "Categoria de preu"
 
+#, fuzzy
+msgctxt "model:configurator.property.quotation_category,name:"
+msgid "Price Category"
+msgstr "Categoria de preus"
+
 msgctxt "model:configurator.quotation.line,name:"
 msgid "Quotation Line"
 msgstr "Linia de pressupost"
+
+msgctxt "model:configurator.quotation.supplier,name:"
+msgid "Quotation Supplier"
+msgstr "Proveïdor cotització"
 
 msgctxt "model:ir.action,name:act_design_form"
 msgid "Designs"
@@ -322,9 +394,17 @@ msgctxt "model:ir.action,name:act_property_form"
 msgid "Properties"
 msgstr "Propietats"
 
+msgctxt "model:ir.action,name:act_property_list"
+msgid "Properties"
+msgstr "Propietats"
+
 msgctxt "model:ir.action,name:act_property_tree"
 msgid "Properties"
 msgstr "Propietats"
+
+msgctxt "model:ir.action,name:act_quotation_category_list"
+msgid "Quotation Category"
+msgstr "Categoria cotització"
 
 msgctxt "model:ir.message,text:msg_expression_error"
 msgid ""
@@ -362,6 +442,14 @@ msgctxt "model:ir.ui.menu,name:menu_property_form"
 msgid "Properties"
 msgstr "Propietats"
 
+msgctxt "model:ir.ui.menu,name:menu_property_list"
+msgid "Properties"
+msgstr "Propietats"
+
+msgctxt "model:ir.ui.menu,name:menu_property_quotation_category"
+msgid "Quotation Category"
+msgstr "Categoria cotització"
+
 msgctxt "selection:configurator.design,state:"
 msgid "Cancel"
 msgstr "Cancelat"
@@ -371,6 +459,18 @@ msgid "Done"
 msgstr "Finalizat"
 
 msgctxt "selection:configurator.design,state:"
+msgid "draft"
+msgstr "Borrador"
+
+msgctxt "selection:configurator.design.attribute,design_state:"
+msgid "Cancel"
+msgstr "Cancel·lat"
+
+msgctxt "selection:configurator.design.attribute,design_state:"
+msgid "Done"
+msgstr "Realitzat"
+
+msgctxt "selection:configurator.design.attribute,design_state:"
 msgid "draft"
 msgstr "Borrador"
 
@@ -385,6 +485,10 @@ msgstr "Funció"
 msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "Group"
 msgstr "Grup"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Match"
+msgstr "Cerca"
 
 msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "Number"
@@ -423,6 +527,10 @@ msgid "Group"
 msgstr "Grup"
 
 msgctxt "selection:configurator.property,type:"
+msgid "Match"
+msgstr "Cerca"
+
+msgctxt "selection:configurator.property,type:"
 msgid "Number"
 msgstr "Número"
 
@@ -445,3 +553,27 @@ msgstr "Producte de compra"
 msgctxt "selection:configurator.property,type:"
 msgid "Text"
 msgstr "Text"
+
+msgctxt "selection:configurator.property.quotation_category,type_:"
+msgid "Goods"
+msgstr "Béns"
+
+msgctxt "selection:configurator.property.quotation_category,type_:"
+msgid "Other"
+msgstr "Un altre"
+
+msgctxt "selection:configurator.property.quotation_category,type_:"
+msgid "Works"
+msgstr "Treballs"
+
+msgctxt "selection:configurator.quotation.line,design_state:"
+msgid "Cancel"
+msgstr "Cancel·lat"
+
+msgctxt "selection:configurator.quotation.line,design_state:"
+msgid "Done"
+msgstr "Realitzat"
+
+msgctxt "selection:configurator.quotation.line,design_state:"
+msgid "draft"
+msgstr "Borrador"

@@ -26,6 +26,8 @@
     <newline/>
     <label name="price_category"/>
     <field name="price_category"/>
+    <label name="quotation_category"/>
+    <field name="quotation_category"/>
     <newline/>
     <label name="quantity"/>
     <field name="quantity"/>

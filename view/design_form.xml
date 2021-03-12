@@ -18,9 +18,10 @@
     <newline/>
     <notebook colspan="6">
         <page name="attributes">
-            <field name="attributes" colspan="4"/>
+            <field name="attributes" colspan="4" height="600"/>
         </page>
         <page name="prices">
+            <field name="suppliers" colspan="4"/>
             <field name="prices" colspan="4"/>
         </page>
         <page name="objects">
