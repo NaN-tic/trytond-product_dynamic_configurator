@@ -621,7 +621,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
-        template.name = self.name + "(" + design.code + ")"
+        template.name = self.name + "(" + design.code + ") production"
         product = self.get_product_product_object_copy(
             self.product_template.products[0])
         product.template = template
@@ -642,9 +642,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 setattr(child_res, 'value', value)
                 template.attributes += (child_res,)
 
-        # if len(template.attributes):
-        #     product = self.set_template_fields(product)
-        Template.update_attributes_values([template])
+        template._update_attributes_values()
         exists_product = Product.search([('code', '=', product.code)])
         if exists_product:
             product = exists_product[0]
