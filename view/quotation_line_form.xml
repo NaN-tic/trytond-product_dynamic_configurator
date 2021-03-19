@@ -2,19 +2,17 @@
     <group col="2" id="column1">
       <label name="list_price"/>
       <field name="list_price"/>
-      <!-- <field name="material_cost_price"/> -->
-      <!-- <field name="margin"/> -->
-    </group>
-    <group col="2" id="column2">
-      <!-- <label name="total_meters"/>
-      <field name="total_meters"/>
-      <label name="total_kgs"/>
-      <field name="total_kgs"/> -->
-    </group>
+      <label name="material_cost_price"/>
+      <field name="material_cost_price"/>
+      <label name="margin_material"/>
+      <field name="margin_material"/>
+    </group>    
     <group col="2" id="column3">
       <label name="quantity"/>
-      <field name="quantity"/>
-      <!-- <field name="uom"/> -->
+      <group id="unit" col="2">
+          <field name="quantity"/>
+          <field name="uom"/>
+      </group>
 
       <label name="unit_price"/>
       <field name="unit_price" />
@@ -26,8 +24,8 @@
     <group col="2" id="column4">
       <label name="list_price"/>
       <field name="list_price"/>
-      <label name="cost_price"/>
-      <field name="cost_price"/>
+      <label name="cost_price_no_manual"/>
+      <field name="cost_price_no_manual"/>
       <label name="margin"/>
       <field name="margin"/>
     </group>

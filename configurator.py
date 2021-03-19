@@ -286,7 +286,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 if res is None:
                     continue
                 created_obj.update(res)
-
         parent = self.get_parent()
         val = values
         if parent in values:
@@ -766,6 +765,8 @@ class Design(Workflow, ModelSQL, ModelView):
         readonly=True)
     suppliers = fields.One2Many('configurator.quotation.supplier', 'design',
         'Suppliers')
+    quotation_uom = fields.Many2One('product.uom', 'Quotation Uom',
+        required=True)
 
     @classmethod
     def __setup__(cls):
@@ -792,6 +793,7 @@ class Design(Workflow, ModelSQL, ModelView):
                 'depends': ['state'],
             },
         })
+
 
     @staticmethod
     def default_currency():
@@ -1026,7 +1028,7 @@ class QuotationLine(ModelSQL, ModelView):
         depends=['design_state'])
     cost_price = fields.Function(fields.Numeric('Cost Price',
         digits=price_digits), 'get_prices')
-    list_price = fields.Function(fields.Numeric('List Price',
+    list_price = fields.Function(fields.Numeric('Total Price',
         digits=price_digits), 'get_prices')
     manual_list_price = fields.Numeric('Manual List Price',
         digits=price_digits)
@@ -1039,6 +1041,12 @@ class QuotationLine(ModelSQL, ModelView):
         'get_product_uom_category')
     design_state = fields.Function(fields.Selection(STATES, 'Design State'),
         'on_change_with_design_state')
+    material_cost_price = fields.Function(fields.Numeric('Cost Material',
+        digits=(16, 4)), 'get_prices')
+    margin_material = fields.Function(fields.Numeric('Margin Material',
+        digits=(16, 4)), 'get_prices')
+    cost_price_no_manual = fields.Function(fields.Numeric(
+        'Cost Price No Manual', digits=price_digits), 'get_prices')
 
     def get_rec_name(self, name):
         return '%s(%s) - %s' % (str(self.quantity), str(self.uom.symbol),
@@ -1088,32 +1096,47 @@ class QuotationLine(ModelSQL, ModelView):
 
     @classmethod
     def get_prices(cls, quotations, names):
+        pool = Pool()
+        Uom = pool.get('product.uom')
+
         res = {}
         quantize = Decimal(str(10.0 ** -price_digits[1]))
-        for name in {'cost_price', 'list_price', 'margin', 'unit_price'}:
+        for name in {'cost_price', 'list_price', 'margin', 'unit_price',
+                'material_cost_price', 'margin_material',
+                'cost_price_no_manual'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
         for quote in quotations:
             cost_price = 0
             list_price = 0
+            cost_price_noman = 0
+            material_cost_price = 0
+            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity,
+                quote.design.quotation_uom, round=False)
             for line in quote.prices:
                 price = line.manual_unit_price or line.unit_price
                 cost_price += (Decimal(line.quantity or 0) *
                     (price or 0))
+                cost_price_noman += Decimal(line.quantity) * line.unit_price
                 list_price += line.amount
-
+                material_cost_price += Decimal(line.property.quotation_category
+                    and line.property.quotation_category.type_ == 'goods'
+                    and line.quantity or 0) * price
             list_price = (list_price
                 * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
                 )).quantize(quantize)
             unit_price = Decimal(float(list_price) /
                 quote.quantity*quote.uom.rate).quantize(quantize)
 
-            res['list_price'][quote.id] = Decimal(quote.quantity) * (
+            res['list_price'][quote.id] = Decimal(quote_quantity) * (
                 quote.manual_list_price or unit_price)
             res['cost_price'][quote.id] = cost_price
-            res['margin'][quote.id] = Decimal(quote.quantity) * (
-                quote.manual_list_price or unit_price) - cost_price
+            res['cost_price_no_manual'][quote.id] = cost_price_noman
+            res['margin'][quote.id] = (res['list_price'][quote.id] -
+                cost_price_noman)
             res['unit_price'][quote.id] = unit_price
-
+            res['material_cost_price'][quote.id] = material_cost_price
+            res['margin_material'][quote.id] = (res['list_price'][quote.id] -
+                material_cost_price)
         return res
 
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):

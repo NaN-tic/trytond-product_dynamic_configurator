@@ -3,18 +3,20 @@
     <field name="name"/>
     <label name="code"/>
     <field name="code"/>
-
-    <group id="templates" colspan="2">
-      <label name="template"/>
-      <field name="template"/>
-      <button name="update"/>
-    </group>
+    <label name="quotation_uom"/>
+    <field name="quotation_uom"/>
     <label name="design_date"/>
     <field name="design_date"/>
     <label name="currency"/>
     <field name="currency"/>
     <label name="product"/>
     <field name="product"/>
+    <group id="templates" colspan="2">
+      <label name="template"/>
+      <field name="template"/>
+      <button name="update"/>
+    </group>
+
     <newline/>
     <notebook colspan="6">
         <page name="attributes">
