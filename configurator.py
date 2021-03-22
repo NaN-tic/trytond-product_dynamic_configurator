@@ -452,6 +452,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
         Product = pool.get('product.product')
+        Attribute = pool.get('product.product.attribute')
 
         if not self.product_template:
             return
@@ -464,20 +465,27 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product.default_uom = self.uom
         product.list_price = 0
         product.code = design.code
-
+        if not hasattr(product, 'attributes'):
+            product.attributes = tuple()
         for prop, child_res in created_obj.items():
-            if prop.parent != self:
-                continue
             child_res = child_res[0]
             if prop.type == 'attribute':
-                if not hasattr(template, 'attributes'):
-                    template.attributes = tuple()
                 template.attribute_set = prop.attribute_set
                 type_, value = self.get_product_attribute_typed(prop,
                     self.evaluate(prop.product_attribute_value, values))
                 setattr(child_res, 'value_' + type_, value)
                 setattr(child_res, 'value', value)
-                template.attributes += (child_res,)
+                product.attributes += (child_res,)
+            elif prop.type == 'match' and child_res:
+                for attribute in child_res.product.attributes:
+                    print("attribute_set:",attribute.attribute_set)
+                    attr = Attribute()
+                    attr.template = template
+                    attr.attribute = attribute.attribute
+                    attr.attribute_type = attribute.attribute_type
+                    setattr(attr, 'value_' + attribute.attribute_type,
+                        attribute.value)
+                    product.attributes += (attr,)
 
         if self.object_expression:
             expressions = eval(self.object_expression)
@@ -564,6 +572,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         Operation = pool.get('production.route.operation')
         Route = pool.get('production.route')
         Uom = pool.get('product.uom')
+        Attribute = pool.get('product.product.attribute')
 
         def create_bom_input(property_):
             if property_.type == 'purchase_product':
@@ -628,19 +637,26 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product.default_uom = self.uom
         product.list_price = 0
         product.code = self.code + "(" + design.code + ")"
+        if not hasattr(template, 'attributes'):
+            template.attributes = tuple()
         for prop, child_res in created_obj.items():
-            if prop.parent != self:
-                continue
             child_res = child_res[0]
             if prop.type == 'attribute':
-                if not hasattr(template, 'attributes'):
-                    template.attributes = tuple()
                 template.attribute_set = prop.attribute_sets
                 type_, value = self.get_product_attribute_typed(prop,
                     self.evaluate(prop.product_attribute_value, values))
                 setattr(child_res, 'value_' + type_, value)
                 setattr(child_res, 'value', value)
                 template.attributes += (child_res,)
+            elif prop.type == 'match' and child_res:
+                for attribute in child_res.product.attributes:
+                    attr = Attribute()
+                    attr.template = template
+                    attr.attribute = attribute.attribute
+                    attr.attribute_type = attribute.attribute_type
+                    setattr(attr, 'value_' + attribute.attribute_type,
+                        attribute.value)
+                    product.attributes += (attr,)
 
         template._update_attributes_values()
         exists_product = Product.search([('code', '=', product.code)])
@@ -818,6 +834,7 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('quotations', None)
         default.setdefault('lines', None)
         default.setdefault('prices', None)
+        default.setdefault('product', None)
         return super(Design, cls).copy(designs, default=default)
 
     @classmethod
