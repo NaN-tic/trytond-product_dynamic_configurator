@@ -478,7 +478,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 product.attributes += (child_res,)
             elif prop.type == 'match' and child_res:
                 for attribute in child_res.product.attributes:
-                    print("attribute_set:",attribute.attribute_set)
                     attr = Attribute()
                     attr.template = template
                     attr.attribute = attribute.attribute
@@ -630,7 +629,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
-        template.name = self.name + "(" + design.code + ") production"
+        template.name = self.name + "(" + design.code + ")"
         product = self.get_product_product_object_copy(
             self.product_template.products[0])
         product.template = template
