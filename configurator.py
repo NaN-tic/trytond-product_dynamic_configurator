@@ -41,6 +41,7 @@ class QuotationCategory(ModelSQL, ModelView):
     name = fields.Char('Name')
     type_ = fields.Selection([('goods', 'Goods'),
         ('works', 'Works'), ('other', 'Other')], 'Type')
+    party = fields.Many2One('party.party', 'Default Supplier')
 
 
 class Template(metaclass=PoolMeta):
@@ -915,6 +916,7 @@ class Design(Workflow, ModelSQL, ModelView):
             suppliers = []
             for category in set(categories):
                 q = QuotationSupplier(category=category)
+                q.supplier = category.party
                 suppliers.append(q)
             design.suppliers = suppliers
 
