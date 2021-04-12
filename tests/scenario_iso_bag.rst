@@ -41,6 +41,14 @@ Get all Units::
 
     >>> euro = get_currency('EUR')
 
+Company::
+
+    >>> _ = create_company()
+    >>> company = get_company()
+    >>> tax_identifier = company.party.identifiers.new()
+    >>> tax_identifier.type = 'eu_vat'
+    >>> tax_identifier.code = 'BE0897290877'
+    >>> company.party.save()
 
 
 Create Attribute Sets::
@@ -286,7 +294,7 @@ Bossa Exterior:
     >>> fca2.quantity = "0.46*widthprov_ext*galgaprov_ext/(100.0*lamina_ext)"
 
 
-	  >>> largo = exterior.childs.new()
+    >>> largo = exterior.childs.new()
     >>> largo.name = "Exterior Largo"
     >>> largo.code = "largo_ext"
     >>> largo.type = 'number'
@@ -683,8 +691,6 @@ Fill Quotation::
 
   >>> design.click('create_prices')
   >>> quotation.reload()
-  >>> quotation.unit_price
-  Decimal('8.0651')
   >>> design.click('process')
   >>> design.reload()
   >>> design.product.name

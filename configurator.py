@@ -516,13 +516,17 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if category.type_ == 'goods':
                 goods_supplier = supplier
                 break
+
+        if not goods_supplier:
+            return {self: (bom_input, [])}
+
         ProductSupplier = pool.get('purchase.product_supplier')
         Price = pool.get('purchase.product_supplier.price')
         product_supplier = ProductSupplier()
         product_supplier.party = goods_supplier
         product_supplier.on_change_party()
         product_supplier.prices = ()
-        template.product_suppliers = [product_supplier]
+        product_supplier.company = Transaction().context.get('company')
         design_qty = self.evaluate(design.template.quantity, values)
         for quote in design.prices:
             cost_price = 0
@@ -553,7 +557,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 price.quantity = ((quote.quantity / qty) * bom_input.quantity)
                 price.unit_price = cost_price
                 product_supplier.prices += (price,)
-
+ 
+        template.product_suppliers = [product_supplier]
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
