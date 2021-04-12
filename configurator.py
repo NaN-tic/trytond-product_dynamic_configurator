@@ -28,11 +28,13 @@ TYPE = [
     ('attribute', 'Product Attribute'),
 ]
 
+
 class PriceCategory(ModelSQL, ModelView):
     """ Price Category """
     __name__ = 'configurator.property.price_category'
 
     name = fields.Char('Name')
+
 
 class QuotationCategory(ModelSQL, ModelView):
     """ Price Category """
@@ -48,6 +50,7 @@ class Template(metaclass=PoolMeta):
 
     def get_purchase_context(self):
         return {}
+
 
 class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     """ Property """
@@ -508,22 +511,50 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         # Calculate cost_price for purchase_product
         cost_price = 0
-        qty = 0
-        for child in self.childs:
-            if child.type in ('number', 'char', 'attribute', 'text',
-                    'bom', 'group'):
-                continue
-            obj, _ = created_obj[child]
-            if isinstance(obj, BomInput):
-                cost_price += (Decimal(obj.quantity) * obj.product.cost_price)
-                qty += obj.quantity
+        suppliers = dict((x.category, x.supplier) for x in design.suppliers)
+        goods_supplier = None
+        for category, supplier in suppliers.items():
+            if category.type_ == 'goods':
+                goods_supplier = supplier
+                break
+        ProductSupplier = pool.get('purchase.product_supplier')
+        Price = pool.get('purchase.product_supplier.price')
+        product_supplier = ProductSupplier()
+        product_supplier.party = goods_supplier
+        product_supplier.on_change_party()
+        product_supplier.prices = ()
+        template.product_suppliers = [product_supplier]
+        design_qty = self.evaluate(design.template.quantity, values)
+        for quote in design.prices:
+            cost_price = 0
+            qty = Uom.compute_qty(design.template.uom, design_qty, quote.uom)
+            for prop, v in created_obj.items():
+                v = v[0]
+                if not v or prop.type not in ('product', 'match', 'bom'):
+                    continue
+                parent = prop.get_parent()
+                quote_quantity = Uom.compute_qty(quote.uom,
+                    quote.quantity, design.template.uom)
+                if isinstance(v, BomInput):
+                    quantity = v.quantity * quote_quantity
+                    product = v.product
+                elif isinstance(v, Product):
+                    quantity = prop.evaluate(prop.quantity,
+                        design.as_dict()[parent])
+                    quantity = quantity * quote_quantity
+                    product = v
+                supplier = None
+                if prop.quotation_category:
+                    supplier = suppliers[prop.quotation_category]
+                quantity = bom_input.quantity * quantity
+                cost_price += quote.get_unit_price(product,
+                    quantity, prop.uom, supplier)
+            if cost_price:
+                price = Price()
+                price.quantity = ((quote.quantity / qty) * bom_input.quantity)
+                price.unit_price = cost_price
+                product_supplier.prices += (price,)
 
-        quantize = Decimal(str(10.0 ** -price_digits[1]))
-        if cost_price:
-            product.cost_price = (Decimal(qty)/Decimal(cost_price)
-                ).quantize(quantize)
-
-        bom_input.product = product
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
@@ -563,7 +594,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def get_bom(self, design, values, created_obj):
         pool = Pool()
         Product = pool.get('product.product')
-        Template = pool.get('product.template')
         Bom = pool.get('production.bom')
         BomInput = pool.get('production.bom.input')
         BomOutput = pool.get('production.bom.output')
@@ -685,8 +715,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return ratio
 
         parent = self.parent
-        ratio_parent = self.evaluate(parent.quantity or '1', values)
-        return parent.get_ratio_for_prices(values, ratio*ratio_parent)
+        ratio_parent = self.evaluate(parent.quantity or '1.0', values) or 1.0
+        return parent.get_ratio_for_prices(values,
+            (ratio or 1.0) * ratio_parent)
 
     def create_design_line(self, quantity, uom, unit_price, quote):
         DesignLine = Pool().get('configurator.design.line')
@@ -753,6 +784,7 @@ READONLY_STATE = {
 
 STATES = [('draft', 'draft'), ('done', 'Done'), ('cancel', 'Cancel')]
 
+
 class Design(Workflow, ModelSQL, ModelView):
     'Design'
     __name__ = 'configurator.design'
@@ -806,7 +838,6 @@ class Design(Workflow, ModelSQL, ModelView):
                 'depends': ['state'],
             },
         })
-
 
     @staticmethod
     def default_currency():
@@ -910,7 +941,8 @@ class Design(Workflow, ModelSQL, ModelView):
             values = design.as_dict()
             res = design.template.create_prices(design, values)
 
-            suppliers = dict((x.category, x.supplier) for x in design.suppliers)
+            suppliers = dict((x.category, x.supplier)
+                for x in design.suppliers)
             for quote in design.prices:
                 for prop, v in res.items():
                     v = v[0]
@@ -925,7 +957,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         if isinstance(v, BomInput):
                             quote_quantity = Uom.compute_qty(quote.uom,
                                 quote.quantity, design.template.uom)
-                            quantity = v.quantity*quote_quantity
+                            quantity = v.quantity * quote_quantity
                             product = v.product
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
@@ -948,12 +980,11 @@ class Design(Workflow, ModelSQL, ModelView):
                         parent = prop.get_parent()
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
-                        if product:
-                            cost_price = quote.get_unit_price(product,
-                                quantity*qty_ratio, prop.uom, supplier)
-                        else:
-                            cost_price = 0
-                        dl = prop.create_design_line(quantity*qty_ratio,
+                        if not product:
+                            continue
+                        cost_price = quote.get_unit_price(product,
+                            quantity * qty_ratio, prop.uom, supplier)
+                        dl = prop.create_design_line(quantity * qty_ratio,
                             prop.uom, cost_price, quote)
                         dl.qty_ratio = qty_ratio
                         dl.debug_quantity = quantity
@@ -964,9 +995,9 @@ class Design(Workflow, ModelSQL, ModelView):
                         parent = prop.get_parent()
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
-                        cost_price = (Decimal(qty_ratio*quantity)/(
+                        cost_price = (Decimal(qty_ratio * quantity) / (
                                 dl.unit_price +
-                                Decimal(qty_ratio*quantity)*cost_price))
+                                Decimal(qty_ratio * quantity) * cost_price))
                         cost_price = Decimal(cost_price).quantize(Decimal(
                             str(10.0 ** -price_digits[1])))
                         dl.quantity += quantity * qty_ratio
@@ -1010,6 +1041,7 @@ class Design(Workflow, ModelSQL, ModelView):
 
         CreatedObject.delete(to_delete)
 
+
 class QuotationSupplier(ModelSQL, ModelView):
     """ Quotation Supplier """
     __name__ = 'configurator.quotation.supplier'
@@ -1018,6 +1050,7 @@ class QuotationSupplier(ModelSQL, ModelView):
     category = fields.Many2One('configurator.property.quotation_category',
         'Category')
     supplier = fields.Many2One('party.party', 'Supplier')
+
 
 class QuotationLine(ModelSQL, ModelView):
     """  Quotation Line """
@@ -1139,8 +1172,7 @@ class QuotationLine(ModelSQL, ModelView):
                 * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
                 )).quantize(quantize)
             unit_price = Decimal(float(list_price) /
-                quote.quantity*quote.uom.rate).quantize(quantize)
-
+                quote.quantity * quote.uom.rate).quantize(quantize)
             res['list_price'][quote.id] = Decimal(quote_quantity) * (
                 quote.manual_list_price or unit_price)
             res['cost_price'][quote.id] = cost_price
@@ -1152,6 +1184,7 @@ class QuotationLine(ModelSQL, ModelView):
             res['margin_material'][quote.id] = (res['list_price'][quote.id] -
                 material_cost_price)
         return res
+
 
 class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     'Design Line'
@@ -1198,6 +1231,7 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
 
     def get_currency(self, name=None):
         return self.quotation.design.currency
+
 
 class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
     'Design Attribute'
