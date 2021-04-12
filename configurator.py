@@ -6,8 +6,6 @@ from trytond.pool import Pool, PoolMeta
 from trytond.config import config
 from trytond.transaction import Transaction
 from copy import copy
-from trytond.exceptions import UserError
-from trytond.i18n import gettext
 import math
 
 price_digits = (16, config.getint('product', 'price_decimal', default=4))
@@ -270,7 +268,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         try:
             code = compile(expression, "<string>", "eval")
             return eval(code, custom_locals)
-        except BaseException as e:
+        except BaseException:
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
