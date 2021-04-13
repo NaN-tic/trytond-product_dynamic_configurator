@@ -1,4 +1,4 @@
-<tree editable="top">
+<tree editable="1">
     <field name="property" expand="2"/>
     <field name="property_type"/>
     <field name="use_property"/>

@@ -1,4 +1,4 @@
-<tree editable="bottom">
+<tree editable="1">
     <field name="category"/>
     <field name="supplier"/>
 </tree>
