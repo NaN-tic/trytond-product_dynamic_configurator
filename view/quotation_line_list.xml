@@ -1,6 +1,5 @@
 <tree editable="top">
     <field name="quantity"/>
-    <field name="uom"/>
     <field name="cost_price"/>
     <field name="list_price"/>
     <field name="global_margin"/>

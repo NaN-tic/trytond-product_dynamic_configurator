@@ -11,7 +11,6 @@
       <label name="quantity"/>
       <group id="unit" col="2">
           <field name="quantity"/>
-          <field name="uom"/>
       </group>
 
       <label name="unit_price"/>

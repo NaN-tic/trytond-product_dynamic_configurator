@@ -420,7 +420,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         Template = Pool().get('product.template')
         ntemplate = Template()
         for f in template._fields:
-            setattr(ntemplate, f, getattr(template, f))
+            if hasattr(ntemplate, f):
+                setattr(ntemplate, f, getattr(template, f))
         ntemplate.configurator_template = False
         ntemplate.categories_all = None
         ntemplate.products = []
@@ -430,7 +431,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         Product = Pool().get('product.product')
         nproduct = Product()
         for f in product._fields:
-            if not hasattr(product, f):
+            if not hasattr(nproduct, f):
                 continue
             setattr(nproduct, f, getattr(product, f))
 
@@ -526,7 +527,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product_supplier.party = goods_supplier
         product_supplier.on_change_party()
         product_supplier.prices = ()
-        product_supplier.company = Transaction().context.get('company')
         design_qty = self.evaluate(design.template.quantity, values)
         for quote in design.prices:
             cost_price = 0
@@ -557,7 +557,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 price.quantity = ((quote.quantity / qty) * bom_input.quantity)
                 price.unit_price = cost_price
                 product_supplier.prices += (price,)
- 
+
         template.product_suppliers = [product_supplier]
         return {self: (bom_input, [])}
 
@@ -973,7 +973,8 @@ class Design(Workflow, ModelSQL, ModelView):
                             quantity = quantity * quote_quantity
                             product = v
                     # if prop.type == 'operation':
-                    #     quantity = prop.evaluate(prop.quantity, design.as_dict())
+                    #     quantity = prop.evaluate(prop.quantity,
+                    #                      design.as_dict())
                     #     quantity = quantity * quote.quantity
                     #     quantity = v.compute_time(quantity, v.time_uom)
                     #     cost_price = prop.work_center_category.cost_price
@@ -1001,8 +1002,8 @@ class Design(Workflow, ModelSQL, ModelView):
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
                         cost_price = (Decimal(qty_ratio * quantity) / (
-                                dl.unit_price +
-                                Decimal(qty_ratio * quantity) * cost_price))
+                                dl.unit_price
+                                + Decimal(qty_ratio * quantity) * cost_price))
                         cost_price = Decimal(cost_price).quantize(Decimal(
                             str(10.0 ** -price_digits[1])))
                         dl.quantity += quantity * qty_ratio
@@ -1067,13 +1068,6 @@ class QuotationLine(ModelSQL, ModelView):
         states={
             'readonly': Bool(Eval('unit_price'))
         }, depends=['unit_price'])
-    uom = fields.Many2One('product.uom', 'UoM',
-        domain=[
-            If(Bool(Eval('product_uom_category')),
-                ('category', '=', Eval('product_uom_category')),
-                ('category', '!=', -1))],
-        states={'readonly': Bool(Eval('unit_price'))},
-        depends=['product_uom_category', 'unit_price'])
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
     global_margin = fields.Float('Global Margin', digits=(16, 4),
         # states={'readonly': 'design_state' != 'draft'},
@@ -1101,7 +1095,7 @@ class QuotationLine(ModelSQL, ModelView):
         'Cost Price No Manual', digits=price_digits), 'get_prices')
 
     def get_rec_name(self, name):
-        return '%s(%s) - %s' % (str(self.quantity), str(self.uom.symbol),
+        return '%s - %s' % (str(self.quantity),
             self.design.name)
 
     @fields.depends('design', '_parent_design.state')
@@ -1148,9 +1142,6 @@ class QuotationLine(ModelSQL, ModelView):
 
     @classmethod
     def get_prices(cls, quotations, names):
-        pool = Pool()
-        Uom = pool.get('product.uom')
-
         res = {}
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         for name in {'cost_price', 'list_price', 'margin', 'unit_price',
@@ -1162,12 +1153,10 @@ class QuotationLine(ModelSQL, ModelView):
             list_price = 0
             cost_price_noman = 0
             material_cost_price = 0
-            quote_quantity = Uom.compute_qty(quote.uom, quote.quantity,
-                quote.design.quotation_uom, round=False)
             for line in quote.prices:
                 price = line.manual_unit_price or line.unit_price
-                cost_price += (Decimal(line.quantity or 0) *
-                    (price or 0))
+                cost_price += (Decimal(line.quantity or 0)
+                    * (price or 0))
                 cost_price_noman += Decimal(line.quantity) * line.unit_price
                 list_price += line.amount
                 material_cost_price += Decimal(line.property.quotation_category
@@ -1176,18 +1165,18 @@ class QuotationLine(ModelSQL, ModelView):
             list_price = (list_price
                 * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
                 )).quantize(quantize)
-            unit_price = Decimal(float(list_price) /
-                quote.quantity * quote.uom.rate).quantize(quantize)
-            res['list_price'][quote.id] = Decimal(quote_quantity) * (
+            unit_price = Decimal(float(list_price) / quote.quantity
+                ).quantize(quantize)
+            res['list_price'][quote.id] = Decimal(quote.quantity) * (
                 quote.manual_list_price or unit_price)
             res['cost_price'][quote.id] = cost_price
             res['cost_price_no_manual'][quote.id] = cost_price_noman
-            res['margin'][quote.id] = (res['list_price'][quote.id] -
-                cost_price_noman)
+            res['margin'][quote.id] = (res['list_price'][quote.id]
+                * cost_price_noman)
             res['unit_price'][quote.id] = unit_price
             res['material_cost_price'][quote.id] = material_cost_price
-            res['margin_material'][quote.id] = (res['list_price'][quote.id] -
-                material_cost_price)
+            res['margin_material'][quote.id] = (res['list_price'][quote.id]
+                * material_cost_price)
         return res
 
 
@@ -1210,7 +1199,8 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
     margin = fields.Float('Margin', digits=(16, 4), )
     amount = fields.Function(fields.Numeric('Amount', digits=price_digits),
         'on_change_with_amount')
-    currency = fields.Function(fields.Many2One('currency.currency', 'Currency'),
+    currency = fields.Function(fields.Many2One('currency.currency',
+        'Currency'),
         'get_currency')
     qty_ratio = fields.Float('Quantity Ratio', readonly=True)
     debug_quantity = fields.Float('Debug Qty', readonly=True)  # TODO: remove
@@ -1219,7 +1209,8 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
 
     @fields.depends('quantity', 'unit_price', 'manual_unit_price')
     def on_change_with_amount(self, name=None):
-        if not self.quantity or not (self.unit_price or self.manual_unit_price):
+        if not self.quantity or not (self.unit_price
+                or self.manual_unit_price):
             return _ZERO
         price = self.manual_unit_price or self.unit_price
         return Decimal(str(self.quantity)) * price * Decimal(
@@ -1227,8 +1218,8 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
 
     @fields.depends('debug_quantity', 'unit_price', 'manual_unit_price')
     def on_change_with_debug_amount(self, name=None):
-        if not self.debug_quantity or not (self.unit_price or
-                self.manual_unit_price):
+        if not self.debug_quantity or not (self.unit_price
+                or self.manual_unit_price):
             return _ZERO
         price = self.manual_unit_price or self.unit_price
         return Decimal(str(self.debug_quantity)) * price * Decimal(
@@ -1252,8 +1243,9 @@ class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
             'invisible': Eval('property_type') != 'bom',
         },
     )
-    property_options = fields.Function(fields.Many2Many('configurator.property',
-        None, None, 'Options'), 'on_change_with_property_options')
+    property_options = fields.Function(fields.Many2Many(
+        'configurator.property', None, None, 'Options'),
+        'on_change_with_property_options')
     option = fields.Many2One('configurator.property', 'Option', domain=[
         ('id', 'in', Eval('property_options')),
     ], states={
