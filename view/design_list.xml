@@ -1,6 +1,7 @@
 <tree>
     <field name="code"/>
     <field name="name"/>
+    <field name="party"/>
     <field name="template"/>
     <field name="state"/>
 </tree>

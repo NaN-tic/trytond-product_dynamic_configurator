@@ -8,9 +8,15 @@ from trytond.transaction import Transaction
 from copy import copy
 import math
 
-price_digits = (16, config.getint('product', 'price_decimal', default=4))
+try:
+    from jinja2 import Template as Jinja2Template
+    jinja2_loaded = True
+except ImportError:
+    jinja2_loaded = False
 
+price_digits = (16, config.getint('product', 'price_decimal', default=4))
 _ZERO = Decimal(0)
+
 TYPE = [
     (None, ''),
     ('bom', 'BoM'),
@@ -181,6 +187,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if self.code and parent and parent.parent:
             res = '%s_%s ' % (parent.code, self.code)
         return res
+
+    def render_expression_record(self, expression, record):
+        template = Jinja2Template(expression)
+        return template.render(record)
 
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
         'price_category', 'object_expression', 'attribute_set',
@@ -443,7 +453,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if not hasattr(nproduct, f):
                 continue
             setattr(nproduct, f, getattr(product, f))
-
+        nproduct.attributes = tuple()
         nproduct.account_category = None
         nproduct.template = None
         return nproduct
@@ -540,7 +550,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         design_qty = self.evaluate(design.template.quantity, values)
         for quote in design.prices:
             cost_price = 0
-            qty = Uom.compute_qty(design.template.uom, design_qty, quote.uom)
+            qty = Uom.compute_qty(design.template.uom, design_qty,
+                design.quotation_uom)
             for prop, v in created_obj.items():
                 v = v[0]
                 if not v or prop.type not in ('product', 'match', 'bom'):
@@ -824,6 +835,8 @@ class Design(Workflow, ModelSQL, ModelView):
         'Suppliers')
     quotation_uom = fields.Many2One('product.uom', 'Quotation Uom',
         required=True)
+    product_exists = fields.Function(fields.Many2One('product.product',
+        'Searched Product'), 'get_product_exist')
 
     @classmethod
     def __setup__(cls):
@@ -878,6 +891,17 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('prices', None)
         default.setdefault('product', None)
         return super(Design, cls).copy(designs, default=default)
+
+    def get_product_exist(self, name=None):
+        if self.product:
+            return self.product.id
+        Product = Pool().get('product.product')
+        products = Product.search([
+            ('code', '=', self.code)], limit=1)
+        if not products:
+            return None
+        product, = products
+        return product.id
 
     @classmethod
     @ModelView.button
@@ -957,6 +981,8 @@ class Design(Workflow, ModelSQL, ModelView):
             suppliers = dict((x.category, x.supplier)
                 for x in design.suppliers)
             for quote in design.prices:
+                quote_quantity = Uom.compute_qty(design.quotation_uom,
+                    quote.quantity, design.template.uom, round=False)
                 for prop, v in res.items():
                     v = v[0]
                     key = (prop.price_category or prop.id, quote)
@@ -968,13 +994,13 @@ class Design(Workflow, ModelSQL, ModelView):
                         continue
                     if prop.type in ('product', 'match'):
                         if isinstance(v, BomInput):
-                            quantity = v.quantity * quote.quantity
+                            quantity = v.quantity * quote_quantity
                             product = v.product
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
                             quantity = prop.evaluate(prop.quantity,
                                 design.as_dict()[parent])
-                            quantity = quantity * quote.quantity
+                            quantity = quantity * quote_quantity
                             product = v
                     # if prop.type == 'operation':
                     #     quantity = prop.evaluate(prop.quantity,
@@ -1014,9 +1040,32 @@ class Design(Workflow, ModelSQL, ModelView):
                         dl.debug_quantity = quantity
                         dl.unit_price = cost_price
 
+            custom_locals = design.design_full_dict()
+            design.code = design.template.render_expression_record(
+                design.template.code_template or '', custom_locals)
+            design.name = design.template.render_expression_record(
+                design.template.name_template or '', custom_locals)
+            design.save()
             to_save = prices.values()
             DesignLine.save(to_save)
         DesignLine.delete(remove_lines)
+
+    def design_full_dict(self):
+        record = self.as_dict()
+        custom_locals = {}
+
+        Property = Pool().get('configurator.property')
+        properties = Property.search([
+            ('parent', 'child_of', [self.template.id])])
+
+        custom_locals['design'] = self
+        for property in properties:
+            custom_locals[property.get_full_code()] = property
+
+        for parent_prop, attributes in record.items():
+            for prop, attr in attributes.items():
+                custom_locals[prop.get_full_code()] = attr
+        return custom_locals
 
     @classmethod
     @ModelView.button
@@ -1146,17 +1195,27 @@ class QuotationLine(ModelSQL, ModelView):
 
     @classmethod
     def get_prices(cls, quotations, names):
+        pool = Pool()
+        Uom = pool.get('product.uom')
         res = {}
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         for name in {'cost_price', 'list_price', 'margin', 'unit_price',
                 'material_cost_price', 'margin_material',
                 'cost_price_no_manual'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
+
         for quote in quotations:
             cost_price = 0
             list_price = 0
             cost_price_noman = 0
             material_cost_price = 0
+            quote_quantity = Uom.compute_qty(quote.design.quotation_uom,
+                quote.quantity, quote.design.template.uom, round=False)
+
+            unit_price_uom = quote.design.template.product_template.default_uom
+            quote_quantity = Uom.compute_qty(quote.design.quotation_uom,
+                quote.quantity, unit_price_uom, round=True)*quote_quantity
+
             for line in quote.prices:
                 price = line.manual_unit_price or line.unit_price
                 cost_price += (Decimal(line.quantity or 0)
@@ -1169,18 +1228,20 @@ class QuotationLine(ModelSQL, ModelView):
             list_price = (list_price
                 * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
                 )).quantize(quantize)
-            unit_price = Decimal(float(list_price) / quote.quantity
+
+            unit_price = Decimal(float(list_price) / quote_quantity
                 ).quantize(quantize)
-            res['list_price'][quote.id] = Decimal(quote.quantity) * (
+
+            res['list_price'][quote.id] = Decimal(quote_quantity) * (
                 quote.manual_list_price or unit_price)
             res['cost_price'][quote.id] = cost_price
             res['cost_price_no_manual'][quote.id] = cost_price_noman
             res['margin'][quote.id] = (res['list_price'][quote.id]
-                * cost_price_noman)
+                - cost_price_noman)
             res['unit_price'][quote.id] = unit_price
             res['material_cost_price'][quote.id] = material_cost_price
             res['margin_material'][quote.id] = (res['list_price'][quote.id]
-                * material_cost_price)
+                - material_cost_price)
         return res
 
 
