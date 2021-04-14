@@ -686,7 +686,6 @@ Fill Quotation::
   >>> quotation = Quotation()
   >>> quotation.design = design
   >>> quotation.quantity = 1
-  >>> quotation.uom = unit
   >>> quotation.save()
 
   >>> design.click('create_prices')

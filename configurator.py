@@ -150,6 +150,14 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             'invisible': Eval('type').in_(['function', 'text', 'number',
                 'attribute', 'group']),
         },)
+    code_template = fields.Text('Code Template',
+        states={
+            'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
+        })
+    name_template = fields.Text('Code Template',
+        states={
+            'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
+        })
 
     @staticmethod
     def default_sequence():
@@ -419,9 +427,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def get_product_template_object_copy(self, template):
         Template = Pool().get('product.template')
         ntemplate = Template()
+        ntemplate.attribute_set = None
+        ntemplate.attributes = tuple()
         for f in template._fields:
-            if hasattr(ntemplate, f):
-                setattr(ntemplate, f, getattr(template, f))
+            setattr(ntemplate, f, getattr(template, f))
         ntemplate.configurator_template = False
         ntemplate.categories_all = None
         ntemplate.products = []
@@ -496,7 +505,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 setattr(template, key, val)
 
         template.products = (product,)
-        template._update_attributes_values()
+        if template.attribute_set:
+            template._update_attributes_values()
         template.products = None
 
         exists_product = Product.search([('code', '=', product.code)])
@@ -536,15 +546,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 if not v or prop.type not in ('product', 'match', 'bom'):
                     continue
                 parent = prop.get_parent()
-                quote_quantity = Uom.compute_qty(quote.uom,
-                    quote.quantity, design.template.uom)
                 if isinstance(v, BomInput):
-                    quantity = v.quantity * quote_quantity
+                    quantity = v.quantity * quote.quantity
                     product = v.product
                 elif isinstance(v, Product):
                     quantity = prop.evaluate(prop.quantity,
                         design.as_dict()[parent])
-                    quantity = quantity * quote_quantity
+                    quantity = quantity * quote.quantity
                     product = v
                 supplier = None
                 if prop.quotation_category:
@@ -632,7 +640,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if isinstance(child_res, BomInput):
                 # TODO: needed to make purchase_product a composite of products
                 # then we need to avoid on bom.
-                if child_res.product.type == 'service':
+                if child_res.product.template.type == 'service':
                     continue
                 if child.type == 'product':
                     bom.inputs += (child_res,)
@@ -960,17 +968,13 @@ class Design(Workflow, ModelSQL, ModelView):
                         continue
                     if prop.type in ('product', 'match'):
                         if isinstance(v, BomInput):
-                            quote_quantity = Uom.compute_qty(quote.uom,
-                                quote.quantity, design.template.uom)
-                            quantity = v.quantity * quote_quantity
+                            quantity = v.quantity * quote.quantity
                             product = v.product
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
                             quantity = prop.evaluate(prop.quantity,
                                 design.as_dict()[parent])
-                            quote_quantity = Uom.compute_qty(quote.uom,
-                                quote.quantity, design.template.uom)
-                            quantity = quantity * quote_quantity
+                            quantity = quantity * quote.quantity
                             product = v
                     # if prop.type == 'operation':
                     #     quantity = prop.evaluate(prop.quantity,
