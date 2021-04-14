@@ -1,4 +1,4 @@
-<tree editable="1">
+<tree editable="top">
     <field name="name"/>
     <field name="type_"/>
     <field name="party"/>

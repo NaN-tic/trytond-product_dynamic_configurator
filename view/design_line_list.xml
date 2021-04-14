@@ -1,4 +1,4 @@
-<tree editable="1">
+<tree editable="top">
 <!--    <field name="design"/>-->
     <field name="category"/>
     <field name="property" expand="1"/>
