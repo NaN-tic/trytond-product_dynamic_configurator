@@ -7,24 +7,33 @@
     <field name="product_exists"/>
     <label name="design_date"/>
     <field name="design_date"/>
-    <label name="currency"/>
-    <field name="currency"/>
     <label name="quotation_uom"/>
     <field name="quotation_uom"/>
     <label name="product"/>
     <field name="product"/>
-    <group id="templates" colspan="2">
+    <label name="company"/>
+    <field name="company"/>
+    <label name="currency"/>
+    <field name="currency"/>
+    <group id="templates" colspan="4">
       <label name="template"/>
       <field name="template"/>
       <button name="update"/>
     </group>
-
     <newline/>
     <notebook colspan="6">
         <page name="attributes">
-            <field name="attributes" colspan="4" height="600"/>
+          <label name="process_by"/>
+          <field name="process_by"/>
+          <label name="process_date"/>
+          <field name="process_date"/>
+         <field name="attributes" colspan="4" height="600"/>
         </page>
         <page name="prices">
+            <label name="quoted_by"/>
+            <field name="quoted_by"/>
+            <label name="quotation_date"/>
+            <field name="quotation_date"/>
             <field name="suppliers" colspan="4"/>
             <field name="prices" colspan="4"/>
         </page>

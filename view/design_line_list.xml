@@ -6,7 +6,7 @@
     <field name="uom"/>
     <field name="unit_price"/>
     <field name="manual_unit_price"/>
-    <field name="margin"/>
+    <field name="margin" factor="100"/>
     <field name="amount"/>
     <field name="qty_ratio"/>
     <field name="debug_quantity"/>

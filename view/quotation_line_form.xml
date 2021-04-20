@@ -6,7 +6,12 @@
       <field name="material_cost_price"/>
       <label name="margin_material"/>
       <field name="margin_material"/>
-    </group>    
+    </group>
+    <group col="2" id="column2">
+      <label name="global_margin"/>
+      <field name="global_margin"/>
+
+    </group>
     <group col="2" id="column3">
       <label name="quantity"/>
       <group id="unit" col="2">

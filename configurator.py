@@ -5,6 +5,8 @@ from trytond.pyson import Eval, Not, If, Bool
 from trytond.pool import Pool, PoolMeta
 from trytond.config import config
 from trytond.transaction import Transaction
+from trytond.modules.company.model import (
+    employee_field, set_employee, reset_employee)
 from copy import copy
 import math
 
@@ -811,6 +813,16 @@ STATES = [('draft', 'draft'), ('done', 'Done'), ('cancel', 'Cancel')]
 class Design(Workflow, ModelSQL, ModelView):
     'Design'
     __name__ = 'configurator.design'
+
+    company = fields.Many2One('company.company', 'Company', required=True,
+        states={
+            'readonly': (Eval('state') != 'draft'),
+            },
+        domain=[
+            ('id', If(Eval('context', {}).contains('company'), '=', '!='),
+                Eval('context', {}).get('company', -1)),
+            ],
+        depends=['state'], select=True)
     code = fields.Char('Code', states=READONLY_STATE, depends=['state'])
     name = fields.Char('Name', states=READONLY_STATE, depends=['state'])
     party = fields.Many2One('party.party', 'Party', states=READONLY_STATE,
@@ -837,6 +849,10 @@ class Design(Workflow, ModelSQL, ModelView):
         required=True)
     product_exists = fields.Function(fields.Many2One('product.product',
         'Searched Product'), 'get_product_exist')
+    quotation_date = fields.Date('Quotation Date', readonly=True)
+    quoted_by = employee_field("Quoted By")
+    process_date = fields.Date('Quotation Date', readonly=True)
+    process_by = employee_field("Processed By")
 
     @classmethod
     def __setup__(cls):
@@ -872,6 +888,10 @@ class Design(Workflow, ModelSQL, ModelView):
             return company.currency.id
 
     @staticmethod
+    def default_company():
+        return Transaction().context.get('company')
+
+    @staticmethod
     def default_design_date():
         Date = Pool().get('ir.date')
         return Date.today()
@@ -886,9 +906,11 @@ class Design(Workflow, ModelSQL, ModelView):
             default = {}
         else:
             default = default.copy()
-        default.setdefault('quotations', None)
-        default.setdefault('lines', None)
-        default.setdefault('prices', None)
+        default.setdefault('process_by', None)
+        default.setdefault('process_date', None)
+        default.setdefault('quoted_by', None)
+        default.setdefault('quotion_date', None)
+        default.setdefault('objects', None)
         default.setdefault('product', None)
         return super(Design, cls).copy(designs, default=default)
 
@@ -963,18 +985,23 @@ class Design(Workflow, ModelSQL, ModelView):
     @ModelView.button
     def create_prices(cls, designs):
         pool = Pool()
+        User = pool.get('res.user')
         DesignLine = pool.get('configurator.design.line')
         remove_lines = []
         BomInput = pool.get('production.bom.input')
         Product = pool.get('product.product')
         Uom = pool.get('product.uom')
+        Date = Pool().get('ir.date')
         to_save = []
+
         for design in designs:
             prices = {}
             remove_lines = []
             for price in design.prices:
                 remove_lines += price.prices
 
+            design.quotation_date = Date.today()
+            design.quoted_by = User(Transaction().user).employee
             values = design.as_dict()
             res = design.template.create_prices(design, values)
 
@@ -1217,7 +1244,8 @@ class QuotationLine(ModelSQL, ModelView):
                 quote.quantity, unit_price_uom, round=True)*quote_quantity
 
             for line in quote.prices:
-                price = line.manual_unit_price or line.unit_price
+                price = (line.manual_unit_price or line.unit_price)*Decimal(
+                    1 + (line.margin or 0))
                 cost_price += (Decimal(line.quantity or 0)
                     * (price or 0))
                 cost_price_noman += Decimal(line.quantity) * line.unit_price
