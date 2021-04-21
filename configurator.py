@@ -1240,8 +1240,8 @@ class QuotationLine(ModelSQL, ModelView):
                 quote.quantity, quote.design.template.uom, round=False)
 
             unit_price_uom = quote.design.template.product_template.default_uom
-            quote_quantity = Uom.compute_qty(quote.design.quotation_uom,
-                quote.quantity, unit_price_uom, round=True)*quote_quantity
+            quote_quantity2 = Uom.compute_qty(quote.design.template.uom,
+                quote_quantity, unit_price_uom, round=True)
 
             for line in quote.prices:
                 price = (line.manual_unit_price or line.unit_price)*Decimal(
@@ -1257,7 +1257,7 @@ class QuotationLine(ModelSQL, ModelView):
                 * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
                 )).quantize(quantize)
 
-            unit_price = Decimal(float(list_price) / quote_quantity
+            unit_price = Decimal(float(list_price) / quote_quantity2
                 ).quantize(quantize)
 
             res['list_price'][quote.id] = Decimal(quote_quantity) * (
