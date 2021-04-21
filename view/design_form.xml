@@ -7,8 +7,7 @@
     <field name="product_exists"/>
     <label name="design_date"/>
     <field name="design_date"/>
-    <label name="quotation_uom"/>
-    <field name="quotation_uom"/>
+
     <label name="product"/>
     <field name="product"/>
     <label name="company"/>
@@ -30,6 +29,8 @@
          <field name="attributes" colspan="4" height="600"/>
         </page>
         <page name="prices">
+           <label name="quotation_uom"/>
+           <field name="quotation_uom"/>
             <label name="quoted_by"/>
             <field name="quoted_by"/>
             <label name="quotation_date"/>

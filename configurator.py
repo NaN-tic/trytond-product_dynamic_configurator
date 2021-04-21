@@ -846,13 +846,25 @@ class Design(Workflow, ModelSQL, ModelView):
     suppliers = fields.One2Many('configurator.quotation.supplier', 'design',
         'Suppliers')
     quotation_uom = fields.Many2One('product.uom', 'Quotation Uom',
-        required=True)
+        states={
+            'readonly': Bool(Eval('prices', [0])),
+            'required': True,
+        },
+        domain=[
+            If(Bool(Eval('product_uom_category')),
+                ('category', '=', Eval('product_uom_category')),
+                ('category', '!=', -1)),
+            ],
+        depends=['prices', 'product_uom_category', 'state'])
     product_exists = fields.Function(fields.Many2One('product.product',
         'Searched Product'), 'get_product_exist')
     quotation_date = fields.Date('Quotation Date', readonly=True)
     quoted_by = employee_field("Quoted By")
     process_date = fields.Date('Quotation Date', readonly=True)
     process_by = employee_field("Processed By")
+    product_uom_category = fields.Function(
+        fields.Many2One('product.uom.category', 'Product Uom Category'),
+        'on_change_with_product_uom_category')
 
     @classmethod
     def __setup__(cls):
@@ -899,6 +911,11 @@ class Design(Workflow, ModelSQL, ModelView):
     @staticmethod
     def default_state():
         return 'draft'
+
+    @fields.depends('template')
+    def on_change_with_product_uom_category(self, name=None):
+        if self.template:
+            return self.template.product_template.default_uom_category.id
 
     @classmethod
     def copy(cls, designs, default=None):
