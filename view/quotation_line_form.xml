@@ -9,7 +9,7 @@
     </group>
     <group col="2" id="column2">
       <label name="global_margin"/>
-      <field name="global_margin"/>
+      <field name="global_margin" factor="100"/>
 
     </group>
     <group col="2" id="column3">
