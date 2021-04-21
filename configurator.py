@@ -825,6 +825,16 @@ class Design(Workflow, ModelSQL, ModelView):
         depends=['state'], select=True)
     code = fields.Char('Code', states=READONLY_STATE, depends=['state'])
     name = fields.Char('Name', states=READONLY_STATE, depends=['state'])
+    manual_code = fields.Char('Manual Code',
+        states={
+            'readonly': ~Eval('attributes', [0]) & READONLY_STATE,
+        },
+        depends=['state', 'attributes'])
+    manual_name = fields.Char('Manual Name',
+        states={
+            'readonly': ~Eval('attributes', [0]) & READONLY_STATE,
+        },
+        depends=['state', 'attributes'])
     party = fields.Many2One('party.party', 'Party', states=READONLY_STATE,
         depends=['state'])
     template = fields.Many2One('configurator.property', 'Template',
@@ -911,6 +921,24 @@ class Design(Workflow, ModelSQL, ModelView):
     @staticmethod
     def default_state():
         return 'draft'
+
+    @fields.depends('template', 'code', 'product_exists', methods=[
+        'design_full_dict', 'get_product_exist'])
+    def on_change_manual_code(self):
+        if not self.template:
+            return
+        custom_locals = self.design_full_dict()
+        self.code = self.template.render_expression_record(
+            self.template.code_template or '', custom_locals)
+        self.product_exists = self.get_product_exist()
+
+    @fields.depends('template', 'name', methods=['design_full_dict'])
+    def on_change_manual_name(self):
+        if not self.template:
+            return
+        custom_locals = self.design_full_dict()
+        self.name = self.template.render_expression_record(
+            self.template.name_template or '', custom_locals)
 
     @fields.depends('template')
     def on_change_with_product_uom_category(self, name=None):
