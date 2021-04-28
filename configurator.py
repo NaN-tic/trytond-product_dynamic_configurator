@@ -162,10 +162,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         states={
             'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
         })
-    name_template = fields.Text('Code Template',
+    name_template = fields.Text('Name Template',
         states={
             'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
-        })
+        }, translate=True)
 
     @staticmethod
     def default_sequence():
@@ -824,7 +824,8 @@ class Design(Workflow, ModelSQL, ModelView):
             ],
         depends=['state'], select=True)
     code = fields.Char('Code', states=READONLY_STATE, depends=['state'])
-    name = fields.Char('Name', states=READONLY_STATE, depends=['state'])
+    name = fields.Char('Name', states=READONLY_STATE, depends=['state'],
+        translate=True)
     manual_code = fields.Char('Manual Code',
         states={
             'readonly': ~Eval('attributes', [0]) & READONLY_STATE,
@@ -834,7 +835,7 @@ class Design(Workflow, ModelSQL, ModelView):
         states={
             'readonly': ~Eval('attributes', [0]) & READONLY_STATE,
         },
-        depends=['state', 'attributes'])
+        depends=['state', 'attributes'], translate=True)
     party = fields.Many2One('party.party', 'Party', states=READONLY_STATE,
         depends=['state'])
     template = fields.Many2One('configurator.property', 'Template',
@@ -1032,6 +1033,8 @@ class Design(Workflow, ModelSQL, ModelView):
         pool = Pool()
         User = pool.get('res.user')
         DesignLine = pool.get('configurator.design.line')
+        Design = pool.get('configurator.design')
+        Lang = pool.get('ir.lang')
         remove_lines = []
         BomInput = pool.get('production.bom.input')
         Product = pool.get('product.product')
@@ -1112,12 +1115,22 @@ class Design(Workflow, ModelSQL, ModelView):
                         dl.debug_quantity = quantity
                         dl.unit_price = cost_price
 
-            custom_locals = design.design_full_dict()
-            design.code = design.template.render_expression_record(
-                design.template.code_template or '', custom_locals)
-            design.name = design.template.render_expression_record(
-                design.template.name_template or '', custom_locals)
-            design.save()
+            langs = Lang.search([('active', '=', True),
+                ('translatable', '=', True)])
+
+            for lang in langs:
+                with Transaction().set_context(language=lang.code):
+                    design = Design(design.id)
+                    custom_locals = design.design_full_dict()
+                    #for a, b in custom_locals.items():
+                        # if a == 'PR_CO_1A':
+                        #     print(b.option.product.description)
+                    design.code = design.template.render_expression_record(
+                        design.template.code_template or '', custom_locals)
+                    design.name = design.template.render_expression_record(
+                        design.template.name_template or '', custom_locals)
+                    #print(lang.code, design.name)
+                    design.save()
             to_save = prices.values()
             DesignLine.save(to_save)
         DesignLine.delete(remove_lines)
