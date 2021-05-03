@@ -30,14 +30,14 @@
     <field name="quotation_category"/>
     <newline/>
     <label name="quantity"/>
-    <field name="quantity"/>
+    <field name="quantity" colspan="3"/>
     <label name="uom"/>
     <field name="uom"/>
     <newline/>
     <label name="product_template"/>
     <field name="product_template"/>
     <label name="object_expression"/>
-    <field name="object_expression"/>
+    <field name="object_expression" colspan="3"/>
     <newline/>
     <label name="attribute_set"/>
     <field name="attribute_set"/>

@@ -94,7 +94,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         })
     parent = fields.Many2One('configurator.property', 'Parent', select=True,
         ondelete='CASCADE')
-    quantity = fields.Text('Quantity', states={
+    quantity = fields.Char('Quantity', states={
         'invisible': Not(Eval('type').in_(['purchase_product',
             'bom', 'product', 'function', 'match'])),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
@@ -105,7 +105,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             'invisible': Eval('type').in_(['function', 'text', 'number',
                 'attribute', 'group']),
         },)
-    object_expression = fields.Text('Object Expression',
+    object_expression = fields.Char('Object Expression',
         states={
             'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
         }
@@ -353,7 +353,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 ('attributes.attribute.id', '=', attribute.id),
                 ('attributes.value_%s' % type_, op, value),
                 ]
-
         domain += self.get_match_domain(design)
         products = Product.search(domain)
         if not products:
@@ -1119,18 +1118,8 @@ class Design(Workflow, ModelSQL, ModelView):
                 ('translatable', '=', True)])
 
             for lang in langs:
-                with Transaction().set_context(language=lang.code):
-                    design = Design(design.id)
-                    custom_locals = design.design_full_dict()
-                    #for a, b in custom_locals.items():
-                        # if a == 'PR_CO_1A':
-                        #     print(b.option.product.description)
-                    design.code = design.template.render_expression_record(
-                        design.template.code_template or '', custom_locals)
-                    design.name = design.template.render_expression_record(
-                        design.template.name_template or '', custom_locals)
-                    #print(lang.code, design.name)
-                    design.save()
+                design.render_fields(lang)
+
             to_save = prices.values()
             DesignLine.save(to_save)
         DesignLine.delete(remove_lines)
@@ -1151,6 +1140,42 @@ class Design(Workflow, ModelSQL, ModelView):
             for prop, attr in attributes.items():
                 custom_locals[prop.get_full_code()] = attr
         return custom_locals
+
+    def get_design_render_fields(self):
+        return [('name_template', 'name'), ('code_template', 'code')]
+
+    def get_product_render_fields(self):
+        return []
+
+    def render_fields(self, lang):
+        pool = Pool()
+        Design = pool.get('configurator.design')
+
+        design_fields = self.get_design_render_fields()
+        product_fields = self.get_product_render_fields()
+
+        with Transaction().set_context(language=lang.code):
+            design = Design(self.id)
+            product = design.product
+            custom_locals = design.design_full_dict()
+            ptemplate = design.template
+
+            for tmpl_field, field in design_fields:
+                f = getattr(ptemplate, tmpl_field)
+                val = ptemplate.render_expression_record(f, custom_locals)
+                val = val.replace('\n', '').replace('\t', '')
+            design.save()
+
+            if not design.product:
+                return
+
+            product.template.name = design.name
+            product.code = design.code
+            for tmpl_field, field in product_fields:
+                f = getattr(ptemplate, tmpl_field)
+                val = ptemplate.render_expression_record(f, custom_locals)
+                setattr(product, field, val)
+            product.save()
 
     @classmethod
     @ModelView.button
@@ -1182,6 +1207,21 @@ class Design(Workflow, ModelSQL, ModelView):
                     obj.save()
                     ref = design.create_object(obj)
                     ref.save()
+
+                product = design.product
+                if not hasattr(product, 'product_customer'):
+                    continue
+
+                ProductCustomer = Pool().get('sale.product_customer')
+                product_customer = ProductCustomer()
+                product_customer.template = product.template
+                product_customer.product = product
+                product.party = design.party
+                product.name = design.name
+                product.code = design.code
+                if hasattr(product_customer, 'product_customer_only'):
+                    product_customer.product_customer_only = True
+                product_customer.save()
 
         CreatedObject.delete(to_delete)
 
@@ -1312,7 +1352,7 @@ class QuotationLine(ModelSQL, ModelView):
                     and line.property.quotation_category.type_ == 'goods'
                     and line.quantity or 0) * price
             list_price = (list_price
-                * Decimal(1 + ((quote.global_margin or 0) / 100) or 0
+                * Decimal(1 + ((quote.global_margin or 0)) or 0
                 )).quantize(quantize)
 
             unit_price = Decimal(float(list_price) / quote_quantity2
