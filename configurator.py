@@ -1175,6 +1175,8 @@ class Design(Workflow, ModelSQL, ModelView):
             product.code = design.code
             for tmpl_field, field in product_fields:
                 f = getattr(ptemplate, tmpl_field)
+                if not f:
+                    continue
                 val = ptemplate.render_expression_record(f, custom_locals)
                 setattr(product, field, val)
             product.save()
