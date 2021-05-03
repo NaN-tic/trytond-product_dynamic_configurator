@@ -1159,11 +1159,11 @@ class Design(Workflow, ModelSQL, ModelView):
             product = design.product
             custom_locals = design.design_full_dict()
             ptemplate = design.template
-
             for tmpl_field, field in design_fields:
                 f = getattr(ptemplate, tmpl_field)
                 val = ptemplate.render_expression_record(f, custom_locals)
                 val = val.replace('\n', '').replace('\t', '')
+                setattr(design, field, val)
             design.save()
 
             if not design.product:
