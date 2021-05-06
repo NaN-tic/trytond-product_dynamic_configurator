@@ -951,6 +951,7 @@ class Design(Workflow, ModelSQL, ModelView):
             default = {}
         else:
             default = default.copy()
+        default.setdefault('design_date', None)
         default.setdefault('process_by', None)
         default.setdefault('process_date', None)
         default.setdefault('quoted_by', None)
@@ -1032,7 +1033,6 @@ class Design(Workflow, ModelSQL, ModelView):
         pool = Pool()
         User = pool.get('res.user')
         DesignLine = pool.get('configurator.design.line')
-        Design = pool.get('configurator.design')
         Lang = pool.get('ir.lang')
         remove_lines = []
         BomInput = pool.get('production.bom.input')
@@ -1171,21 +1171,24 @@ class Design(Workflow, ModelSQL, ModelView):
             if not design.product:
                 return
 
-            product.template.name = design.name
-            product.code = design.code
+            template = product.template
+            template.name = design.name or template.name
             for tmpl_field, field in product_fields:
                 f = getattr(ptemplate, tmpl_field)
                 if not f:
                     continue
                 val = ptemplate.render_expression_record(f, custom_locals)
-                setattr(product, field, val)
-            product.save()
+                setattr(template, field, val)
+            template.save()
 
     @classmethod
     @ModelView.button
     @Workflow.transition('done')
     def process(cls, designs):
-        CreatedObject = Pool().get('configurator.object')
+        pool = Pool()
+        CreatedObject = pool.get('configurator.object')
+        Lang = pool.get('ir.lang')
+
         to_delete = []
         for design in designs:
             to_delete += [x for x in design.objects]
@@ -1212,20 +1215,27 @@ class Design(Workflow, ModelSQL, ModelView):
                     ref = design.create_object(obj)
                     ref.save()
 
-                product = design.product
-                if not hasattr(product, 'product_customer'):
-                    continue
+            product = design.product
+            template = product.template
+            template.code = design.code
+            template.product_customer_only = True
+            template.save()
 
-                ProductCustomer = Pool().get('sale.product_customer')
+            if (product.product_customers and
+                    design.party not in product.product_customers):
+                ProductCustomer = pool.get('sale.product_customer')
                 product_customer = ProductCustomer()
-                product_customer.template = product.template
                 product_customer.product = product
-                product.party = design.party
-                product.name = design.name
-                product.code = design.code
-                if hasattr(product_customer, 'product_customer_only'):
-                    product_customer.product_customer_only = True
+                product_customer.on_change_product()
+                product_customer.party = design.party
+                product_customer.name = design.name
+                product_customer.code = design.code
                 product_customer.save()
+
+            langs = Lang.search([('active', '=', True),
+                ('translatable', '=', True)])
+            for lang in langs:
+                design.render_fields(lang)
 
         CreatedObject.delete(to_delete)
 
