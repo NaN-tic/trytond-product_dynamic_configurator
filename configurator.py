@@ -1221,16 +1221,14 @@ class Design(Workflow, ModelSQL, ModelView):
             template.product_customer_only = True
             template.save()
 
-            if (product.product_customers and
-                    design.party not in product.product_customers):
-                ProductCustomer = pool.get('sale.product_customer')
-                product_customer = ProductCustomer()
-                product_customer.product = product
-                product_customer.on_change_product()
-                product_customer.party = design.party
-                product_customer.name = design.name
-                product_customer.code = design.code
-                product_customer.save()
+            ProductCustomer = pool.get('sale.product_customer')
+            product_customer = ProductCustomer()
+            product_customer.product = product
+            product_customer.on_change_product()
+            product_customer.party = design.party
+            product_customer.name = design.name
+            product_customer.code = design.code
+            product_customer.save()
 
             langs = Lang.search([('active', '=', True),
                 ('translatable', '=', True)])
