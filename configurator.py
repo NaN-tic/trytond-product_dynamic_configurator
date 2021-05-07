@@ -839,7 +839,9 @@ class Design(Workflow, ModelSQL, ModelView):
         depends=['state'])
     template = fields.Many2One('configurator.property', 'Template',
         domain=[('template', '=', True)],
-        states=READONLY_STATE, depends=['state', 'template'])
+        states={
+            'readonly': Eval('attributes', [0]) | (Eval('state') != 'draft'),
+        }, depends=['state', 'template', 'attributes'])
     design_date = fields.Date('Design Date', states=READONLY_STATE,
         depends=['state'])
     currency = fields.Many2One('currency.currency', 'Currency',
@@ -1122,6 +1124,7 @@ class Design(Workflow, ModelSQL, ModelView):
 
             to_save = prices.values()
             DesignLine.save(to_save)
+            design.save()
         DesignLine.delete(remove_lines)
 
     def design_full_dict(self):
