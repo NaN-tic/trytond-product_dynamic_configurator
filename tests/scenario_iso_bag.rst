@@ -49,6 +49,7 @@ Company::
     >>> tax_identifier.type = 'eu_vat'
     >>> tax_identifier.code = 'BE0897290877'
     >>> company.party.save()
+    >>> party = company.party
 
 
 Create Attribute Sets::
@@ -586,6 +587,7 @@ Create Design::
     >>> Attribute = Model.get('configurator.design.attribute')
     >>> design = Design(name='Bossa isotermica', code = 'isotermica', template=bag,
     ...    currency=euro, quotation_uom=unit)
+    >>> design.party = party
     >>> design.save()
     >>> design.click('update')
 

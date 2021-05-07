@@ -1362,7 +1362,8 @@ class QuotationLine(ModelSQL, ModelView):
                 list_price += line.amount
                 material_cost_price += Decimal(line.property.quotation_category
                     and line.property.quotation_category.type_ == 'goods'
-                    and line.quantity or 0) * price
+                    and line.quantity or 0) * (line.manual_unit_price or
+                        line.unit_price)
             list_price = (list_price
                 * Decimal(1 + ((quote.global_margin or 0)) or 0
                 )).quantize(quantize)
