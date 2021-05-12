@@ -1421,7 +1421,7 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
             return _ZERO
         price = self.manual_unit_price or self.unit_price
         return Decimal(str(self.quantity)) * price * Decimal(
-            self.margin and 1 + self.margin / 100.0 or 1)
+            self.margin and 1 + self.margin or 1)
 
     @fields.depends('debug_quantity', 'unit_price', 'manual_unit_price')
     def on_change_with_debug_amount(self, name=None):
@@ -1430,7 +1430,7 @@ class DesignLine(sequence_ordered(), ModelSQL, ModelView):
             return _ZERO
         price = self.manual_unit_price or self.unit_price
         return Decimal(str(self.debug_quantity)) * price * Decimal(
-            self.margin and 1 + self.margin / 100.0 or 1)
+            self.margin and 1 + self.margin or 1)
 
     def get_currency(self, name=None):
         return self.quotation.design.currency
