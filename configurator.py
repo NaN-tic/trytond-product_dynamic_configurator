@@ -1259,6 +1259,7 @@ class QuotationLine(ModelSQL, ModelView):
         ondelete='CASCADE')
     quantity = fields.Float('Quantity', digits=(16, 4),
         states={
+            'required': True,
             'readonly': Bool(Eval('unit_price'))
         }, depends=['unit_price'])
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
@@ -1351,7 +1352,6 @@ class QuotationLine(ModelSQL, ModelView):
             material_cost_price = 0
             quote_quantity = Uom.compute_qty(quote.design.quotation_uom,
                 quote.quantity, quote.design.template.uom, round=False)
-
             unit_price_uom = quote.design.template.product_template.default_uom
             quote_quantity2 = Uom.compute_qty(quote.design.template.uom,
                 quote_quantity, unit_price_uom, round=True)
