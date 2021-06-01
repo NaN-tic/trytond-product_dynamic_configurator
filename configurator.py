@@ -187,7 +187,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if self.code:
             res = '%s' % self.code
         if self.code and parent and parent.parent:
-            res = '%s_%s ' % (parent.code, self.code)
+            res = '%s_%s' % (parent.code, self.code)
         return res
 
     def render_expression_record(self, expression, record):
@@ -486,7 +486,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
-        product.list_price = 0
         product.code = design.code
         if not hasattr(product, 'attributes'):
             product.attributes = tuple()
@@ -550,6 +549,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product_supplier.prices = ()
         design_qty = self.evaluate(design.template.quantity, values)
         for quote in design.prices:
+            if hasattr(quote, 'state') and quote.state != 'confirmed':
+                continue
             cost_price = 0
             qty = Uom.compute_qty(design.template.uom, design_qty,
                 design.quotation_uom)
@@ -573,6 +574,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 cost_price += quote.get_unit_price(product,
                     quantity, prop.uom, supplier)
             if cost_price:
+                product.cost_price = cost_price
                 price = Price()
                 price.quantity = ((quote.quantity / qty) * bom_input.quantity)
                 price.unit_price = cost_price
@@ -690,6 +692,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product.default_uom = self.uom
         product.list_price = 0
         product.code = self.code + "(" + design.code + ")"
+
         if not hasattr(template, 'attributes'):
             template.attributes = tuple()
         for prop, child_res in created_obj.items():
@@ -1134,7 +1137,6 @@ class Design(Workflow, ModelSQL, ModelView):
         Property = Pool().get('configurator.property')
         properties = Property.search([
             ('parent', 'child_of', [self.template.id])])
-
         custom_locals['design'] = self
         for property in properties:
             custom_locals[property.get_full_code()] = property
