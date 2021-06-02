@@ -648,7 +648,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         bom.outputs = ()
         operations_route = ()
         for child, child_res in created_obj.items():
-            if child.parent != self:
+            parent = child.get_parent()
+            if parent != self and child.parent:
                 continue
             child_res, _ = child_res
             if isinstance(child_res, BomInput):
@@ -656,7 +657,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 # then we need to avoid on bom.
                 if child_res.product.template.type == 'service':
                     continue
-                if child.type == 'product':
+                if child_res in bom.inputs:
+                    continue
+                if (child.type == 'product' and child.parent and
+                        child.parent.type != 'options'):
                     bom.inputs += (child_res,)
                 elif child.type == 'purchase_product':
                     bom.inputs += (child_res,)
@@ -1091,7 +1095,7 @@ class Design(Workflow, ModelSQL, ModelView):
                     if not dl:
                         supplier = None
                         if prop.quotation_category:
-                            supplier = suppliers[prop.quotation_category]
+                            supplier = suppliers.get(prop.quotation_category)
                         parent = prop.get_parent()
                         qty_ratio = prop.get_ratio_for_prices(
                             values.get(parent, {}), 1)
