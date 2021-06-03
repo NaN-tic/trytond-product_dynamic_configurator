@@ -698,4 +698,4 @@ Fill Quotation::
   1
   >>> bom, = design.product.boms
   >>> len(bom.bom.inputs)
-  6
+  3
