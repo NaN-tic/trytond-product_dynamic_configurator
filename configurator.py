@@ -64,7 +64,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     __name__ = 'configurator.property'
     # Code may not contain spaces or special characters (usable in formulas)
     code = fields.Char('Code', required=True)
-    name = fields.Char('Name', required=True)
+    name = fields.Char('Name', required=True, translate=True)
     type = fields.Selection(TYPE, 'Type', required=True)
     user_input = fields.Boolean('User Input',
         states={
@@ -192,7 +192,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     def render_expression_record(self, expression, record):
         template = Jinja2Template(expression)
-        return template.render(record)
+        res = template.render(record)
+        if res:
+            res = res.replace('\t', '').replace('\n', '')
+        return res
 
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
         'price_category', 'object_expression', 'attribute_set',
@@ -479,6 +482,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         if not self.product_template:
             return
+
+        custom_locals = design.design_full_dict()
         template = self.get_product_template_object_copy(self.product_template)
         template.name = self.name + "(" + design.name + ")"
         template.list_price = 0
@@ -486,7 +491,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
-        product.code = design.code
+        product.code = design.render_field(self, 'code_template',
+            custom_locals)
+        if not product.code:
+            product.code = "purchase (%s)" % (design.code or str(design.id))
         if not hasattr(product, 'attributes'):
             product.attributes = tuple()
         for prop, child_res in created_obj.items():
@@ -519,7 +527,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             template._update_attributes_values()
         template.products = None
 
-        exists_product = Product.search([('code', '=', product.code)])
+        exists_product = Product.search([('code', '=', product.code),
+            ('default_uom', '=', self.uom.id)])
         if exists_product:
             product = exists_product[0]
 
@@ -642,7 +651,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         res_obj = []
         bom = Bom()
-        bom.name = self.name + " ( " + design.code + " ) "
+        bom.name = "%s (%s)" % (self.name, (design.code or str(design.id)))
         bom.active = True
         bom.inputs = ()
         bom.outputs = ()
@@ -689,13 +698,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
-        template.name = self.name + "(" + design.code + ")"
+        template.name = "%s (%s)" % (self.name, (design.code or str(design.id)))
         product = self.get_product_product_object_copy(
             self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
-        product.code = self.code + "(" + design.code + ")"
+        product.code = "%s (%s)" % (self.code, design.code or str(design.id))
 
         if not hasattr(template, 'attributes'):
             template.attributes = tuple()
@@ -739,6 +748,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         exists_bom = Bom.search([('name', '=', bom.name)])
         if exists_bom:
             return {self: (exists_bom[0], res_obj)}
+
         return {self: (bom, res_obj)}
 
     def get_ratio_for_prices(self, values, ratio):
@@ -1036,6 +1046,10 @@ class Design(Workflow, ModelSQL, ModelView):
 
         cls.save(designs)
 
+
+    def custom_operations(self, res):
+        pass
+
     @classmethod
     @ModelView.button
     def create_prices(cls, designs):
@@ -1060,7 +1074,7 @@ class Design(Workflow, ModelSQL, ModelView):
             design.quoted_by = User(Transaction().user).employee
             values = design.as_dict()
             res = design.template.create_prices(design, values)
-
+            design.custom_operations(res)
             suppliers = dict((x.category, x.supplier)
                 for x in design.suppliers)
             for quote in design.prices:
@@ -1127,10 +1141,13 @@ class Design(Workflow, ModelSQL, ModelView):
                 ('translatable', '=', True)])
 
             for lang in langs:
-                design.render_fields(lang)
+                design.render_design_fields(lang)
 
             to_save = prices.values()
             DesignLine.save(to_save)
+            custom_locals = design.design_full_dict()
+            design.code = design.render_field(design.template, 'code_template',
+                custom_locals)
             design.save()
         DesignLine.delete(remove_lines)
 
@@ -1151,21 +1168,15 @@ class Design(Workflow, ModelSQL, ModelView):
         return custom_locals
 
     def get_design_render_fields(self):
-        return [('name_template', 'name'), ('code_template', 'code')]
+        return [('name_template', 'name')]
 
-    def get_product_render_fields(self):
-        return []
-
-    def render_fields(self, lang):
+    def render_design_fields(self, lang):
         pool = Pool()
         Design = pool.get('configurator.design')
-
         design_fields = self.get_design_render_fields()
-        product_fields = self.get_product_render_fields()
 
         with Transaction().set_context(language=lang.code):
             design = Design(self.id)
-            product = design.product
             custom_locals = design.design_full_dict()
             ptemplate = design.template
             for tmpl_field, field in design_fields:
@@ -1177,18 +1188,32 @@ class Design(Workflow, ModelSQL, ModelView):
                 setattr(design, field, val)
             design.save()
 
-            if not design.product:
-                return
+    def render_product_fields(self, lang, product, pproperty=None):
+        pool = Pool()
+        Design = pool.get('configurator.design')
+        Product = pool.get('product.product')
+        product_fields = self.get_product_render_fields()
 
+        with Transaction().set_context(language=lang.code):
+            design = Design(self.id)
+            product = Product(product.id)
+            custom_locals = design.design_full_dict()
             template = product.template
-            template.name = design.name or template.name
+            property = pproperty or design.template
             for tmpl_field, field in product_fields:
-                f = getattr(ptemplate, tmpl_field)
-                if not f:
-                    continue
-                val = ptemplate.render_expression_record(f, custom_locals)
-                setattr(template, field, val)
+                val = self.render_field(property, tmpl_field, custom_locals)
+                if val:
+                    setattr(template, field, val)
             template.save()
+
+    def render_field(self, property, field, custom_locals):
+        f = getattr(property, field)
+        if not f:
+            return
+        return property.render_expression_record(f, custom_locals)
+
+    def get_product_render_fields(self):
+        return [('name_template', 'name')]
 
     @classmethod
     @ModelView.button
@@ -1197,15 +1222,16 @@ class Design(Workflow, ModelSQL, ModelView):
         pool = Pool()
         CreatedObject = pool.get('configurator.object')
         Lang = pool.get('ir.lang')
-
+        langs = Lang.search([('active', '=', True),
+            ('translatable', '=', True)])
         to_delete = []
         for design in designs:
+            custom_locals = design.design_full_dict()
             to_delete += [x for x in design.objects]
             res = design.template.create_prices(design, design.as_dict())
             for prop, objs in res.items():
                 obj, additional = objs
                 if prop.type == 'bom':
-                    # TODO: update list price of product.
                     obj.save()
                     ref = design.create_object(obj)
                     ref.save()
@@ -1215,9 +1241,19 @@ class Design(Workflow, ModelSQL, ModelView):
                     for output_ in obj.outputs:
                         ref = design.create_object(output_)
                         ref.save()
+                        product = output_.product
                         if prop.parent is None:
-                            design.product = output_.product
+                            design.product = product
                             design.save()
+                        for lang in langs:
+                            design.render_product_fields(lang, product, prop)
+                if prop.type == 'purchase_product':
+                    product = obj.product
+                    product.code = design.render_field(prop, 'code_template',
+                        custom_locals)
+                    product.save()
+                    for lang in langs:
+                        design.render_product_fields(lang, product, prop)
 
                 for obj in additional:
                     obj.save()
@@ -1238,11 +1274,6 @@ class Design(Workflow, ModelSQL, ModelView):
             product_customer.name = design.name
             product_customer.code = design.code
             product_customer.save()
-
-            langs = Lang.search([('active', '=', True),
-                ('translatable', '=', True)])
-            for lang in langs:
-                design.render_fields(lang)
 
         CreatedObject.delete(to_delete)
 
