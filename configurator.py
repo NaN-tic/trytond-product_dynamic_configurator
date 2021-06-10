@@ -18,6 +18,7 @@ except ImportError:
 
 price_digits = (16, config.getint('product', 'price_decimal', default=4))
 _ZERO = Decimal(0)
+_ROUND = Decimal('.0001')
 
 TYPE = [
     (None, ''),
@@ -558,7 +559,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product_supplier.prices = ()
         design_qty = self.evaluate(design.template.quantity, values)
 
-        # TODO: estic posant el preu per kg hi ha de ser el preu per km esta canviat.
         for quote in design.prices:
             if hasattr(quote, 'state') and quote.state != 'confirmed':
                 continue
@@ -585,12 +585,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 cost_price += quote.get_unit_price(product,
                     quantity, prop.uom, supplier)
             if cost_price:
+                cost_price = (cost_price * Decimal(str(template.info_ratio)) if
+                    template.info_ratio else cost_price).quantize(_ROUND)
                 product.cost_price = cost_price
                 price = Price()
                 price.quantity = ((quote.quantity / qty) * bom_input.quantity)
                 price.unit_price = cost_price
                 product_supplier.prices += (price,)
-
         template.product_suppliers = [product_supplier]
         return {self: (bom_input, [])}
 
