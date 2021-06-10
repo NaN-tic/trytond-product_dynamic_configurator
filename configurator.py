@@ -557,6 +557,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product_supplier.on_change_party()
         product_supplier.prices = ()
         design_qty = self.evaluate(design.template.quantity, values)
+
+        # TODO: estic posant el preu per kg hi ha de ser el preu per km esta canviat.
         for quote in design.prices:
             if hasattr(quote, 'state') and quote.state != 'confirmed':
                 continue
@@ -1154,17 +1156,33 @@ class Design(Workflow, ModelSQL, ModelView):
     def design_full_dict(self):
         record = self.as_dict()
         custom_locals = {}
-
+        all = {}
         Property = Pool().get('configurator.property')
         properties = Property.search([
             ('parent', 'child_of', [self.template.id])])
         custom_locals['design'] = self
         for property in properties:
             custom_locals[property.get_full_code()] = property
+            parent = property.get_parent()
+            if parent:
+                if parent.code not in all:
+                    all[parent.code] = {}
+                all[parent.code][property.code] = property
+            else:
+                all[property.code] = property
 
         for parent_prop, attributes in record.items():
             for prop, attr in attributes.items():
                 custom_locals[prop.get_full_code()] = attr
+                parent = prop.get_parent()
+                if parent:
+                    if parent.code not in all:
+                        all[parent.code] = {}
+                    all[parent.code][prop.code] = attr
+                else:
+                    all[prop.code] = attr
+
+        custom_locals['tree'] = all
         return custom_locals
 
     def get_design_render_fields(self):
