@@ -528,10 +528,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             template._update_attributes_values()
         template.products = None
 
-        exists_product = Product.search([('code', '=', product.code),
-            ('default_uom', '=', self.uom.id)])
-        if exists_product:
-            product = exists_product[0]
+        # exists_product = Product.search([('code', '=', product.code),
+        #     ('default_uom', '=', self.uom.id)])
+        # if exists_product:
+        #     product = exists_product[0]
 
         bom_input = BomInput()
         bom_input.product = product
@@ -731,9 +731,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     product.attributes += (attr,)
 
         template._update_attributes_values()
-        exists_product = Product.search([('code', '=', product.code)])
-        if exists_product:
-            product = exists_product[0]
+        # exists_product = Product.search([('code', '=', product.code)])
+        # if exists_product:
+        #     product = exists_product[0]
         output = BomOutput()
         output.bom = bom
         output.product = product
@@ -748,9 +748,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if route:
             product_bom.route = route
         res_obj.append(product_bom)
-        exists_bom = Bom.search([('name', '=', bom.name)])
-        if exists_bom:
-            return {self: (exists_bom[0], res_obj)}
+        # exists_bom = Bom.search([('name', '=', bom.name)])
+        # if exists_bom:
+        #     return {self: (exists_bom[0], res_obj)}
 
         return {self: (bom, res_obj)}
 
