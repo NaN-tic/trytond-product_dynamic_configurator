@@ -11,5 +11,4 @@
     <field name="qty_ratio"/>
     <field name="debug_quantity"/>
     <field name="debug_amount"/>
-
 </tree>

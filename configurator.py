@@ -1109,6 +1109,8 @@ class Design(Workflow, ModelSQL, ModelView):
                     #     quantity = v.compute_time(quantity, v.time_uom)
                     #     cost_price = prop.work_center_category.cost_price
                     dl = prices.get(key)
+                    if quantity == 0:
+                        continue
                     if not dl:
                         supplier = None
                         if prop.quotation_category:
