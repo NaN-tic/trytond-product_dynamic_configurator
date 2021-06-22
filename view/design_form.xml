@@ -11,13 +11,14 @@
     <field name="manual_code"/>
     <label name="product"/>
     <field name="product"/>
-
     <label name="design_date"/>
     <field name="design_date"/>
     <label name="company"/>
     <field name="company"/>
     <label name="currency"/>
     <field name="currency"/>
+    <label name="quotation_uom"/>
+    <field name="quotation_uom"/>
     <group id="templates" colspan="4">
       <label name="template"/>
       <field name="template"/>
@@ -33,8 +34,6 @@
          <field name="attributes" colspan="4" height="600"/>
         </page>
         <page name="prices">
-           <label name="quotation_uom"/>
-           <field name="quotation_uom"/>
             <label name="quoted_by"/>
             <field name="quoted_by"/>
             <label name="quotation_date"/>
