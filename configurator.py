@@ -967,6 +967,12 @@ class Design(Workflow, ModelSQL, ModelView):
         if self.template:
             return self.template.product_template.default_uom_category.id
 
+    @fields.depends('template')
+    def on_change_template(self):
+        if not self.template:
+            return
+        self.quotation_uom = self.template.product_template.purchase_uom.id
+
     @classmethod
     def copy(cls, designs, default=None):
         if default is None:
