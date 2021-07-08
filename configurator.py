@@ -1100,7 +1100,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         continue
                     if prop.type in ('product', 'match'):
                         if isinstance(v, BomInput):
-                            quantity = v.quantity * quote_quantity
+                            quantity = (v.quantity or 0) * quote_quantity
                             product = v.product
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
@@ -1435,8 +1435,10 @@ class QuotationLine(ModelSQL, ModelView):
                 * Decimal(1 + ((quote.global_margin or 0)) or 0
                 )).quantize(quantize)
 
-            unit_price = Decimal(float(list_price) / quote_quantity2
-                ).quantize(quantize)
+            unit_price = 0
+            if quote_quantity2:
+                unit_price = Decimal(float(list_price) / quote_quantity2
+                    ).quantize(quantize)
 
             res['list_price'][quote.id] = Decimal(quote_quantity) * (
                 quote.manual_list_price or unit_price)
