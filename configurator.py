@@ -7,6 +7,8 @@ from trytond.config import config
 from trytond.transaction import Transaction
 from trytond.modules.company.model import (
     employee_field, set_employee, reset_employee)
+from trytond.i18n import gettext
+from trytond.exceptions import UserError
 from copy import copy
 import math
 
@@ -293,12 +295,11 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         try:
             code = compile(expression, "<string>", "eval")
             return eval(code, custom_locals)
-        except BaseException:
-            pass
-            # raise UserError(gettext(
-            #     'product_dynamic_configurator.msg_expression_error',
-            #     property=self.name, expression=self.quantity,
-            #     invalid=str(e)))
+        except BaseException as e:
+            raise UserError(gettext(
+                'product_dynamic_configurator.msg_expression_error',
+                property=self.name, expression=self.quantity,
+                invalid=str(e)))
 
     def create_prices(self, design, values):
         created_obj = {}
