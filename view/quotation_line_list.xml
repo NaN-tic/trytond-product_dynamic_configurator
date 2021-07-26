@@ -1,9 +1,9 @@
 <tree editable="1">
     <field name="quantity"/>
-    <field name="cost_price"/>
     <field name="list_price"/>
-    <field name="manual_list_price"/>
+    <field name="cost_price"/>
     <field name="global_margin" factor="100"/>
-    <field name="margin"/>
+    <field name="margin_w_manual"/>
     <field name="unit_price"/>
+    <field name="manual_list_price"/>
 </tree>
