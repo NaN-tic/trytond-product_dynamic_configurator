@@ -1339,6 +1339,8 @@ class QuotationLine(ModelSQL, ModelView):
         digits=price_digits)
     margin = fields.Function(fields.Numeric('Margin', digits=(16, 4)),
         'get_prices')
+    margin_w_manual = fields.Function(fields.Numeric('Margin', digits=(16, 4)),
+            'get_prices')
     unit_price = fields.Function(fields.Numeric('Unit Price',
         digits=price_digits), 'get_prices')
     product_uom_category = fields.Function(
@@ -1407,7 +1409,7 @@ class QuotationLine(ModelSQL, ModelView):
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         for name in {'cost_price', 'list_price', 'margin', 'unit_price',
                 'material_cost_price', 'margin_material',
-                'cost_price_no_manual'}:
+                'cost_price_no_manual', 'margin_w_manual'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
 
         for quote in quotations:
@@ -1451,6 +1453,8 @@ class QuotationLine(ModelSQL, ModelView):
             res['material_cost_price'][quote.id] = material_cost_price
             res['margin_material'][quote.id] = (res['list_price'][quote.id]
                 - material_cost_price)
+            res['margin_w_manual'][quote.id] = (res['list_price'][quote.id]
+                - cost_price)
         return res
 
 
