@@ -10,6 +10,10 @@ msgctxt "field:configurator.design,code:"
 msgid "Code"
 msgstr "Código"
 
+msgctxt "field:configurator.design,company:"
+msgid "Company"
+msgstr "Empresa"
+
 msgctxt "field:configurator.design,currency:"
 msgid "Currency"
 msgstr "Moneda"
@@ -18,9 +22,13 @@ msgctxt "field:configurator.design,design_date:"
 msgid "Design Date"
 msgstr "Fecha Diseño"
 
-msgctxt "field:configurator.design,lines:"
-msgid "Lines"
-msgstr "Líneas"
+msgctxt "field:configurator.design,manual_code:"
+msgid "Manual Code"
+msgstr "Código manual"
+
+msgctxt "field:configurator.design,manual_name:"
+msgid "Manual Name"
+msgstr "Nombre manual"
 
 msgctxt "field:configurator.design,name:"
 msgid "Name"
@@ -38,17 +46,45 @@ msgctxt "field:configurator.design,prices:"
 msgid "Quotations"
 msgstr "Cotizaciones"
 
+msgctxt "field:configurator.design,process_by:"
+msgid "Processed By"
+msgstr "Procesado por"
+
+msgctxt "field:configurator.design,process_date:"
+msgid "Quotation Date"
+msgstr "Fecha cotización"
+
 msgctxt "field:configurator.design,product:"
 msgid "Product Designed"
 msgstr "Producto diseñado"
+
+msgctxt "field:configurator.design,product_exists:"
+msgid "Searched Product"
+msgstr "Producto buscado"
+
+msgctxt "field:configurator.design,product_uom_category:"
+msgid "Product Uom Category"
+msgstr "Categoría UdM del producto"
+
+msgctxt "field:configurator.design,quotation_date:"
+msgid "Quotation Date"
+msgstr "Fecha cotización"
+
+msgctxt "field:configurator.design,quotation_uom:"
+msgid "Quotation Uom"
+msgstr "Uom Cotización"
+
+msgctxt "field:configurator.design,quoted_by:"
+msgid "Quoted By"
+msgstr "Presupuestada por"
 
 msgctxt "field:configurator.design,state:"
 msgid "State"
 msgstr "Estado"
 
-msgctxt "field:configurator.design,summary:"
-msgid "Summary"
-msgstr "Sumario"
+msgctxt "field:configurator.design,suppliers:"
+msgid "Suppliers"
+msgstr "Proveedores"
 
 msgctxt "field:configurator.design,template:"
 msgid "Template"
@@ -57,6 +93,10 @@ msgstr "Plantilla"
 msgctxt "field:configurator.design.attribute,design:"
 msgid "Design"
 msgstr "Diseño"
+
+msgctxt "field:configurator.design.attribute,design_state:"
+msgid "Design State"
+msgstr "Estado diseño"
 
 msgctxt "field:configurator.design.attribute,number:"
 msgid "Number"
@@ -98,6 +138,18 @@ msgctxt "field:configurator.design.line,currency:"
 msgid "Currency"
 msgstr "Moneda"
 
+msgctxt "field:configurator.design.line,debug_amount:"
+msgid "Debug Amount"
+msgstr ""
+
+msgctxt "field:configurator.design.line,debug_quantity:"
+msgid "Debug Qty"
+msgstr ""
+
+msgctxt "field:configurator.design.line,manual_unit_price:"
+msgid "Manual Unit Price"
+msgstr "Manual precio unitario"
+
 msgctxt "field:configurator.design.line,margin:"
 msgid "Margin"
 msgstr "Margenes"
@@ -107,7 +159,7 @@ msgid "Property"
 msgstr "Propiedad"
 
 msgctxt "field:configurator.design.line,qty_ratio:"
-msgid "Quantity"
+msgid "Quantity Ratio"
 msgstr "Cantidad"
 
 msgctxt "field:configurator.design.line,quantity:"
@@ -126,14 +178,6 @@ msgctxt "field:configurator.design.line,uom:"
 msgid "UoM"
 msgstr "Unidad de medida"
 
-msgctxt "field:configurator.function,expression:"
-msgid "Expression"
-msgstr "Expresión"
-
-msgctxt "field:configurator.function,name:"
-msgid "Name"
-msgstr "Nombre"
-
 msgctxt "field:configurator.object,design:"
 msgid "Design"
 msgstr "Diseño"
@@ -141,6 +185,10 @@ msgstr "Diseño"
 msgctxt "field:configurator.object,object:"
 msgid "Object"
 msgstr "Objeto"
+
+msgctxt "field:configurator.property,attribute_search_op:"
+msgid "Operator"
+msgstr "Operación"
 
 msgctxt "field:configurator.property,attribute_set:"
 msgid "Attribute Set"
@@ -154,13 +202,9 @@ msgctxt "field:configurator.property,code:"
 msgid "Code"
 msgstr "Código"
 
-msgctxt "field:configurator.property,cost_price:"
-msgid "Cost Price"
-msgstr "Precio de coste"
-
-msgctxt "field:configurator.property,function_:"
-msgid "Function"
-msgstr "Funcion"
+msgctxt "field:configurator.property,code_template:"
+msgid "Code Template"
+msgstr "Codigo plantilla"
 
 msgctxt "field:configurator.property,name:"
 msgid "Name"
@@ -206,9 +250,9 @@ msgctxt "field:configurator.property,quantity:"
 msgid "Quantity"
 msgstr "Cantidad"
 
-msgctxt "field:configurator.property,summary:"
-msgid "Summary"
-msgstr "Sumario"
+msgctxt "field:configurator.property,quotation_category:"
+msgid "Quoatation Category"
+msgstr "Categoria cotización"
 
 msgctxt "field:configurator.property,template:"
 msgid "Template"
@@ -234,25 +278,61 @@ msgctxt "field:configurator.property.price_category,name:"
 msgid "Name"
 msgstr "Nombre"
 
+msgctxt "field:configurator.property.quotation_category,name:"
+msgid "Name"
+msgstr "Nombre"
+
+msgctxt "field:configurator.property.quotation_category,party:"
+msgid "Default Supplier"
+msgstr "Proveedor defecto"
+
+msgctxt "field:configurator.property.quotation_category,type_:"
+msgid "Type"
+msgstr "Tipos"
+
 msgctxt "field:configurator.quotation.line,cost_price:"
 msgid "Cost Price"
 msgstr "Precio de coste"
 
+msgctxt "field:configurator.quotation.line,cost_price_no_manual:"
+msgid "Cost Price No Manual"
+msgstr "Coste No manual"
+
 msgctxt "field:configurator.quotation.line,design:"
 msgid "Design"
 msgstr "Diseño"
+
+msgctxt "field:configurator.quotation.line,design_state:"
+msgid "Design State"
+msgstr "Estado diseño"
 
 msgctxt "field:configurator.quotation.line,global_margin:"
 msgid "Global Margin"
 msgstr "Margen global"
 
 msgctxt "field:configurator.quotation.line,list_price:"
-msgid "List Price"
+msgid "Total Price"
 msgstr "Lista de precio"
+
+msgctxt "field:configurator.quotation.line,manual_list_price:"
+msgid "Manual List Price"
+msgstr "Precio Manual"
 
 msgctxt "field:configurator.quotation.line,margin:"
 msgid "Margin"
 msgstr "Margen"
+
+msgctxt "field:configurator.quotation.line,margin_material:"
+msgid "Margin Material"
+msgstr "Margen material"
+
+msgctxt "field:configurator.quotation.line,margin_w_manual:"
+msgid "Margin"
+msgstr "Margenes"
+
+msgctxt "field:configurator.quotation.line,material_cost_price:"
+msgid "Cost Material"
+msgstr "Coste material"
 
 msgctxt "field:configurator.quotation.line,prices:"
 msgid "Prices"
@@ -270,9 +350,17 @@ msgctxt "field:configurator.quotation.line,unit_price:"
 msgid "Unit Price"
 msgstr "Precio Unitario"
 
-msgctxt "field:configurator.quotation.line,uom:"
-msgid "UoM"
-msgstr "Unidad de medida"
+msgctxt "field:configurator.quotation.supplier,category:"
+msgid "Category"
+msgstr "Categoría"
+
+msgctxt "field:configurator.quotation.supplier,design:"
+msgid "Design"
+msgstr "Diseño"
+
+msgctxt "field:configurator.quotation.supplier,supplier:"
+msgid "Supplier"
+msgstr "Proveedor"
 
 msgctxt "field:product.template,configurator_template:"
 msgid "Template for Configurator"
@@ -290,10 +378,6 @@ msgctxt "model:configurator.design.line,name:"
 msgid "Design Line"
 msgstr "Línea de diseño"
 
-msgctxt "model:configurator.function,name:"
-msgid "Function"
-msgstr "Función"
-
 msgctxt "model:configurator.object,name:"
 msgid "Created Object"
 msgstr "Objeto creado"
@@ -306,9 +390,21 @@ msgctxt "model:configurator.property.price_category,name:"
 msgid "Price Category"
 msgstr "Categoría de precio"
 
+msgctxt "model:configurator.property.quotation_category,name:"
+msgid "Price Category"
+msgstr "Categoría de precio"
+
 msgctxt "model:configurator.quotation.line,name:"
 msgid "Quotation Line"
 msgstr "Línea de presupuesto"
+
+msgctxt "model:configurator.quotation.supplier,name:"
+msgid "Quotation Supplier"
+msgstr "Proveedor cotizaciòn"
+
+msgctxt "model:ir.action,name:act_attributes_form"
+msgid "Attributes"
+msgstr "Atributos"
 
 msgctxt "model:ir.action,name:act_design_form"
 msgid "Designs"
@@ -322,9 +418,29 @@ msgctxt "model:ir.action,name:act_property_form"
 msgid "Properties"
 msgstr "Propiedades"
 
+msgctxt "model:ir.action,name:act_property_list"
+msgid "Properties"
+msgstr "Propiedades"
+
 msgctxt "model:ir.action,name:act_property_tree"
 msgid "Properties"
 msgstr "Propiedades"
+
+msgctxt "model:ir.action,name:act_quotation_category_list"
+msgid "Quotation Category"
+msgstr "Categoria cotización"
+
+msgctxt "model:ir.action.act_window.domain,name:act_design_form_domain_all"
+msgid "All"
+msgstr "Todos"
+
+msgctxt "model:ir.action.act_window.domain,name:act_design_form_domain_done"
+msgid "Done"
+msgstr "Realizado"
+
+msgctxt "model:ir.action.act_window.domain,name:act_design_form_domain_draft"
+msgid "Draft"
+msgstr "Borrador"
 
 msgctxt "model:ir.message,text:msg_expression_error"
 msgid ""
@@ -362,6 +478,14 @@ msgctxt "model:ir.ui.menu,name:menu_property_form"
 msgid "Properties"
 msgstr "Propiedades"
 
+msgctxt "model:ir.ui.menu,name:menu_property_list"
+msgid "Properties"
+msgstr "Propiedades"
+
+msgctxt "model:ir.ui.menu,name:menu_property_quotation_category"
+msgid "Quotation Category"
+msgstr "Categoria cotización"
+
 msgctxt "selection:configurator.design,state:"
 msgid "Cancel"
 msgstr "Cancelado"
@@ -371,6 +495,18 @@ msgid "Done"
 msgstr "Finalizado"
 
 msgctxt "selection:configurator.design,state:"
+msgid "draft"
+msgstr "Borrador"
+
+msgctxt "selection:configurator.design.attribute,design_state:"
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgctxt "selection:configurator.design.attribute,design_state:"
+msgid "Done"
+msgstr "Realizado"
+
+msgctxt "selection:configurator.design.attribute,design_state:"
 msgid "draft"
 msgstr "Borrador"
 
@@ -385,6 +521,10 @@ msgstr "Función"
 msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "Group"
 msgstr "Grupo"
+
+msgctxt "selection:configurator.design.attribute,property_type:"
+msgid "Match"
+msgstr "Busqueda"
 
 msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "Number"
@@ -423,6 +563,10 @@ msgid "Group"
 msgstr "Grupo"
 
 msgctxt "selection:configurator.property,type:"
+msgid "Match"
+msgstr "Cerca"
+
+msgctxt "selection:configurator.property,type:"
 msgid "Number"
 msgstr "Número"
 
@@ -445,3 +589,27 @@ msgstr "Producto de compra"
 msgctxt "selection:configurator.property,type:"
 msgid "Text"
 msgstr "Texto"
+
+msgctxt "selection:configurator.property.quotation_category,type_:"
+msgid "Goods"
+msgstr "Bienes"
+
+msgctxt "selection:configurator.property.quotation_category,type_:"
+msgid "Other"
+msgstr "Otro"
+
+msgctxt "selection:configurator.property.quotation_category,type_:"
+msgid "Works"
+msgstr "Treballs"
+
+msgctxt "selection:configurator.quotation.line,design_state:"
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgctxt "selection:configurator.quotation.line,design_state:"
+msgid "Done"
+msgstr "Realizado"
+
+msgctxt "selection:configurator.quotation.line,design_state:"
+msgid "draft"
+msgstr "Borrador"

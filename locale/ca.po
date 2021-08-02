@@ -10,6 +10,10 @@ msgctxt "field:configurator.design,code:"
 msgid "Code"
 msgstr "Codi"
 
+msgctxt "field:configurator.design,company:"
+msgid "Company"
+msgstr "Empresa"
+
 msgctxt "field:configurator.design,currency:"
 msgid "Currency"
 msgstr "Moneda"
@@ -18,9 +22,13 @@ msgctxt "field:configurator.design,design_date:"
 msgid "Design Date"
 msgstr "Data disseny"
 
-msgctxt "field:configurator.design,lines:"
-msgid "Lines"
-msgstr "Línies"
+msgctxt "field:configurator.design,manual_code:"
+msgid "Manual Code"
+msgstr "Codi Manual"
+
+msgctxt "field:configurator.design,manual_name:"
+msgid "Manual Name"
+msgstr "Nom Manual"
 
 msgctxt "field:configurator.design,name:"
 msgid "Name"
@@ -38,19 +46,42 @@ msgctxt "field:configurator.design,prices:"
 msgid "Quotations"
 msgstr "Cotizació"
 
+msgctxt "field:configurator.design,process_by:"
+msgid "Processed By"
+msgstr "Processat per"
+
+msgctxt "field:configurator.design,process_date:"
+msgid "Quotation Date"
+msgstr "Data Cotizació"
+
 msgctxt "field:configurator.design,product:"
 msgid "Product Designed"
 msgstr "Producte disenyat"
+
+msgctxt "field:configurator.design,product_exists:"
+msgid "Searched Product"
+msgstr "Producte cercat"
+
+msgctxt "field:configurator.design,product_uom_category:"
+msgid "Product Uom Category"
+msgstr "Categoria unidad de mesura"
+
+msgctxt "field:configurator.design,quotation_date:"
+msgid "Quotation Date"
+msgstr "Data Cotizació"
+
+msgctxt "field:configurator.design,quotation_uom:"
+msgid "Quotation Uom"
+msgstr "Uom Cotització"
+
+msgctxt "field:configurator.design,quoted_by:"
+msgid "Quoted By"
+msgstr "Pressupostada per"
 
 msgctxt "field:configurator.design,state:"
 msgid "State"
 msgstr "Estat"
 
-msgctxt "field:configurator.design,summary:"
-msgid "Summary"
-msgstr "Sumari"
-
-#, fuzzy
 msgctxt "field:configurator.design,suppliers:"
 msgid "Suppliers"
 msgstr "Proveïdors"
@@ -127,10 +158,6 @@ msgctxt "field:configurator.design.line,property:"
 msgid "Property"
 msgstr "Propietat"
 
-msgctxt "field:configurator.design.line,qty_ratio:"
-msgid "Quantity Ratio"
-msgstr "Quantitat Ratio"
-
 msgctxt "field:configurator.design.line,quantity:"
 msgid "Quantity"
 msgstr "Quantitat"
@@ -146,14 +173,6 @@ msgstr "Preu unitari"
 msgctxt "field:configurator.design.line,uom:"
 msgid "UoM"
 msgstr "Unidad de mesura"
-
-msgctxt "field:configurator.function,expression:"
-msgid "Expression"
-msgstr "Expressió"
-
-msgctxt "field:configurator.function,name:"
-msgid "Name"
-msgstr "Nom"
 
 msgctxt "field:configurator.object,design:"
 msgid "Design"
@@ -179,17 +198,18 @@ msgctxt "field:configurator.property,code:"
 msgid "Code"
 msgstr "Codi"
 
-msgctxt "field:configurator.property,cost_price:"
-msgid "Cost Price"
-msgstr "Preu de cost"
-
-msgctxt "field:configurator.property,function_:"
-msgid "Function"
-msgstr "Funció"
+msgctxt "field:configurator.property,code_template:"
+msgid "Code Template"
+msgstr "Codi plantilla"
 
 msgctxt "field:configurator.property,name:"
 msgid "Name"
 msgstr "Nom"
+
+#, fuzzy
+msgctxt "field:configurator.property,name_template:"
+msgid "Name Template"
+msgstr "Codi plantilla"
 
 msgctxt "field:configurator.property,object_expression:"
 msgid "Object Expression"
@@ -233,11 +253,7 @@ msgstr "Quantitat"
 
 msgctxt "field:configurator.property,quotation_category:"
 msgid "Quoatation Category"
-msgstr ""
-
-msgctxt "field:configurator.property,summary:"
-msgid "Summary"
-msgstr "Sumari"
+msgstr "Categoria de Cotització"
 
 msgctxt "field:configurator.property,template:"
 msgid "Template"
@@ -267,6 +283,10 @@ msgctxt "field:configurator.property.quotation_category,name:"
 msgid "Name"
 msgstr "Nom"
 
+msgctxt "field:configurator.property.quotation_category,party:"
+msgid "Default Supplier"
+msgstr "Proveïdor per defecte"
+
 msgctxt "field:configurator.property.quotation_category,type_:"
 msgid "Type"
 msgstr "Tipus"
@@ -274,6 +294,10 @@ msgstr "Tipus"
 msgctxt "field:configurator.quotation.line,cost_price:"
 msgid "Cost Price"
 msgstr "Preu de cost"
+
+msgctxt "field:configurator.quotation.line,cost_price_no_manual:"
+msgid "Cost Price No Manual"
+msgstr "Preu Cost No manual"
 
 msgctxt "field:configurator.quotation.line,design:"
 msgid "Design"
@@ -287,17 +311,25 @@ msgctxt "field:configurator.quotation.line,global_margin:"
 msgid "Global Margin"
 msgstr "Marge global"
 
-msgctxt "field:configurator.quotation.line,list_price:"
-msgid "List Price"
-msgstr "LLista de preu"
-
 msgctxt "field:configurator.quotation.line,manual_list_price:"
 msgid "Manual List Price"
-msgstr ""
+msgstr "Preu Manual"
 
 msgctxt "field:configurator.quotation.line,margin:"
 msgid "Margin"
 msgstr "Marge"
+
+msgctxt "field:configurator.quotation.line,margin_material:"
+msgid "Margin Material"
+msgstr "Marge de Material"
+
+msgctxt "field:configurator.quotation.line,margin_w_manual:"
+msgid "Margin"
+msgstr "Marge"
+
+msgctxt "field:configurator.quotation.line,material_cost_price:"
+msgid "Cost Material"
+msgstr "Cost Material"
 
 msgctxt "field:configurator.quotation.line,prices:"
 msgid "Prices"
@@ -315,19 +347,9 @@ msgctxt "field:configurator.quotation.line,unit_price:"
 msgid "Unit Price"
 msgstr "Preu unitari"
 
-msgctxt "field:configurator.quotation.line,uom:"
-msgid "UoM"
-msgstr "Unidad de mesura"
-
-#, fuzzy
 msgctxt "field:configurator.quotation.supplier,category:"
 msgid "Category"
 msgstr "Categoria"
-
-#, fuzzy
-msgctxt "field:configurator.quotation.supplier,code:"
-msgid "Code"
-msgstr "Codi"
 
 msgctxt "field:configurator.quotation.supplier,design:"
 msgid "Design"
@@ -353,10 +375,6 @@ msgctxt "model:configurator.design.line,name:"
 msgid "Design Line"
 msgstr "Linia de disseny"
 
-msgctxt "model:configurator.function,name:"
-msgid "Function"
-msgstr "Funció"
-
 msgctxt "model:configurator.object,name:"
 msgid "Created Object"
 msgstr "Objecte creat"
@@ -369,7 +387,6 @@ msgctxt "model:configurator.property.price_category,name:"
 msgid "Price Category"
 msgstr "Categoria de preu"
 
-#, fuzzy
 msgctxt "model:configurator.property.quotation_category,name:"
 msgid "Price Category"
 msgstr "Categoria de preus"
@@ -381,6 +398,10 @@ msgstr "Linia de pressupost"
 msgctxt "model:configurator.quotation.supplier,name:"
 msgid "Quotation Supplier"
 msgstr "Proveïdor cotització"
+
+msgctxt "model:ir.action,name:act_attributes_form"
+msgid "Attributes"
+msgstr "Attributs"
 
 msgctxt "model:ir.action,name:act_design_form"
 msgid "Designs"
@@ -405,6 +426,18 @@ msgstr "Propietats"
 msgctxt "model:ir.action,name:act_quotation_category_list"
 msgid "Quotation Category"
 msgstr "Categoria cotització"
+
+msgctxt "model:ir.action.act_window.domain,name:act_design_form_domain_all"
+msgid "All"
+msgstr "Tots"
+
+msgctxt "model:ir.action.act_window.domain,name:act_design_form_domain_done"
+msgid "Done"
+msgstr "Realitzat"
+
+msgctxt "model:ir.action.act_window.domain,name:act_design_form_domain_draft"
+msgid "Draft"
+msgstr "Esborrany"
 
 msgctxt "model:ir.message,text:msg_expression_error"
 msgid ""
