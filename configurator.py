@@ -169,6 +169,15 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         states={
             'invisible': Not(Eval('type').in_(['purchase_product', 'bom']))
         }, translate=True)
+    option_default = fields.Many2One('configurator.property',
+        'Default Option', domain=[
+            ('id', '!=', Eval('id')),
+            ('parent', 'child_of', Eval('id'))
+            ],
+        depends = ['id'],
+        states={
+            'invisible': Eval('type').in_(['option'])
+        })
 
     @staticmethod
     def default_sequence():
@@ -258,13 +267,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 if attribute.property_type == 'options':
                     attribute.property_options = \
                         attribute.on_change_with_property_options()
-                attribute.option = None
+                    if attribute.property.option_default:
+                        attribute.option = attribute.property.option_default.id
                 attributes[self.code] = attribute
             res.append(attribute)
-
-            if self.type == 'options' and attribute.option:
-                res += attribute.option.compute_attributes(design,
-                    attributes)
         else:
             for child in self.childs:
                 res += child.compute_attributes(design, attributes)
@@ -296,10 +302,11 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             code = compile(expression, "<string>", "eval")
             return eval(code, custom_locals)
         except BaseException as e:
-            raise UserError(gettext(
-                'product_dynamic_configurator.msg_expression_error',
-                property=self.name, expression=self.quantity,
-                invalid=str(e)))
+            pass
+            # raise UserError(gettext(
+            #     'product_dynamic_configurator.msg_expression_error',
+            #     property=self.name, expression=self.quantity,
+            #     invalid=str(e)))
 
     def create_prices(self, design, values):
         created_obj = {}
