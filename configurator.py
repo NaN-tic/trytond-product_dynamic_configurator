@@ -174,14 +174,27 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             ('id', '!=', Eval('id')),
             ('parent', 'child_of', Eval('id'))
             ],
-        depends = ['id'],
+        depends=['id'],
         states={
             'invisible': Eval('type').in_(['option'])
         })
+    childrens = fields.Function(fields.One2Many('configurator.property', None,
+        'Childrens'), 'get_childrens')
 
     @staticmethod
     def default_sequence():
         return 99
+
+    def get_childrens(self, name):
+        Property = Pool().get('configurator.property')
+        parent = self
+        if self.type != 'bom':
+            parent = self.get_parent()
+        childrens = Property.search([('parent', 'child_of', parent)])
+        childrens = [x.id for x in childrens if x.type in ('bom', 'product',
+            'purchase_product') and x.get_parent() == parent]
+        return childrens
+
 
     def get_rec_name(self, name):
         res = ''
