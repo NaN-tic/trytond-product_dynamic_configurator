@@ -190,10 +190,17 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         parent = self
         if self.type != 'bom':
             parent = self.get_parent()
-        childrens = Property.search([('parent', 'child_of', parent)])
-        childrens = [x.id for x in childrens if x.type in ('bom', 'product',
-            'purchase_product') and x.get_parent() == parent]
-        return childrens
+        childrens = Property.search([('parent', 'child_of', [parent.id])])
+        childrens = [x for x in childrens if x.type in ('bom', 'product',
+            'purchase_product')]
+        childs = []
+        for children in childrens:
+            p = children.get_parent()
+            if children.type == 'bom':
+                p = children.parent and children.parent.get_parent()
+            if p == parent:
+                childs.append(children.id)
+        return childs
 
 
     def get_rec_name(self, name):

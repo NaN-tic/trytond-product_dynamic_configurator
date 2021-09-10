@@ -60,5 +60,8 @@
         <page name="name_template">
             <field name="name_template"/>
         </page>
+        <page name="childrens">
+            <field name="childrens"/>
+        </page>
     </notebook>
 </form>
