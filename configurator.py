@@ -1451,8 +1451,6 @@ class QuotationLine(ModelSQL, ModelView):
                 quote_quantity, unit_price_uom, round=True)
 
             for line in quote.prices:
-                # price = (line.manual_unit_price or line.unit_price)*Decimal(
-                #     1 + (line.margin or 0))
                 cost_price += (Decimal(line.quantity or 0)
                     * (line.manual_unit_price or line.unit_price))
                 cost_price_noman += Decimal(line.quantity) * line.unit_price
