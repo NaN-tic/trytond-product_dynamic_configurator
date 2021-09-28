@@ -206,7 +206,6 @@ msgctxt "field:configurator.property,name:"
 msgid "Name"
 msgstr "Nom"
 
-#, fuzzy
 msgctxt "field:configurator.property,name_template:"
 msgid "Name Template"
 msgstr "Codi plantilla"
@@ -473,7 +472,7 @@ msgstr "Dissenys"
 
 msgctxt "model:ir.ui.menu,name:menu_property_form"
 msgid "Properties"
-msgstr "Propietats"
+msgstr "Plantilles (Propietats)"
 
 msgctxt "model:ir.ui.menu,name:menu_property_list"
 msgid "Properties"

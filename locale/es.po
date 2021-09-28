@@ -476,7 +476,7 @@ msgstr "Diseños"
 
 msgctxt "model:ir.ui.menu,name:menu_property_form"
 msgid "Properties"
-msgstr "Propiedades"
+msgstr "Plantillas (Propiedades)"
 
 msgctxt "model:ir.ui.menu,name:menu_property_list"
 msgid "Properties"

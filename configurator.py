@@ -229,6 +229,17 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             res = res.replace('\t', '').replace('\n', '')
         return res
 
+    @classmethod
+    def copy(cls, properties, default=None):
+        if default is None:
+            default = {}
+        else:
+            default = default.copy()
+
+        default.setdefault('option_default', None)
+        return super().copy(properties, default=default)
+
+
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
         'price_category', 'object_expression', 'attribute_set',
         'work_center_category', 'operation_type', 'product_attribute',
@@ -520,8 +531,16 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             self.product_template.products[0])
         product.template = template
         product.default_uom = self.uom
-        product.code = design.render_field(self, 'code_template',
+
+        # Generate code
+        parent = self.get_parent()
+        code = ''
+        if parent:
+            code = design.render_field(parent, 'code_template',
+                custom_locals)
+        product.code = code + design.render_field(self, 'code_template',
             custom_locals)
+
         if not product.code:
             product.code = "purchase (%s)" % (design.code or str(design.id))
         if not hasattr(product, 'attributes'):
@@ -735,8 +754,24 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
-        product.code = "%s (%s)" % (self.code, design.code or str(design.id))
 
+        # Generate code
+        custom_locals = design.design_full_dict()
+        parent = self.get_parent()
+        code = ''
+        if parent and parent != self:
+            code = design.render_field(parent, 'code_template',
+                custom_locals)
+
+        product.code = code + design.render_field(self, 'code_template',
+            custom_locals)
+
+        if not product.code:
+            product.code = "%s (%s)" % (self.code, design.code or str(design.id))
+
+        bom.name = product.code
+
+        # Copy attributes
         if not hasattr(template, 'attributes'):
             template.attributes = tuple()
         for prop, child_res in created_obj.items():
@@ -939,8 +974,9 @@ class Design(Workflow, ModelSQL, ModelView):
                 'depends': ['state'],
                 },
             'update': {
-                'invisible': ~Eval('state').in_(['draft']),
-                'depends': ['state'],
+                'invisible': (~Eval('state').in_(['draft']) |
+                    Eval('attributes', [-1])),
+                'depends': ['state', 'attributes'],
             },
             'process': {
                 'invisible': Eval('state').in_(['done', 'cancel']),
@@ -1007,6 +1043,7 @@ class Design(Workflow, ModelSQL, ModelView):
             default = {}
         else:
             default = default.copy()
+
         default.setdefault('design_date', None)
         default.setdefault('process_by', None)
         default.setdefault('process_date', None)
@@ -1176,18 +1213,18 @@ class Design(Workflow, ModelSQL, ModelView):
                         dl.debug_quantity = quantity
                         dl.unit_price = cost_price
 
-            langs = Lang.search([('active', '=', True),
-                ('translatable', '=', True)])
-
-            for lang in langs:
-                design.render_design_fields(lang)
-
             to_save = prices.values()
             DesignLine.save(to_save)
             custom_locals = design.design_full_dict()
             design.code = design.render_field(design.template, 'code_template',
                 custom_locals)
             design.save()
+
+            langs = Lang.search([('active', '=', True),
+                ('translatable', '=', True)])
+            for lang in langs:
+                design.render_design_fields(lang)
+
         DesignLine.delete(remove_lines)
 
     def design_full_dict(self):
@@ -1256,7 +1293,14 @@ class Design(Workflow, ModelSQL, ModelView):
             template = product.template
             property = pproperty or design.template
             for tmpl_field, field in product_fields:
-                val = self.render_field(property, tmpl_field, custom_locals)
+                val = ''
+                if tmpl_field == 'name' and pproperty:
+                    parent = pproperty.get_parent()
+                    if parent and parent != pproperty:
+                        val = self.render_field(parent, tmpl_field,
+                            custom_locals) or ''
+                val = val + self.render_field(property, tmpl_field,
+                    custom_locals) or ''
                 if val:
                     setattr(template, field, val)
             template.save()
@@ -1264,8 +1308,9 @@ class Design(Workflow, ModelSQL, ModelView):
     def render_field(self, property, field, custom_locals):
         f = getattr(property, field)
         if not f:
-            return
-        return property.render_expression_record(f, custom_locals)
+            return ''
+        res = property.render_expression_record(f, custom_locals)
+        return res or ''
 
     def get_product_render_fields(self):
         return [('name_template', 'name')]
@@ -1281,7 +1326,7 @@ class Design(Workflow, ModelSQL, ModelView):
             ('translatable', '=', True)])
         to_delete = []
         for design in designs:
-            custom_locals = design.design_full_dict()
+#            custom_locals = design.design_full_dict()
             to_delete += [x for x in design.objects]
             res = design.template.create_prices(design, design.as_dict())
             for prop, objs in res.items():
@@ -1304,8 +1349,8 @@ class Design(Workflow, ModelSQL, ModelView):
                             design.render_product_fields(lang, product, prop)
                 if prop.type == 'purchase_product':
                     product = obj.product
-                    product.code = design.render_field(prop, 'code_template',
-                        custom_locals)
+                    # product.code = design.render_field(prop, 'code_template',
+                    #     custom_locals)
                     product.save()
                     for lang in langs:
                         design.render_product_fields(lang, product, prop)
