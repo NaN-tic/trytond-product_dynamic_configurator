@@ -636,9 +636,19 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     template.info_ratio else cost_price).quantize(_ROUND)
                 product.cost_price = cost_price
                 price = Price()
-                price.quantity = ((quote.quantity / qty) * bom_input.quantity)
-                price.unit_price = cost_price
+                qty = ((quote.quantity / qty) * bom_input.quantity)
+                price.quantity = Uom.compute_qty(self.uom, qty,
+                    self.product_template.purchase_uom)
+                price.unit_price = Uom.compute_price(self.uom, cost_price,
+                    self.product_template.purchase_uom).quantize(
+                        Decimal(1) / 10 ** price_digits[1])
                 product_supplier.prices += (price,)
+                price.product = product
+                if getattr(template, 'use_info_unit'):
+                    price.info_unit_price = (
+                        price.on_change_with_info_unit_price())
+                    price.info_quantity = price.on_change_with_info_quantity()
+
         template.product_suppliers = [product_supplier]
         return {self: (bom_input, [])}
 
@@ -794,6 +804,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     product.attributes += (attr,)
 
         template._update_attributes_values()
+
+        if self.object_expression:
+            expressions = eval(self.object_expression)
+            for key, value in expressions.items():
+                val = self.evaluate(value, values)
+                setattr(template, key, val)
+
         # exists_product = Product.search([('code', '=', product.code)])
         # if exists_product:
         #     product = exists_product[0]
@@ -951,6 +968,17 @@ class Design(Workflow, ModelSQL, ModelView):
                 ('category', '!=', -1)),
             ],
         depends=['prices', 'product_uom_category', 'state'])
+    sale_uom = fields.Many2One('product.uom', 'Sale Uom',
+        states={
+            'readonly': Bool(Eval('prices', [0])),
+            'required': True,
+        },
+        domain=[
+            If(Bool(Eval('product_uom_category')),
+                ('category', '=', Eval('product_uom_category')),
+                ('category', '!=', -1)),
+            ],
+        depends=['prices', 'product_uom_category', 'state'])
     product_exists = fields.Function(fields.Many2One('product.product',
         'Searched Product'), 'get_product_exist')
     quotation_date = fields.Date('Quotation Date', readonly=True)
@@ -1036,6 +1064,7 @@ class Design(Workflow, ModelSQL, ModelView):
         if not self.template:
             return
         self.quotation_uom = self.template.product_template.purchase_uom.id
+        self.sale_uom = self.template.product_template.sale_uom.id
 
     @classmethod
     def copy(cls, designs, default=None):

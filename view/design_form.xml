@@ -19,6 +19,8 @@
     <field name="currency"/>
     <label name="quotation_uom"/>
     <field name="quotation_uom"/>
+    <label name="sale_uom"/>
+    <field name="sale_uom"/>
     <group id="templates" colspan="4">
       <label name="template"/>
       <field name="template"/>
