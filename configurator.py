@@ -527,6 +527,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         template = self.get_product_template_object_copy(self.product_template)
         template.name = self.name + "(" + design.name + ")"
         template.list_price = 0
+        template.info_ratio = Decimal('1.0')
         product = self.get_product_product_object_copy(
             self.product_template.products[0])
         product.template = template
@@ -610,46 +611,40 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if hasattr(quote, 'state') and quote.state != 'confirmed':
                 continue
             cost_price = 0
+            uom = None
             qty = Uom.compute_qty(design.template.uom, design_qty,
                 design.quotation_uom)
             for prop, v in created_obj.items():
                 v = v[0]
                 if not v or prop.type not in ('product', 'match', 'bom'):
                     continue
-                parent = prop.get_parent()
-                if isinstance(v, BomInput):
-                    quantity = v.quantity * quote.quantity
-                    product = v.product
-                elif isinstance(v, Product):
-                    quantity = prop.evaluate(prop.quantity,
-                        design.as_dict()[parent])
-                    quantity = quantity * quote.quantity
-                    product = v
-                supplier = None
-                if prop.quotation_category:
-                    supplier = suppliers[prop.quotation_category]
-                quantity = bom_input.quantity * quantity
-                cost_price += quote.get_unit_price(product,
-                    quantity, prop.uom, supplier)
+                for line in quote.prices:
+                    if line.property != prop:
+                        continue
+                    cost_price += line.unit_price
+                    uom = line.uom
+
             if cost_price:
-                cost_price = (cost_price * Decimal(str(template.info_ratio)) if
-                    template.info_ratio else cost_price).quantize(_ROUND)
-                product.cost_price = cost_price
                 price = Price()
                 qty = ((quote.quantity / qty) * bom_input.quantity)
                 price.quantity = Uom.compute_qty(self.uom, qty,
                     self.product_template.purchase_uom)
-                price.unit_price = Uom.compute_price(self.uom, cost_price,
-                    self.product_template.purchase_uom).quantize(
-                        Decimal(1) / 10 ** price_digits[1])
+                if uom != self.uom:
+                    product.cost_price = template.get_unit_price(cost_price)
+                    cost_price = Uom.compute_price(self.uom, cost_price,
+                        self.product_template.purchase_uom)
+                    price.unit_price = template.get_unit_price(cost_price)
+                else:
+                    product.cost_price = cost_price
+                    price.unit_price = cost_price
+
                 product_supplier.prices += (price,)
                 price.product = product
                 if getattr(template, 'use_info_unit'):
                     price.info_unit_price = (
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
-
-        template.product_suppliers = [product_supplier]
+        product.product_suppliers = [product_supplier]
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
