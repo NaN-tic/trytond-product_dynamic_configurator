@@ -333,6 +333,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             code = compile(expression, "<string>", "eval")
             return eval(code, custom_locals)
         except BaseException as e:
+            print(expression, str(e))
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
@@ -626,6 +627,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
             if cost_price:
                 price = Price()
+                price.info_unit = template.info_unit
                 qty = ((quote.quantity / qty) * bom_input.quantity)
                 price.quantity = Uom.compute_qty(self.uom, qty,
                     self.product_template.purchase_uom)
@@ -644,7 +646,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     price.info_unit_price = (
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
-        product.product_suppliers = [product_supplier]
+
+        template.product_suppliers = [product_supplier]
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
