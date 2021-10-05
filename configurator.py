@@ -572,7 +572,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 val = self.evaluate(value, values)
                 quantize = Decimal(str(10.0 ** -4))
                 try:
-                    val = Decimal(val or 0).quantize(quantize)
+                    val = float(Decimal(val or 0).quantize(quantize))
                 except:
                     pass
                 setattr(template, key, val)
@@ -814,7 +814,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 val = self.evaluate(value, values)
                 quantize = Decimal(str(10.0 ** -4))
                 try:
-                    val = Decimal(val or 0).quantize(quantize)
+                    val = float(Decimal(val or 0).quantize(quantize))
                 except:
                     pass
                 setattr(template, key, val)
