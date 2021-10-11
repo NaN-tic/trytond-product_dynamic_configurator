@@ -78,6 +78,10 @@ msgctxt "field:configurator.design,quoted_by:"
 msgid "Quoted By"
 msgstr "Pressupostada per"
 
+msgctxt "field:configurator.design,sale_uom:"
+msgid "Sale Uom"
+msgstr "Unitat De Mesura Venta"
+
 msgctxt "field:configurator.design,state:"
 msgid "State"
 msgstr "Estat"
@@ -148,7 +152,7 @@ msgstr ""
 
 msgctxt "field:configurator.design.line,manual_unit_price:"
 msgid "Manual Unit Price"
-msgstr ""
+msgstr "Preu Unitari Manual"
 
 msgctxt "field:configurator.design.line,margin:"
 msgid "Margin"
@@ -157,6 +161,10 @@ msgstr "Marge"
 msgctxt "field:configurator.design.line,property:"
 msgid "Property"
 msgstr "Propietat"
+
+msgctxt "field:configurator.design.line,qty_ratio:"
+msgid "Quantity Ratio"
+msgstr ""
 
 msgctxt "field:configurator.design.line,quantity:"
 msgid "Quantity"
@@ -190,6 +198,10 @@ msgctxt "field:configurator.property,attribute_set:"
 msgid "Attribute Set"
 msgstr "Conjunt Attributs"
 
+msgctxt "field:configurator.property,childrens:"
+msgid "Childrens"
+msgstr "Fills"
+
 msgctxt "field:configurator.property,childs:"
 msgid "childs"
 msgstr "Fills"
@@ -217,6 +229,10 @@ msgstr "Expressió del objecte"
 msgctxt "field:configurator.property,operation_type:"
 msgid "Operation Type"
 msgstr "Tipus operació"
+
+msgctxt "field:configurator.property,option_default:"
+msgid "Default Option"
+msgstr ""
 
 msgctxt "field:configurator.property,parent:"
 msgid "Parent"
@@ -309,6 +325,10 @@ msgstr "Estat disseny"
 msgctxt "field:configurator.quotation.line,global_margin:"
 msgid "Global Margin"
 msgstr "Marge global"
+
+msgctxt "field:configurator.quotation.line,list_price:"
+msgid "Total Price"
+msgstr "Preu Total"
 
 msgctxt "field:configurator.quotation.line,manual_list_price:"
 msgid "Manual List Price"

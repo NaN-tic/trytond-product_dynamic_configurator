@@ -78,6 +78,10 @@ msgctxt "field:configurator.design,quoted_by:"
 msgid "Quoted By"
 msgstr "Presupuestada por"
 
+msgctxt "field:configurator.design,sale_uom:"
+msgid "Sale Uom"
+msgstr "Unidad de venta"
+
 msgctxt "field:configurator.design,state:"
 msgid "State"
 msgstr "Estado"
@@ -160,7 +164,7 @@ msgstr "Propiedad"
 
 msgctxt "field:configurator.design.line,qty_ratio:"
 msgid "Quantity Ratio"
-msgstr "Cantidad"
+msgstr ""
 
 msgctxt "field:configurator.design.line,quantity:"
 msgid "Quantity"
@@ -194,6 +198,10 @@ msgctxt "field:configurator.property,attribute_set:"
 msgid "Attribute Set"
 msgstr "Conjunto de atributos"
 
+msgctxt "field:configurator.property,childrens:"
+msgid "Childrens"
+msgstr "Hijos"
+
 msgctxt "field:configurator.property,childs:"
 msgid "childs"
 msgstr "Hijos"
@@ -210,6 +218,10 @@ msgctxt "field:configurator.property,name:"
 msgid "Name"
 msgstr "Nombre"
 
+msgctxt "field:configurator.property,name_template:"
+msgid "Name Template"
+msgstr "Nombre plantilla"
+
 msgctxt "field:configurator.property,object_expression:"
 msgid "Object Expression"
 msgstr "Expresión del objeto"
@@ -217,6 +229,10 @@ msgstr "Expresión del objeto"
 msgctxt "field:configurator.property,operation_type:"
 msgid "Operation Type"
 msgstr "Tipo de operación"
+
+msgctxt "field:configurator.property,option_default:"
+msgid "Default Option"
+msgstr ""
 
 msgctxt "field:configurator.property,parent:"
 msgid "Parent"
@@ -312,7 +328,7 @@ msgstr "Margen global"
 
 msgctxt "field:configurator.quotation.line,list_price:"
 msgid "Total Price"
-msgstr "Lista de precio"
+msgstr "Precio Total"
 
 msgctxt "field:configurator.quotation.line,manual_list_price:"
 msgid "Manual List Price"
