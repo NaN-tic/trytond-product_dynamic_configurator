@@ -333,7 +333,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             code = compile(expression, "<string>", "eval")
             return eval(code, custom_locals)
         except BaseException as e:
-            print(expression, str(e))
+            #print(expression, str(e))
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
@@ -514,6 +514,17 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         name_field = getattr(attribute_set, name)
         return attribute_set.render_expression_record(name_field, values)
 
+    def get_property_code(self, design, custom_locals):
+        parent = self.get_parent()
+        code = ''
+        if parent:
+            code = design.render_field(parent, 'code_template', custom_locals)
+            code = code and code.strip() or ''
+        if parent != self:
+            code2 = design.render_field(self, 'code_template', custom_locals)
+            code = code.strip() + (code2 and code2.strip() or '')
+        return code
+
     def get_purchase_product(self, design, values, created_obj):
         pool = Pool()
         BomInput = pool.get('production.bom.input')
@@ -535,16 +546,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product.default_uom = self.uom
 
         # Generate code
-        parent = self.get_parent()
-        code = ''
-        if parent:
-            code = design.render_field(parent, 'code_template',
-                custom_locals)
-        product.code = code + design.render_field(self, 'code_template',
-            custom_locals)
+        template.code = self.get_property_code(design, custom_locals)
 
-        if not product.code:
-            product.code = "purchase (%s)" % (design.code or str(design.id))
+        if not template.code:
+            template.code = "purchase (%s)" % (template.code or str(design.id))
         if not hasattr(product, 'attributes'):
             product.attributes = tuple()
         for prop, child_res in created_obj.items():
@@ -582,10 +587,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             template._update_attributes_values()
         template.products = None
 
-        # exists_product = Product.search([('code', '=', product.code),
-        #     ('default_uom', '=', self.uom.id)])
-        # if exists_product:
-        #     product = exists_product[0]
+        exists_product = Product.search([('template.code', '=', template.code)])
+        if exists_product:
+            product = exists_product[0]
 
         bom_input = BomInput()
         bom_input.product = product
@@ -770,19 +774,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         # Generate code
         custom_locals = design.design_full_dict()
-        parent = self.get_parent()
-        code = ''
-        if parent and parent != self:
-            code = design.render_field(parent, 'code_template',
-                custom_locals)
+        # Generate code
+        template.code = self.get_property_code(design, custom_locals)
+        if not template.code:
+            template.code = "%s (%s)" % (self.code, design.code or str(design.id))
 
-        product.code = code + design.render_field(self, 'code_template',
-            custom_locals)
-
-        if not product.code:
-            product.code = "%s (%s)" % (self.code, design.code or str(design.id))
-
-        bom.name = product.code
+        bom.name = template.code
 
         # Copy attributes
         if not hasattr(template, 'attributes'):
@@ -819,9 +816,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     pass
                 setattr(template, key, val)
 
-        # exists_product = Product.search([('code', '=', product.code)])
-        # if exists_product:
-        #     product = exists_product[0]
+        exists_product = Product.search([('template.code', '=', template.code)])
+        if exists_product:
+            product = exists_product[0]
         output = BomOutput()
         output.bom = bom
         output.product = product
@@ -1386,8 +1383,6 @@ class Design(Workflow, ModelSQL, ModelView):
                             design.render_product_fields(lang, product, prop)
                 if prop.type == 'purchase_product':
                     product = obj.product
-                    # product.code = design.render_field(prop, 'code_template',
-                    #     custom_locals)
                     product.save()
                     for lang in langs:
                         design.render_product_fields(lang, product, prop)
