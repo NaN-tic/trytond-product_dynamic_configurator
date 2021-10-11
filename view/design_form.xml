@@ -33,7 +33,7 @@
           <field name="process_by"/>
           <label name="process_date"/>
           <field name="process_date"/>
-         <field name="attributes" colspan="4" height="600"/>
+         <field name="attributes" colspan="4" height="800"/>
         </page>
         <page name="prices">
             <label name="quoted_by"/>
