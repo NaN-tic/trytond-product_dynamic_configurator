@@ -585,7 +585,7 @@ Create Design::
 
     >>> Design = Model.get('configurator.design')
     >>> Attribute = Model.get('configurator.design.attribute')
-    >>> design = Design(name='Bossa isotermica', code = 'isotermica', template=bag,
+    >>> design = Design(name='Bossa isotermica 1', code = 'isotermica 1', template=bag,
     ...    currency=euro, quotation_uom=unit)
     >>> design.party = party
     >>> design.save()
