@@ -239,7 +239,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         default.setdefault('option_default', None)
         return super().copy(properties, default=default)
 
-
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
         'price_category', 'object_expression', 'attribute_set',
         'work_center_category', 'operation_type', 'product_attribute',
@@ -1360,7 +1359,9 @@ class Design(Workflow, ModelSQL, ModelView):
             ('translatable', '=', True)])
         to_delete = []
         for design in designs:
-#            custom_locals = design.design_full_dict()
+            custom_locals = design.design_full_dict()
+            design.code = design.render_field(design.template, 'code_template',
+                custom_locals)
             to_delete += [x for x in design.objects]
             res = design.template.create_prices(design, design.as_dict())
             for prop, objs in res.items():
