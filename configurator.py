@@ -171,10 +171,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         }, translate=True)
     option_default = fields.Many2One('configurator.property',
         'Default Option', domain=[
-            ('id', '!=', Eval('id')),
-            ('parent', 'child_of', Eval('id'))
+            ('id', '!=', Eval('id', -1)),
+            ('parent', 'child_of', Eval('id', -1))
             ],
-        depends=['id'],
+        depends=['id', 'parent', 'type',],
         states={
             'invisible': Eval('type').in_(['option'])
         })
