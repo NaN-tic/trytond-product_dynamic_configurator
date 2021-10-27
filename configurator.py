@@ -589,6 +589,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         exists_product = Product.search([('template.code', '=', template.code)])
         if exists_product:
             product = exists_product[0]
+            template = product.template
 
         bom_input = BomInput()
         bom_input.product = product
@@ -656,6 +657,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     price.info_quantity = price.on_change_with_info_quantity()
 
         template.product_suppliers = [product_supplier]
+        self.update_product_values(template, design, values, created_obj)
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
@@ -818,6 +820,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         exists_product = Product.search([('template.code', '=', template.code)])
         if exists_product:
             product = exists_product[0]
+        
+        self.update_product_values(template, design, values, created_obj)
+      
         output = BomOutput()
         output.bom = bom
         output.product = product
@@ -836,6 +841,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         # if exists_bom:
         #     return {self: (exists_bom[0], res_obj)}
 
+        
         return {self: (bom, res_obj)}
 
     def get_ratio_for_prices(self, values, ratio):
