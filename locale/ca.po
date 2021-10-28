@@ -220,7 +220,7 @@ msgstr "Nom"
 
 msgctxt "field:configurator.property,name_template:"
 msgid "Name Template"
-msgstr "Codi plantilla"
+msgstr "Nom plantilla"
 
 msgctxt "field:configurator.property,object_expression:"
 msgid "Object Expression"
@@ -232,7 +232,7 @@ msgstr "Tipus operació"
 
 msgctxt "field:configurator.property,option_default:"
 msgid "Default Option"
-msgstr ""
+msgstr "Opció per defecte"
 
 msgctxt "field:configurator.property,parent:"
 msgid "Parent"
