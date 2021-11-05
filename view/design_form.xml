@@ -40,8 +40,10 @@
             <field name="quoted_by"/>
             <label name="quotation_date"/>
             <field name="quotation_date"/>
-            <field name="suppliers" colspan="4"/>
             <field name="prices" colspan="4"/>
+        </page>
+        <page name="suppliers">
+            <field name="suppliers" colspan="4"/>
         </page>
         <page name="objects">
             <field name="objects" colspan="4"/>

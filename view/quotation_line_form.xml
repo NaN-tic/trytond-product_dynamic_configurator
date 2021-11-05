@@ -25,13 +25,25 @@
       <field name="manual_list_price"/>
       <newline/>
     </group>
-    <group col="2" id="column4">
+    <group col="2" id="column4" colspan="2">
       <label name="list_price"/>
       <field name="list_price"/>
       <label name="cost_price_no_manual"/>
       <field name="cost_price_no_manual"/>
       <label name="margin"/>
       <field name="margin"/>
+      <label name="unit_price_no_manual_per_mil"/>
+      <field name="unit_price_no_manual_per_mil"/>
+    </group>
+    <group col="2" id="column5" colspan="2">
+      <label name="list_price"/>
+      <field name="list_price"/>
+      <label name="cost_price"/>
+      <field name="cost_price"/>
+      <label name="margin_w_manual"/>
+      <field name="margin_w_manual"/>
+      <label name="unit_price_per_mil"/>
+      <field name="unit_price_per_mil"/>
     </group>
     <field name="prices" colspan="8"/>
 </form>

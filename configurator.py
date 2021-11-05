@@ -820,9 +820,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         exists_product = Product.search([('template.code', '=', template.code)])
         if exists_product:
             product = exists_product[0]
-        
+
         self.update_product_values(template, design, values, created_obj)
-      
+
         output = BomOutput()
         output.bom = bom
         output.product = product
@@ -841,7 +841,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         # if exists_bom:
         #     return {self: (exists_bom[0], res_obj)}
 
-        
+
         return {self: (bom, res_obj)}
 
     def get_ratio_for_prices(self, values, ratio):
@@ -1465,6 +1465,10 @@ class QuotationLine(ModelSQL, ModelView):
         digits=(16, 4)), 'get_prices')
     cost_price_no_manual = fields.Function(fields.Numeric(
         'Cost Price No Manual', digits=price_digits), 'get_prices')
+    unit_price_per_mil = fields.Function(fields.Numeric('Cost/Qty',
+        digits=price_digits), 'get_prices')
+    unit_price_no_manual_per_mil = fields.Function(fields.Numeric('Cost(NoM)/Qty',
+        digits=price_digits), 'get_prices')
 
     def get_rec_name(self, name):
         return '%s - %s' % (str(self.quantity),
@@ -1520,7 +1524,8 @@ class QuotationLine(ModelSQL, ModelView):
         quantize = Decimal(str(10.0 ** -price_digits[1]))
         for name in {'cost_price', 'list_price', 'margin', 'unit_price',
                 'material_cost_price', 'margin_material',
-                'cost_price_no_manual', 'margin_w_manual'}:
+                'cost_price_no_manual', 'margin_w_manual',
+                'unit_price_per_mil', 'unit_price_no_manual_per_mil'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
 
         for quote in quotations:
@@ -1564,6 +1569,10 @@ class QuotationLine(ModelSQL, ModelView):
                 - material_cost_price)
             res['margin_w_manual'][quote.id] = (res['list_price'][quote.id]
                 - cost_price)
+            res['unit_price_per_mil'][quote.id] = (
+                res['cost_price'][quote.id]/ Decimal(quote_quantity2))
+            res['unit_price_no_manual_per_mil'][quote.id] = (
+                res['cost_price_no_manual'][quote.id] / Decimal(quote_quantity2))
         return res
 
 
