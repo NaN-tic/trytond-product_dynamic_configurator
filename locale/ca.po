@@ -312,7 +312,7 @@ msgstr "Preu de cost"
 
 msgctxt "field:configurator.quotation.line,cost_price_no_manual:"
 msgid "Cost Price No Manual"
-msgstr "Preu Cost No manual"
+msgstr "Preu Cost (NoM)"
 
 msgctxt "field:configurator.quotation.line,design:"
 msgid "Design"
