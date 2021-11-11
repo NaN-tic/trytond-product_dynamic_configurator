@@ -226,7 +226,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         template = Jinja2Template(expression)
         res = template.render(record)
         if res:
-            res = res.replace('\t', '').replace('\n', '')
+            res = res.replace('\t', '').replace('\n', '').strip()
         return res
 
     @classmethod
@@ -846,7 +846,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     def get_ratio_for_prices(self, values, ratio):
         if not self.parent:
-            return ratio
+            r = self.evaluate(self.quantity or '1.0', values) or 1.0
+            return ratio/r
 
         parent = self.parent
         ratio_parent = self.evaluate(parent.quantity or '1.0', values) or 1.0
@@ -1073,7 +1074,9 @@ class Design(Workflow, ModelSQL, ModelView):
     def on_change_template(self):
         if not self.template:
             return
-        self.quotation_uom = self.template.product_template.purchase_uom.id
+        template = self.template.product_template
+        self.quotation_uom = (template.quotation_uom and template.quotation_uom.id or
+            template.default_uom.id)
         self.sale_uom = self.template.product_template.sale_uom.id
 
     @classmethod
@@ -1193,6 +1196,10 @@ class Design(Workflow, ModelSQL, ModelView):
             for quote in design.prices:
                 quote_quantity = Uom.compute_qty(design.quotation_uom,
                     quote.quantity, design.template.uom, round=False)
+                bom_quantity = Uom.compute_qty(design.template.uom,
+                    eval(design.template.quantity), design.template.uom, round=False)
+                quote_ratio = quote_quantity/bom_quantity
+                print("quote_quantity", quote_quantity, bom_quantity, quote_ratio)
                 for prop, v in res.items():
                     v = v[0]
                     key = (prop.price_category or prop.id, quote)
@@ -1204,13 +1211,13 @@ class Design(Workflow, ModelSQL, ModelView):
                         continue
                     if prop.type in ('product', 'match'):
                         if isinstance(v, BomInput):
-                            quantity = (v.quantity or 0) * quote_quantity
+                            quantity = (v.quantity or 0) * quote_ratio
                             product = v.product
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
                             quantity = prop.evaluate(prop.quantity,
                                 design.as_dict()[parent])
-                            quantity = quantity * quote_quantity
+                            quantity = quantity * quote_ratio
                             product = v
                     # if prop.type == 'operation':
                     #     quantity = prop.evaluate(prop.quantity,
@@ -1230,6 +1237,8 @@ class Design(Workflow, ModelSQL, ModelView):
                             values.get(parent, {}), 1)
                         if not product:
                             continue
+                        print("quote_quantity", quote_quantity, bom_quantity, quote_ratio, qty_ratio, quantity)
+
                         cost_price = quote.get_unit_price(product,
                             quantity * qty_ratio, prop.uom, supplier)
                         dl = prop.create_design_line(quantity * qty_ratio,
@@ -1336,13 +1345,18 @@ class Design(Workflow, ModelSQL, ModelView):
                 if tmpl_field == 'name' and pproperty:
                     parent = pproperty.get_parent()
                     if parent and parent != pproperty:
-                        val = self.render_field(parent, tmpl_field,
-                            custom_locals) or ''
-                val = val + self.render_field(property, tmpl_field,
-                    custom_locals) or ''
+                        val = (self.render_field(parent, tmpl_field,
+                            custom_locals) or '').strip()
+
+                val = val + (self.render_field(property, tmpl_field,
+                    custom_locals) or '').strip()
                 if val:
-                    setattr(template, field, val)
+                    if tmpl_field != 'name':
+                        setattr(product, field, val)
+                    else:
+                        setattr(template, field, val)
             template.save()
+            product.save()
 
     def render_field(self, property, field, custom_locals):
         f = getattr(property, field)
