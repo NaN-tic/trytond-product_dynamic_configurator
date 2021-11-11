@@ -1199,7 +1199,6 @@ class Design(Workflow, ModelSQL, ModelView):
                 bom_quantity = Uom.compute_qty(design.template.uom,
                     eval(design.template.quantity), design.template.uom, round=False)
                 quote_ratio = quote_quantity/bom_quantity
-                print("quote_quantity", quote_quantity, bom_quantity, quote_ratio)
                 for prop, v in res.items():
                     v = v[0]
                     key = (prop.price_category or prop.id, quote)
