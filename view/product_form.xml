@@ -2,15 +2,13 @@
 <!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
 this repository contains the full copyright notices and license terms. -->
 <data>
-<!--    <xpath expr="/form/notebook" position="inside">-->
-<!--        <page id="attributes" string="Attributes">-->
-<!--            <field name="attributes" colspan="4"/>-->
-<!--            <label name="attribute_summary" colspan="4" xalign="0.0"/>-->
-<!--            <field name="attribute_summary" colspan="4" widget="richtext" toolbar="0" yexpand="1" yfill="1"/>-->
-<!--        </page>-->
-<!--    </xpath>-->
-    <xpath expr="/form/notebook/page[@id='general']/field[@name='type']" position="after">
-        <label name="configurator_template"/>
-        <field name="configurator_template"/>
+     <xpath expr="/form/notebook/page[@id='general']/field[@name='type']" position="after">
+         <label name="configurator_template"/>
+         <field name="configurator_template"/>
+     </xpath>
+
+    <xpath expr="/form/notebook/page[@id='general']/field[@name='default_uom']" position="after">
+        <label name="quotation_uom"/>
+        <field name="quotation_uom"/>
     </xpath>
 </data>

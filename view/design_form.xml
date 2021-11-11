@@ -35,6 +35,9 @@
           <field name="process_date"/>
          <field name="attributes" colspan="4" height="800"/>
         </page>
+         <page name="suppliers">
+            <field name="suppliers" colspan="4"/>
+        </page>
         <page name="prices">
             <label name="quoted_by"/>
             <field name="quoted_by"/>
@@ -42,9 +45,7 @@
             <field name="quotation_date"/>
             <field name="prices" colspan="4"/>
         </page>
-        <page name="suppliers">
-            <field name="suppliers" colspan="4"/>
-        </page>
+
         <page name="objects">
             <field name="objects" colspan="4"/>
         </page>
