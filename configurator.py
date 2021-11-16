@@ -1236,8 +1236,6 @@ class Design(Workflow, ModelSQL, ModelView):
                             values.get(parent, {}), 1)
                         if not product:
                             continue
-                        print("quote_quantity", quote_quantity, bom_quantity, quote_ratio, qty_ratio, quantity)
-
                         cost_price = quote.get_unit_price(product,
                             quantity * qty_ratio, prop.uom, supplier)
                         dl = prop.create_design_line(quantity * qty_ratio,
