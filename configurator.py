@@ -1480,6 +1480,9 @@ class QuotationLine(ModelSQL, ModelView):
         digits=price_digits), 'get_prices')
     unit_price_no_manual_per_mil = fields.Function(fields.Numeric('Cost(NoM)/Qty',
         digits=price_digits), 'get_prices')
+    manual_list_price_on_sale_uom = fields.Function(
+        fields.Numeric('Manual List Price On Sale Uome',
+                       digits=price_digits), 'get_prices')
 
     def get_rec_name(self, name):
         return '%s - %s' % (str(self.quantity),
@@ -1536,6 +1539,7 @@ class QuotationLine(ModelSQL, ModelView):
         for name in {'cost_price', 'list_price', 'margin', 'unit_price',
                 'material_cost_price', 'margin_material',
                 'cost_price_no_manual', 'margin_w_manual',
+                'manual_list_price_on_sale_uom',
                 'unit_price_per_mil', 'unit_price_no_manual_per_mil'}:
             res[name] = {}.fromkeys([x.id for x in quotations], Decimal(0))
 
@@ -1584,6 +1588,9 @@ class QuotationLine(ModelSQL, ModelView):
                 res['cost_price'][quote.id]/ Decimal(quote_quantity2))
             res['unit_price_no_manual_per_mil'][quote.id] = (
                 res['cost_price_no_manual'][quote.id] / Decimal(quote_quantity2))
+            res['manual_list_price_on_sale_uom'][quote.id] = (
+                Uom.compute_price(unit_price_uom, quote.manual_list_price,
+                    quote.design.sale_uom))
         return res
 
 
