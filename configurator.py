@@ -999,6 +999,7 @@ class Design(Workflow, ModelSQL, ModelView):
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'on_change_with_product_uom_category')
+    product_codes = fields.Text('Product Codes', readonly=True)
 
     @classmethod
     def __setup__(cls):
@@ -1174,6 +1175,7 @@ class Design(Workflow, ModelSQL, ModelView):
         DesignLine = pool.get('configurator.design.line')
         Lang = pool.get('ir.lang')
         remove_lines = []
+        Bom = pool.get('production.bom')
         BomInput = pool.get('production.bom.input')
         Product = pool.get('product.product')
         Uom = pool.get('product.uom')
@@ -1188,11 +1190,13 @@ class Design(Workflow, ModelSQL, ModelView):
 
             design.quotation_date = Date.today()
             design.quoted_by = User(Transaction().user).employee
+            design.product_codes = ''
             values = design.as_dict()
             res = design.template.create_prices(design, values)
             design.custom_operations(res)
             suppliers = dict((x.category, x.supplier)
                 for x in design.suppliers)
+            product_codes = []
             for quote in design.prices:
                 quote_quantity = Uom.compute_qty(design.quotation_uom,
                     quote.quantity, design.template.uom, round=False)
@@ -1206,6 +1210,22 @@ class Design(Workflow, ModelSQL, ModelView):
                     quantity = 0
                     cost_price = None
                     product = None
+                    if prop.type in ('bom', 'purchase_product'):
+                        if isinstance(v, Bom):
+                            for output in v.outputs:
+                                code = '%s - %s' % (
+                                    output.product.template.code,
+                                    output.product.template.name)
+                                if code not in product_codes:
+                                    product_codes += [code]
+
+                        if isinstance(v, Product):
+                            code = '%s - %s' % (
+                                v.product.template.code,
+                                v.product.template.name)
+                            if code not in product_codes:
+                                product_codes += [code]
+
                     if prop.type not in ('product', 'match'):
                         continue
                     if prop.type in ('product', 'match'):
@@ -1263,6 +1283,7 @@ class Design(Workflow, ModelSQL, ModelView):
             custom_locals = design.design_full_dict()
             design.code = design.render_field(design.template, 'code_template',
                 custom_locals)
+            design.product_codes = "\n".join(product_codes)
             design.save()
 
             langs = Lang.search([('active', '=', True),
