@@ -1278,8 +1278,10 @@ class Design(Workflow, ModelSQL, ModelView):
                         dl.debug_quantity = quantity
                         dl.unit_price = cost_price
 
+            DesignLine.delete(remove_lines)
             to_save = prices.values()
             DesignLine.save(to_save)
+
             custom_locals = design.design_full_dict()
             design.code = design.render_field(design.template, 'code_template',
                 custom_locals)
@@ -1291,7 +1293,7 @@ class Design(Workflow, ModelSQL, ModelView):
             for lang in langs:
                 design.render_design_fields(lang)
 
-        DesignLine.delete(remove_lines)
+
 
     def design_full_dict(self):
         record = self.as_dict()
