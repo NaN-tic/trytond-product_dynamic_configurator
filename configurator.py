@@ -513,16 +513,16 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         name_field = getattr(attribute_set, name)
         return attribute_set.render_expression_record(name_field, values)
 
-    def get_property_code(self, design, custom_locals):
-        parent = self.get_parent()
-        code = ''
-        if parent:
-            code = design.render_field(parent, 'code_template', custom_locals)
-            code = code and code.strip() or ''
-        if parent != self:
-            code2 = design.render_field(self, 'code_template', custom_locals)
-            code = code.strip() + (code2 and code2.strip() or '')
-        return code
+    # def get_property_code(self, design, custom_locals):
+    #     parent = self.get_parent()
+    #     code = ''
+    #     if parent:
+    #         code = design.render_field(parent, 'code_template', custom_locals)
+    #         code = code and code.strip() or ''
+    #     if parent != self:
+    #         code2 = design.render_field(self, 'code_template', custom_locals)
+    #         code = code.strip() + (code2 and code2.strip() or '')
+    #     return code
 
     def get_purchase_product(self, design, values, created_obj):
         pool = Pool()
@@ -546,7 +546,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         # Generate code
         template.code = self.get_property_code(design, custom_locals)
-
         if not template.code:
             template.code = "purchase (%s)" % (template.code or str(design.id))
         if not hasattr(product, 'attributes'):
@@ -840,7 +839,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         # exists_bom = Bom.search([('name', '=', bom.name)])
         # if exists_bom:
         #     return {self: (exists_bom[0], res_obj)}
-
 
         return {self: (bom, res_obj)}
 
@@ -1210,21 +1208,20 @@ class Design(Workflow, ModelSQL, ModelView):
                     quantity = 0
                     cost_price = None
                     product = None
-                    if prop.type in ('bom', 'purchase_product'):
-                        if isinstance(v, Bom):
-                            for output in v.outputs:
-                                code = '%s - %s' % (
-                                    output.product.template.code,
-                                    output.product.template.name)
-                                if code not in product_codes:
-                                    product_codes += [code]
-
-                        if isinstance(v, Product):
+                    if prop.type == 'bom':
+                        for output in v.outputs:
                             code = '%s - %s' % (
-                                v.product.template.code,
-                                v.product.template.name)
+                                output.product.template.code,
+                                output.product.template.name)
                             if code not in product_codes:
                                 product_codes += [code]
+
+                    if prop.type == 'purchase_product':
+                        code = '%s - %s' % (
+                            v.product.template.code,
+                            v.product.template.name)
+                        if code not in product_codes:
+                            product_codes += [code]
 
                     if prop.type not in ('product', 'match'):
                         continue
