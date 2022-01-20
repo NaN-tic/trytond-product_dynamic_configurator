@@ -281,6 +281,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             return self
         return self.parent.get_parent()
 
+    def get_root_parent(self):
+        if self.parent:
+            return self.get_root_parent(self.parent)
+        return self
+
+
     def compute_attributes(self, design, attributes=None):
         Attribute = Pool().get('configurator.design.attribute')
         if not attributes:
@@ -519,9 +525,18 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if parent:
             code = design.render_field(parent, 'code_template', custom_locals)
             code = code and code.strip() or ''
-        if parent != self:
-            code2 = design.render_field(self, 'code_template', custom_locals)
-            code = code.strip() + (code2 and code2.strip() or '')
+        if self.parent:
+            code = code.strip() + self.code.strip()
+        return code
+
+    def get_property_name(self, design, custom_locals):
+        parent = self.get_parent()
+        code = ''
+        if parent:
+            code = design.render_field(parent, 'name_template', custom_locals)
+            code = code and code.strip() or ''
+        if self.parent:
+            code = code.strip() + self.code.strip()
         return code
 
     def get_purchase_product(self, design, values, created_obj):
@@ -549,6 +564,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         if not template.code:
             template.code = "purchase (%s)" % (template.code or str(design.id))
+        template_name = self.get_property_name(design, custom_locals)
+        if template_name:
+            template.name = template_name
+
         if not hasattr(product, 'attributes'):
             product.attributes = tuple()
         for prop, child_res in created_obj.items():
@@ -777,6 +796,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         template.code = self.get_property_code(design, custom_locals)
         if not template.code:
             template.code = "%s (%s)" % (self.code, design.code or str(design.id))
+
+        template_name = self.get_property_name(design, custom_locals)
+        if template_name:
+            template.name = template_name
 
         bom.name = template.code
 
