@@ -709,6 +709,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         bom_input.quantity = quantity
         return {self: (bom_input, [])}
 
+
     def get_bom(self, design, values, created_obj):
         pool = Pool()
         Product = pool.get('product.product')
