@@ -1563,15 +1563,12 @@ class QuotationLine(ModelSQL, ModelView):
 
         context[uom] = uom and uom.id
         with Transaction().set_context(context):
-            quantity2 = Uom.compute_qty(uom,
-                abs(quantity), product.purchase_uom)
-
             unit_price = Product.get_purchase_price(
-                [product], abs(quantity2 or 0))[product.id]
+                [product], abs(quantity or 0))[product.id]
             if unit_price:
                 unit_price = unit_price.quantize(
                     Decimal(1) / 10 ** price_digits[1])
-
+            print(product.name, "quantities:", quantity,uom.name, product.purchase_uom.name, unit_price)
             return unit_price
 
     @classmethod
