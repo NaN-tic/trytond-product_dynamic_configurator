@@ -249,5 +249,18 @@
             <field name="view" ref="object_view_list"/>
             <field name="act_window" ref="act_object_form"/>
         </record>
+
+        <!-- Rules -->
+        <record model="ir.rule.group" id="rule_group_configurator_design">
+            <field name="name">User in company</field>
+            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+            <field name="global_p" eval="True"/>
+        </record>
+        <record model="ir.rule" id="rule_configurator_design1">
+            <field name="domain"
+                eval="[('company', 'in', Eval('companies', []))]"
+                pyson="1"/>
+            <field name="rule_group" ref="rule_group_configurator_design"/>
+        </record>
     </data>
 </tryton>
