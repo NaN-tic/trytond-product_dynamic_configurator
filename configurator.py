@@ -220,7 +220,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         return res
 
     def render_expression_record(self, expression, record):
-        template = Jinja2Template(expression)
+        template = Jinja2Template(expression, trim_blocks=True)
         res = template.render(record)
         if res:
             res = res.replace('\t', '').replace('\n', '').strip()
@@ -520,9 +520,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         code = ''
         if parent:
             code = design.render_field(parent, 'code_template', custom_locals)
-            code = code and code.strip() or ''
+            code = code and code.strip() or '' + parent.code
         if self.parent:
-            code = code.strip() + self.code.strip()
+            suffix = self.code.strip()
+            if parent and parent != self:
+                suffix = parent.code + suffix
+            code = code.strip() + suffix
         return code
 
     def get_property_name(self, design, custom_locals):
@@ -741,7 +744,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         bom.outputs = ()
         operations_route = ()
         for child, child_res in created_obj.items():
-            parent = child.get_parent()
+            if child.type == 'bom' and child.parent:
+                parent = child.parent.get_parent()
+            else:
+                parent = child.get_parent()
+
             if parent != self and child.parent:
                 continue
             child_res, _ = child_res
@@ -766,6 +773,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 bom_input.product = child_output.product
                 bom_input.on_change_product()
                 bom_input.quantity = child_output.quantity
+                bom_input.uom = child_output.uom
                 bom.inputs += (bom_input,)
             elif isinstance(child_res, Operation):
                 operations_route += (child_res,)
@@ -858,9 +866,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if route:
             product_bom.route = route
         res_obj.append(product_bom)
-        # exists_bom = Bom.search([('name', '=', bom.name)])
-        # if exists_bom:
-        #     return {self: (exists_bom[0], res_obj)}
 
         return {self: (bom, res_obj)}
 
@@ -1363,7 +1368,7 @@ class Design(Workflow, ModelSQL, ModelView):
             ptemplate = design.template
             for tmpl_field, field in design_fields:
                 f = getattr(ptemplate, tmpl_field)
-                if not f:
+                if not f or f is None or f == '':
                     continue
                 val = ptemplate.render_expression_record(f, custom_locals)
                 val = val.replace('\n', '').replace('\t', '')
@@ -1569,7 +1574,6 @@ class QuotationLine(ModelSQL, ModelView):
             if unit_price:
                 unit_price = unit_price.quantize(
                     Decimal(1) / 10 ** price_digits[1])
-            print(product.name, "quantities:", quantity,uom.name, product.purchase_uom.name, unit_price)
             return unit_price
 
     @classmethod
