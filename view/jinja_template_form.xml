@@ -1,0 +1,18 @@
+<form>
+    <label name="name"/>
+    <field name="name"/>
+    <label name="type_"/>
+    <field name="type_"/>
+    <notebook>
+        <page name="jinja">
+            <field name="jinja" colspan="4"/>
+        </page>
+        <page name="full_content">
+            <field name="full_content" colspan="4"/>
+        </page>
+        <page name="macros">
+            <field name="macros" colspan="4"/>
+        </page>
+    </notebook>
+</form>
+
