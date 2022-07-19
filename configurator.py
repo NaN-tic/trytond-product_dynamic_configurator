@@ -864,6 +864,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product_bom = ProductBom()
         product_bom.product = product
         product_bom.bom = bom
+        if 'phantom' in Product._fields:
+            product.phantom = True
         if route:
             product_bom.route = route
         res_obj.append(product_bom)
