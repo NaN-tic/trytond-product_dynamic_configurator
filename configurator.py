@@ -528,6 +528,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     def get_property_code(self, design, custom_locals):
         parent = self.get_parent()
         code = ''
+        if self.type == 'purchase_product':
+            code = design.render_field(self, 'code_template', custom_locals) # TODO: remove when applies new jinja codes
+            code = design.render_field(self, 'code_jinja', custom_locals)
+            code = code and code.strip() + self.code.strip()
+            return code
         if parent:
             code = design.render_field(parent, 'code_template', custom_locals) # TODO: remove when applies new jinja codes
             code = design.render_field(parent, 'code_jinja', custom_locals)
@@ -542,11 +547,16 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     def get_property_name(self, design, custom_locals):
         parent = self.get_parent()
         code = ''
+        if self.type == 'purchase_product':
+            code = design.render_field(self, 'name_template', custom_locals) # TODO: remove when applies new jinja codes
+            code = design.render_field(self, 'name_jinja', custom_locals)
+            code = code and code.strip() or '' + self.name.strip()
+            return code
         if parent:
             code = design.render_field(parent, 'name_template', custom_locals)  # TODO: Remove when applies new jinja codes
             code = design.render_field(parent, 'name_jinja', custom_locals)
             code = code and code.strip() or ''
-        if self.parent:
+        if self.parent and self.type != 'purchase_product':
             code = code.strip() + self.code.strip()
         return code
 
@@ -616,7 +626,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         template.products = None
 
         exists_product = Product.search(
-            [('template.code', '=', template.code)])
+            [('template.code', '=', template.code),
+              ('template.default_uom', '=', template.default_uom)])
+
         if exists_product:
             product = exists_product[0]
             template = product.template
