@@ -633,6 +633,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         ProductSupplier = pool.get('purchase.product_supplier')
         Price = pool.get('purchase.product_supplier.price')
         product_supplier = ProductSupplier()
+        product_supplier.template = template
+        product_supplier.product = product
         product_supplier.party = goods_supplier
         product_supplier.on_change_party()
         product_supplier.prices = ()
@@ -657,6 +659,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
             if cost_price:
                 price = Price()
+                price.uom = template.purchase_uom
                 price.info_unit = template.info_unit
                 qty = ((quote.quantity / qty) * bom_input.quantity)
                 price.quantity = Uom.compute_qty(self.uom, qty,
@@ -677,7 +680,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
 
-        template.product_suppliers = [product_supplier]
+        product.product_suppliers = [product_supplier]
         self.update_product_values(template, design, values, created_obj)
         return {self: (bom_input, [])}
 
