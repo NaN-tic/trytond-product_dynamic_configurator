@@ -1,0 +1,36 @@
+<tryton>
+    <data>
+        <record model="ir.ui.view" id="jinja_template_view_form">
+            <field name="model">configurator.jinja_template</field>
+            <field name="type">form</field>
+            <field name="name">jinja_template_form</field>
+        </record>
+
+        <record model="ir.ui.view" id="jinja_template_view_list">
+            <field name="model">configurator.jinja_template</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="20"/>
+            <field name="name">jinja_template_list</field>
+        </record>
+
+        <record model="ir.action.act_window" id="act_jinja_template_tree">
+            <field name="name">Jinja Templates</field>
+            <field name="res_model">configurator.jinja_template</field>
+        </record>
+
+        <record model="ir.action.act_window.view" id="act_jinja_template_list_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="jinja_template_view_list"/>
+            <field name="act_window" ref="act_jinja_template_tree"/>
+        </record>
+
+        <record model="ir.action.act_window.view" id="act_jinja_template_form_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="jinja_template_view_form"/>
+            <field name="act_window" ref="act_jinja_template_tree"/>
+        </record>
+
+        <menuitem parent="menu_configurator" sequence="1"
+            action="act_jinja_template_tree" id="menu_jinja_template_form"/>
+    </data>
+</tryton>

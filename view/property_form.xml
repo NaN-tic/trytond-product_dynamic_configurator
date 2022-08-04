@@ -54,6 +54,12 @@
         <page name="childs">
             <field name="childs" colspan="4"/>
         </page>
+        <page id="descriptions" string="Descriptions">
+            <label name="code_jinja"/>
+            <field name="code_jinja"/>
+            <label name="name_jinja"/>
+            <field name="name_jinja"/>
+        </page>
         <page name="code_template">
             <field name="code_template"/>
         </page>
@@ -65,3 +71,4 @@
         </page>
     </notebook>
 </form>
+
