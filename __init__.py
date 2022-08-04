@@ -4,6 +4,7 @@
 from trytond.pool import Pool
 from . import configurator
 from . import product
+from . import jinja_templates
 
 def register():
     Pool.register(
@@ -17,5 +18,7 @@ def register():
         configurator.DesignAttribute,
         configurator.QuotationCategory,
         configurator.QuotationSupplier,
+        jinja_templates.JinjaTemplateMacros,
+        jinja_templates.JinjaTemplate,
         product.Template,
         module='product_dynamic_configurator', type_='model')
