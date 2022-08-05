@@ -404,7 +404,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 value = val
             op = child.attribute_search_op or '='
             type_ = attribute.type_
-            domain += [('template.attribute_set', '=', child.attribute_set.id),
+            domain += [
+                ('type', '=', 'service'),
+                ('template.attribute_set', '=', child.attribute_set.id),
                 ('attributes.attribute.id', '=', attribute.id),
                 ('attributes.value_%s' % type_, op, value),
                 ]
@@ -422,6 +424,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if not product:
             return {self: (None, [])}
 
+        print("code:", self.code, "id:", self.id, "quantity:", self.quantity, "uom:", self.uom.name, "product:", product.default_uom.name, product.id , product.code)
         quantity = self.evaluate(self.quantity, values)
         quantity = Uom.compute_qty(self.uom, quantity,
              product.default_uom)
