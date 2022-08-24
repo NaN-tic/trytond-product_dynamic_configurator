@@ -428,7 +428,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not product:
             return {self: (None, [])}
 
-        print("code:", self.code, "id:", self.id, "quantity:", self.quantity, "uom:", self.uom.name, "product:", product.default_uom.name, product.id , product.code)
         quantity = self.evaluate(self.quantity, values)
         quantity = Uom.compute_qty(self.uom, quantity,
              product.default_uom)
@@ -537,12 +536,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         code = ''
         if self.type == 'purchase_product':
             code = design.render_field(self, 'code_template', custom_locals) # TODO: remove when applies new jinja codes
-            code = design.render_field(self, 'code_jinja', custom_locals)
+            code = design.render_field(self, 'code_jinja', custom_locals) or code
             code = code and code.strip() + self.code.strip()
             return code
         if parent:
             code = design.render_field(parent, 'code_template', custom_locals) # TODO: remove when applies new jinja codes
-            code = design.render_field(parent, 'code_jinja', custom_locals)
+            code = design.render_field(parent, 'code_jinja', custom_locals) or code
             code = code and code.strip() or '' + parent.code
         if self.parent:
             suffix = self.code.strip()
@@ -891,7 +890,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         output.quantity = Uom.compute_qty(self.uom,
             self.evaluate(self.quantity, values), product.default_uom)
         bom.outputs += (output,)
-        bom.name = template.name
+        bom.name = "(%s) %s" % (template.code, template.name)
         product_bom = ProductBom()
         product_bom.product = product
         product_bom.bom = bom
@@ -1122,7 +1121,7 @@ class Design(Workflow, ModelSQL, ModelView):
             self.template.code_template or '', custom_locals)  # TODO: Remove when applies new jinja_fields
         self.code = self.template.render_expression_record(
             self.template.code_jinja and self.template.code_jinja.full_content
-            or '', custom_locals)
+            or '', custom_locals) or self.code
         self.product_exists = self.get_product_exist()
 
     @fields.depends('template', 'name', methods=['design_full_dict'])
@@ -1352,7 +1351,10 @@ class Design(Workflow, ModelSQL, ModelView):
             design.code = design.render_field(design.template, 'code_template', # TODO: Remove when applies new jinja fields
                 custom_locals)   # TODO: Remove when applies new jinja fields
             design.code = design.render_field(design.template, 'code_jinja',
-                custom_locals)
+                custom_locals) or design.code
+            code = design.render_field(design.template, 'code_jinja',
+                 custom_locals) or design.code
+            design.product_codes = "\n".join(product_codes)
             design.save()
 
             langs = Lang.search([('active', '=', True),
@@ -1483,7 +1485,7 @@ class Design(Workflow, ModelSQL, ModelView):
             design.code = design.render_field(design.template, 'code_template',  # TODO: remove when applies new jinja fields
                 custom_locals)  # TODO: remove when applies new jinja fields
             design.code = design.render_field(design.template, 'code_jinja',
-                custom_locals)
+                custom_locals) or design.code
             to_delete += [x for x in design.objects]
             res = design.template.create_prices(design, design.as_dict())
             for prop, objs in res.items():
