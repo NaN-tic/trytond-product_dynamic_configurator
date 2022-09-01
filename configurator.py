@@ -532,12 +532,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         code = ''
         if self.type == 'purchase_product':
             code = design.render_field(self, 'code_template', custom_locals) # TODO: remove when applies new jinja codes
-            code = design.render_field(self, 'code_jinja', custom_locals) or code
+            code = design.render_field(self, 'code_jinja', custom_locals)
             code = code and code.strip() + self.code.strip()
             return code
         if parent:
             code = design.render_field(parent, 'code_template', custom_locals) # TODO: remove when applies new jinja codes
-            code = design.render_field(parent, 'code_jinja', custom_locals) or code
+            code = design.render_field(parent, 'code_jinja', custom_locals)
             code = code and code.strip() or '' + parent.code
         if self.parent:
             suffix = self.code.strip()
@@ -1162,6 +1162,7 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('quotion_date', None)
         default.setdefault('objects', None)
         default.setdefault('product', None)
+        default.setdefault('product_codes', None)
         return super(Design, cls).copy(designs, default=default)
 
     def get_product_exist(self, name=None):
@@ -1352,7 +1353,8 @@ class Design(Workflow, ModelSQL, ModelView):
             design.code = design.render_field(design.template, 'code_template', # TODO: Remove when applies new jinja fields
                 custom_locals)   # TODO: Remove when applies new jinja fields
             code = design.render_field(design.template, 'code_jinja',
-                 custom_locals) or design.code
+                 custom_locals)
+            design.code = code
             design.product_codes = "\n".join(product_codes)
             design.save()
 
@@ -1482,7 +1484,7 @@ class Design(Workflow, ModelSQL, ModelView):
             design.code = design.render_field(design.template, 'code_template',  # TODO: remove when applies new jinja fields
                 custom_locals)  # TODO: remove when applies new jinja fields
             design.code = design.render_field(design.template, 'code_jinja',
-                custom_locals) or design.code
+                custom_locals)
             to_delete += [x for x in design.objects]
             res = design.template.create_prices(design, design.as_dict())
             for prop, objs in res.items():
