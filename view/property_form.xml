@@ -60,12 +60,6 @@
             <label name="name_jinja"/>
             <field name="name_jinja"/>
         </page>
-        <page name="code_template">
-            <field name="code_template"/>
-        </page>
-        <page name="name_template">
-            <field name="name_template"/>
-        </page>
         <page name="childrens">
             <field name="childrens"/>
         </page>
