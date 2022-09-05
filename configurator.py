@@ -1338,13 +1338,6 @@ class Design(Workflow, ModelSQL, ModelView):
             DesignLine.save(to_save)
 
             custom_locals = design.design_full_dict()
-<<<<<<< HEAD
-            design.code = design.render_field(design.template, 'code_template', # TODO: Remove when applies new jinja fields
-                custom_locals)   # TODO: Remove when applies new jinja fields
-            design.code = design.render_field(design.template, 'code_jinja',
-                custom_locals) or design.code
-=======
->>>>>>> 07bf398 (remove old code that generated description fields)
             code = design.render_field(design.template, 'code_jinja',
                  custom_locals)
             design.code = code
