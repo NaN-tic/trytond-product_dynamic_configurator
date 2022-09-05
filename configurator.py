@@ -870,6 +870,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             product = exists_product[0]
 
         self.update_product_values(template, design, values, created_obj)
+        template = self.template_update(template, bom)
 
         output = BomOutput()
         output.bom = bom
@@ -889,6 +890,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         res_obj.append(product_bom)
 
         return {self: (bom, res_obj)}
+
+    def template_update(self, template, bom):
+        return template
+
 
     def get_ratio_for_prices(self, values, ratio):
         if not self.parent:
