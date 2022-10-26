@@ -5,6 +5,7 @@
     <field name="template"/>
     <field name="product"/>
     <field name="quantity" expand="2"/>
+    <field name="bom_quantity" expand="2"/>
     <field name="uom"/>
     <field name="user_input"/>
     <field name="parent" tree_invisible="1"/>

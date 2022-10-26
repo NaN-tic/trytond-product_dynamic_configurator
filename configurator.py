@@ -100,6 +100,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             'bom', 'product', 'function', 'match'])),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
     }, depends=['type'])
+    bom_quantity = fields.Char('Bom Quantity', states={
+        'invisible': Not(Eval('type').in_(['purchase_product',
+            'bom', 'product', 'function', 'match'])),
+        'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
+    }, depends=['type'])
     price_category = fields.Many2One('configurator.property.price_category',
         'Price Category',
         states={
@@ -403,6 +408,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 ('attributes.value_%s' % type_, op, value),
                 ]
         domain += self.get_match_domain(design)
+        print(domain)
         products = Product.search(domain)
         if not products:
             return {self: (None, [])}
@@ -416,7 +422,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if not product:
             return {self: (None, [])}
 
-        quantity = self.evaluate(self.quantity, values)
+        context = Transaction().context
+        quantity = self.bom_quantity or self.quantity
+        if context.get('prices', False):
+            quantity = self.quantity
+
+        quantity = self.evaluate(quantity, values)
         quantity = Uom.compute_qty(self.uom, quantity,
              product.default_uom)
         bom_input = BomInput()
@@ -432,7 +443,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         pass
 
     def get_function(self, design, values, created_obj):
-        value = self.evaluate(self.quantity, values),
+        context = Transaction().context
+        if context.get('prices', False):
+            value = self.evaluate(self.quantity, values)
+        else:
+            value = self.evaluate(self.bom_quantity, values)
+
         return {self: (value, [])}
 
     def get_options(self, design, values, created_obj):
@@ -463,8 +479,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         operation.time = 1  # TODO: hardcoded
         operation.time_uom = 9  # TODO: hardcoded
         operation.quantity_uom = self.uom
+
+        context = Transaction().context
+        quantity = self.bom_quantity or self.quantity
+        if context.get('prices', False):
+            quantity = self.quantity
+
         operation.quantity = Uom.compute_qty(self.uom,
-            self.evaluate(self.quantity, values), self.uom)
+            self.evaluate(quantity, values), self.uom)
         operation.calculation = 'standard'
         return {self: (operation, [])}
 
@@ -626,8 +648,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         bom_input = BomInput()
         bom_input.product = product
         bom_input.on_change_product()
+        context = Transaction().context
+        quantity = self.bom_quantity or self.quantity
+        if context.get('prices', False):
+            quantity = self.quantity
+
         bom_input.quantity = Uom.compute_qty(self.uom,
-            self.evaluate(self.quantity, values), product.default_uom)
+            self.evaluate(quantity, values), product.default_uom)
 
         # Calculate cost_price for purchase_product
         cost_price = 0
@@ -650,6 +677,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product_supplier.on_change_party()
         product_supplier.prices = ()
         design_qty = self.evaluate(design.template.quantity, values)
+        if product.product_suppliers:
+            for supplier in product.product_suppliers:
+                supplier.active = False
+
 
         for quote in design.prices:
             if hasattr(quote, 'state') and quote.state != 'confirmed':
@@ -691,7 +722,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
 
-        product.product_suppliers = [product_supplier]
+        product.product_suppliers += (product_supplier,)
         self.update_product_values(template, design, values, created_obj)
         return {self: (bom_input, [])}
 
@@ -713,6 +744,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if not self.product:
             return
 
+        quantity = self.bom_quantity or self.quantity
+        context = Transaction().context
+        if context.get('prices', False):
+            quantity = self.quantity
+
         attribute = None
         if self.parent and self.parent.type == 'options':
             attribute = values.get(self.parent)
@@ -720,7 +756,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if attribute and attribute.number:
             quantity = attribute.number
         else:
-            quantity = self.evaluate(self.quantity, values)
+            quantity = self.evaluate(quantity, values)
 
         quantity = Uom.compute_qty(self.uom, quantity, product.default_uom)
         bom_input = BomInput()
@@ -870,12 +906,17 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         self.update_product_values(template, design, values, created_obj)
         template = self.template_update(template, bom)
 
+        quantity = self.bom_quantity or self.quantity
+        context = Transaction().context
+        if context.get('prices', False):
+            quantity = self.quantity
+
         output = BomOutput()
         output.bom = bom
         output.product = product
         output.uom = product.default_uom
         output.quantity = Uom.compute_qty(self.uom,
-            self.evaluate(self.quantity, values), product.default_uom)
+            self.evaluate(quantity, values), product.default_uom)
         bom.outputs += (output,)
         bom.name = "(%s) %s" % (template.code, template.name)
         product_bom = ProductBom()
@@ -894,12 +935,22 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
 
     def get_ratio_for_prices(self, values, ratio):
+        quantity = self.bom_quantity or self.quantity
+        context = Transaction().context
+        if context.get('prices', False):
+            quantity = self.quantity
+
+
         if not self.parent:
-            r = self.evaluate(self.quantity or '1.0', values) or 1.0
+            r = self.evaluate(quantity or '1.0', values) or 1.0
             return ratio / r
 
         parent = self.parent
-        ratio_parent = self.evaluate(parent.quantity or '1.0', values) or 1.0
+        parent_quantity = parent.bom_quantity or parent.quantity
+        if context.get('prices', False):
+            quantity = parent.quantity
+
+        ratio_parent = self.evaluate(parent_quantity or '1.0', values) or 1.0
         return parent.get_ratio_for_prices(values,
             (ratio or 1.0) * ratio_parent)
 
@@ -1238,6 +1289,9 @@ class Design(Workflow, ModelSQL, ModelView):
         Date = Pool().get('ir.date')
         to_save = []
 
+        context = Transaction().context.copy()
+        context['prices']  = True
+
         for design in designs:
             prices = {}
             remove_lines = []
@@ -1248,7 +1302,8 @@ class Design(Workflow, ModelSQL, ModelView):
             design.quoted_by = User(Transaction().user).employee
             design.product_codes = ''
             values = design.as_dict()
-            res = design.template.create_prices(design, values)
+            with Transaction().set_context(context):
+                res = design.template.create_prices(design, values)
             design.custom_operations(res)
             suppliers = dict((x.category, x.supplier)
                 for x in design.suppliers)
