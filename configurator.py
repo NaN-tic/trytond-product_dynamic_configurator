@@ -408,7 +408,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 ('attributes.value_%s' % type_, op, value),
                 ]
         domain += self.get_match_domain(design)
-        print(domain)
         products = Product.search(domain)
         if not products:
             return {self: (None, [])}
@@ -677,9 +676,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product_supplier.on_change_party()
         product_supplier.prices = ()
         design_qty = self.evaluate(design.template.quantity, values)
-        if product.product_suppliers:
+        if hasattr(product, 'product_suppliers') and product.product_suppliers:
             for supplier in product.product_suppliers:
                 supplier.active = False
+        else:
+            product.product_suppliers = []
 
 
         for quote in design.prices:
