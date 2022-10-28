@@ -647,6 +647,11 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         ProductSupplier = pool.get('purchase.product_supplier')
         Price = pool.get('purchase.product_supplier.price')
+        if hasattr(product, 'product_suppliers') and product.product_suppliers:
+            for supplier in product.product_suppliers:
+                supplier.active = False
+        else:
+            product.product_suppliers = []
         product_supplier = ProductSupplier()
         product_supplier.template = template
         product_supplier.product = product
@@ -695,7 +700,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
 
-        product.product_suppliers = [product_supplier]
+        product.product_suppliers += (product_supplier,)
         self.update_product_values(template, design, values, created_obj)
         return {self: (bom_input, [])}
 
