@@ -521,7 +521,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def get_property_code(self, design, custom_locals):
         code = design.render_field(self, 'code_jinja', custom_locals)
-        code = code and code.strip() + self.code.strip()
+        code = code and code.strip()
         return code
 
     def get_property_name(self, design, custom_locals):
