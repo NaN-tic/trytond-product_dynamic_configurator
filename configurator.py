@@ -524,34 +524,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         return attribute_set.render_expression_record(name_field, values)
 
     def get_property_code(self, design, custom_locals):
-        parent = self.get_parent()
-        code = ''
-        if self.type == 'purchase_product':
-            code = design.render_field(self, 'code_jinja', custom_locals)
-            code = code and code.strip() + self.code.strip()
-            return code
-        if parent:
-            code = design.render_field(parent, 'code_jinja', custom_locals)
-            code = code and code.strip() or '' + parent.code
-        if self.parent:
-            suffix = self.code.strip()
-            if parent and parent != self:
-                suffix = parent.code + suffix
-            code = code.strip() + suffix
+        code = design.render_field(self, 'code_jinja', custom_locals)
+        code = code and code.strip()
         return code
 
     def get_property_name(self, design, custom_locals):
-        parent = self.get_parent()
-        code = ''
-        if self.type == 'purchase_product':
-            code = design.render_field(self, 'name_jinja', custom_locals)
-            code = code and code.strip() or '' + self.name.strip()
-            return code
-        if parent:
-            code = design.render_field(parent, 'name_jinja', custom_locals)
-            code = code and code.strip() or ''
-        if self.parent and self.type != 'purchase_product':
-            code = code.strip() + self.code.strip()
+        code = design.render_field(self, 'name_jinja', custom_locals)
+        code = code and code.strip() or '' + self.name.strip()
         return code
 
     def get_purchase_product(self, design, values, created_obj):
