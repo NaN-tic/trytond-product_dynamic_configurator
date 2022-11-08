@@ -30,7 +30,9 @@
     <field name="quotation_category"/>
     <newline/>
     <label name="quantity"/>
-    <field name="quantity" colspan="3"/>
+    <field name="quantity"/>
+    <label name="bom_quantity"/>
+    <field name="bom_quantity"/>
     <label name="uom"/>
     <field name="uom"/>
     <newline/>
