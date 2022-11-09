@@ -95,7 +95,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             'invisible': Not(Eval('type').in_(['bom', 'purchase_product',
                 'options', 'group', 'match']))
         })
-    parent = fields.Many2One('configurator.property', 'Parent', select=True,
+    parent = fields.Many2One('configurator.property', 'Parent',
         ondelete='CASCADE')
     quantity = fields.Char('Quantity', states={
         'invisible': Not(Eval('type').in_(['purchase_product',
@@ -1019,7 +1019,7 @@ class Design(Workflow, ModelSQL, ModelView):
             ('id', If(Eval('context', {}).contains('company'), '=', '!='),
                 Eval('context', {}).get('company', -1)),
             ],
-        depends=['state'], select=True)
+        depends=['state'])
     code = fields.Char('Code', states=READONLY_STATE, depends=['state'])
     name = fields.Char('Name', states=READONLY_STATE, depends=['state'],
         translate=True)
