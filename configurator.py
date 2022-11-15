@@ -927,7 +927,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if context.get('prices', False):
             quantity = self.quantity
 
-
         if not self.parent:
             r = self.evaluate(quantity or '1.0', values) or 1.0
             return ratio / r
@@ -935,7 +934,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         parent = self.parent
         parent_quantity = parent.bom_quantity or parent.quantity
         if context.get('prices', False):
-            quantity = parent.quantity
+            parent_quantity = parent.quantity
 
         ratio_parent = self.evaluate(parent_quantity or '1.0', values) or 1.0
         return parent.get_ratio_for_prices(values,
@@ -1347,8 +1346,9 @@ class Design(Workflow, ModelSQL, ModelView):
                         if prop.quotation_category:
                             supplier = suppliers.get(prop.quotation_category)
                         parent = prop.get_parent()
-                        qty_ratio = prop.get_ratio_for_prices(
-                            values.get(parent, {}), 1)
+                        with Transaction().set_context(context):
+                            qty_ratio = prop.get_ratio_for_prices(
+                                values.get(parent, {}), 1)
                         if not product:
                             continue
                         cost_price = quote.get_unit_price(product,
@@ -1362,8 +1362,9 @@ class Design(Workflow, ModelSQL, ModelView):
                         prices[key] = dl
                     else:
                         parent = prop.get_parent()
-                        qty_ratio = prop.get_ratio_for_prices(
-                            values.get(parent, {}), 1)
+                        with Transaction().set_context(context):
+                            qty_ratio = prop.get_ratio_for_prices(
+                                values.get(parent, {}), 1)
                         cost_price = (Decimal(qty_ratio * quantity) / (
                                 dl.unit_price
                                 + Decimal(qty_ratio * quantity) * cost_price))
