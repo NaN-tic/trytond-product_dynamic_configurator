@@ -42,6 +42,6 @@ class JinjaTemplateMacros(ModelSQL):
     __name__ = 'jinja_template-jinja_template_macro'
 
     template = fields.Many2One('configurator.jinja_template', 'Template',
-        domain = [('type_', '=', 'base')], required=True)
+        domain = [('type_', '=', 'base')], required=True, ondelete='CASCADE')
     macro = fields.Many2One('configurator.jinja_template', 'Macro',
-        domain = [('type_', '=', 'macro')], required=True)
+        domain = [('type_', '=', 'macro')], required=True,  ondelete='CASCADE')
