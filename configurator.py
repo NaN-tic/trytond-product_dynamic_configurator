@@ -709,6 +709,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
         product.product_suppliers += (product_supplier,)
         self.update_product_values(template, design, values, created_obj)
+        self.update_variant_values(product, values)
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
@@ -889,6 +890,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             product = exists_product[0]
 
         self.update_product_values(template, design, values, created_obj)
+        self.update_variant_values(product, values)
         template = self.template_update(template, bom)
 
         quantity = self.bom_quantity or self.quantity
