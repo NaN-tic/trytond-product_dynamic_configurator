@@ -21,4 +21,5 @@ def register():
         jinja_templates.JinjaTemplateMacros,
         jinja_templates.JinjaTemplate,
         product.Template,
+        product.Product,
         module='product_dynamic_configurator', type_='model')

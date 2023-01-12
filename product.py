@@ -13,3 +13,7 @@ class Template(metaclass=PoolMeta):
             ('category', '=', Eval('default_uom_category')),
             ],
         depends=['default_uom_category'])
+
+
+class Product(metaclass=PoolMeta):
+    __name__ = 'product.product'
