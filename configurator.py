@@ -1546,14 +1546,21 @@ class Design(Workflow, ModelSQL, ModelView):
             template.product_customer_only = True
             template.save()
 
-            ProductCustomer = pool.get('sale.product_customer')
-            product_customer = ProductCustomer()
-            product_customer.product = product
-            product_customer.on_change_product()
-            product_customer.party = design.party
-            product_customer.name = design.name
-            product_customer.code = design.code
-            product_customer.save()
+            create_product_customer = True
+            if product.product_customers:
+                parties = [x.party for x in product.product_customers]
+                if design.party in parties:
+                    create_product_customer = False
+
+            if create_product_customer:
+                ProductCustomer = pool.get('sale.product_customer')
+                product_customer = ProductCustomer()
+                product_customer.product = product
+                product_customer.on_change_product()
+                product_customer.party = design.party
+                product_customer.name = design.name
+                product_customer.code = design.code
+                product_customer.save()
 
         CreatedObject.delete(to_delete)
 
