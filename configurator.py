@@ -1588,14 +1588,14 @@ class QuotationLine(ModelSQL, ModelView):
         }, depends=['unit_price'])
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
     global_margin = fields.Float('Global Margin', digits=(16, 4),
-        states={'readonly': 'design_state' != 'draft'},
+        states={'readonly':  Eval('design_state') != 'draft'},
         depends=['design_state'])
     cost_price = fields.Function(fields.Numeric('Cost Price',
         digits=price_digits), 'get_prices')
     list_price = fields.Function(fields.Numeric('Total Price',
         digits=price_digits), 'get_prices')
     manual_list_price = fields.Numeric('Manual List Price',
-        digits=price_digits, states={'readonly': 'design_state' != 'draft'},
+        digits=price_digits, states={'readonly':  Eval('design_state') != 'draft'},
         depends=['design_state'])
     margin = fields.Function(fields.Numeric('Margin', digits=(16, 4)),
         'get_prices')
