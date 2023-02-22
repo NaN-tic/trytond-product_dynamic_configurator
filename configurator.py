@@ -556,7 +556,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         Uom = pool.get('product.uom')
         Product = pool.get('product.product')
         Attribute = pool.get('product.product.attribute')
-
+        exists = False
         if not self.product_template:
             return
 
@@ -622,6 +622,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if exists_product:
             product = exists_product[0]
             template = product.template
+            exists = True
 
         bom_input = BomInput()
         bom_input.product = product
@@ -708,7 +709,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     price.info_quantity = price.on_change_with_info_quantity()
 
         product.product_suppliers += (product_supplier,)
-        self.update_product_values(template, design, values, created_obj)
+        self.update_product_values(template, design, values, created_obj, exists)
         self.update_variant_values(product, values)
         return {self: (bom_input, [])}
 
