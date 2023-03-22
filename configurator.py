@@ -1533,13 +1533,17 @@ class Design(Workflow, ModelSQL, ModelView):
                 if prop.type == 'purchase_product':
                     product = obj.product
                     product.save()
+                    if prop.parent is None:
+                        design.product = product
+                        design.save()
                     for lang in langs:
                         design.render_product_fields(lang, product, prop)
 
                 for obj in additional:
                     obj.save()
                     ref = design.create_object(obj)
-                    ref.save()
+                    if ref:
+                        ref.save()
 
             product = design.product
             template = product.template
