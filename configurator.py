@@ -338,10 +338,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             else:
                 custom_locals[prop.code] = attr.number or attr.option
         try:
+            print(expression)
             code = compile(expression, "<string>", "eval")
             return eval(code, custom_locals)
         except BaseException as e:
-            #print(expression, str(e))
+            print(expression, str(e))
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
@@ -1196,8 +1197,9 @@ class Design(Workflow, ModelSQL, ModelView):
         if self.product:
             return self.product.id
         Product = Pool().get('product.product')
-        products = Product.search([
-            ('code', '=', self.code)], limit=1)
+        with Transaction().set_context(active_test=False):
+            products = Product.search([
+                ('code', '=', self.code)], limit=1)
         if not products:
             return None
         product, = products
