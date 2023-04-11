@@ -350,8 +350,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def create_prices(self, design, values):
         created_obj = {}
-        if self.type not in ('options', 'match'):
+        if self.type not in ('match'):
             for prop in self.childs:
+                if self.type == 'options' and prop.type != 'purchase_product':
+                    continue
                 parent = prop.get_parent()
                 val = values
                 if parent in values:
@@ -454,6 +456,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         attribute = values.get(self)
         if attribute and attribute.option:
             res = attribute.option.create_prices(design, values)
+            if attribute.option.type == 'purchase_product':
+                res = attribute.option.get_purchase_product(design, values, created_obj)
+                # option = res.get(attribute.option, None)
+                # if option:
+                #     res = {self: (option[0].product, [])}
+                #     return res
+
             option = res.get(attribute.option, None)
             if option:
                 res.update({self: (option[0], [])})
@@ -557,6 +566,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         Product = pool.get('product.product')
         Attribute = pool.get('product.product.attribute')
         exists = False
+
         if not self.product_template:
             return
 
@@ -667,7 +677,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         else:
             product.product_suppliers = []
 
-
         for quote in design.prices:
             if hasattr(quote, 'state') and quote.state != 'confirmed':
                 continue
@@ -707,7 +716,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     price.info_unit_price = (
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
-
         product.product_suppliers += (product_supplier,)
         self.update_product_values(template, design, values, created_obj, exists)
         self.update_variant_values(product, values)
@@ -1538,6 +1546,8 @@ class Design(Workflow, ModelSQL, ModelView):
                         design.save()
                     for lang in langs:
                         design.render_product_fields(lang, product, prop)
+
+
 
                 for obj in additional:
                     obj.save()
