@@ -186,6 +186,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     childrens = fields.Function(fields.One2Many('configurator.property', None,
         'Childrens'), 'get_childrens')
 
+    option_price_property = fields.Many2One('configurator.property',
+        'Option Price Property',
+        help='Price for option when purchase_product is selected')
+
+
     @staticmethod
     def default_sequence():
         return 99
@@ -456,8 +461,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         attribute = values.get(self)
         if attribute and attribute.option:
             res = attribute.option.create_prices(design, values)
-            if attribute.option.type == 'purchase_product':
-                res = attribute.option.get_purchase_product(design, values, created_obj)
+            if attribute.option and attribute.option.type == 'purchase_product':
+                res = attribute.option.get_purchase_product(design, values,
+                    created_obj)
                 # option = res.get(attribute.option, None)
                 # if option:
                 #     res = {self: (option[0].product, [])}
@@ -650,7 +656,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         suppliers = dict((x.category, x.supplier) for x in design.suppliers)
         goods_supplier = None
         for category, supplier in suppliers.items():
-            if category.type_ == 'goods':
+            if (self.option_price_property and
+                    self.quotation_category == category):
+                goods_supplier = supplier
+                break
+            if not self.option_price_property and category.type_ == 'goods':
                 goods_supplier = supplier
                 break
 
@@ -666,7 +676,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             product.product_suppliers = []
         product_supplier = ProductSupplier()
         product_supplier.template = template
-        product_supplier.product = product
+        # product_supplier.product = product
         product_supplier.party = goods_supplier
         product_supplier.on_change_party()
         product_supplier.prices = ()
@@ -694,6 +704,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     cost_price += line.unit_price
                     uom = line.uom
 
+            if self.option_price_property:
+                for line in quote.prices:
+                    if line.property != self.option_price_property:
+                        continue
+                    cost_price = line.manual_unit_price or line.unit_price
+
             if cost_price:
                 price = Price()
                 price.uom = template.purchase_uom
@@ -702,10 +718,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 price.quantity = Uom.compute_qty(self.uom, qty,
                     self.product_template.purchase_uom)
                 if uom != self.uom:
-                    product.cost_price = template.get_unit_price(cost_price)
                     cost_price = Uom.compute_price(self.uom, cost_price,
                         self.product_template.purchase_uom)
-                    price.unit_price = template.get_unit_price(cost_price)
+                    price.unit_price = cost_price
+                    product.cost_price = cost_price
+                    if template.use_info_unit:
+                        product.cost_price = template.get_unit_price(cost_price)
+                        price.unit_price = template.get_unit_price(cost_price)
                 else:
                     product.cost_price = cost_price
                     price.unit_price = cost_price
@@ -1546,8 +1565,6 @@ class Design(Workflow, ModelSQL, ModelView):
                         design.save()
                     for lang in langs:
                         design.render_product_fields(lang, product, prop)
-
-
 
                 for obj in additional:
                     obj.save()
