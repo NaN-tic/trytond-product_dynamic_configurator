@@ -530,6 +530,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         ntemplate.configurator_template = False
         ntemplate.categories_all = None
         ntemplate.products = []
+        ntemplate.product_suppliers = []
         return ntemplate
 
     def get_product_product_object_copy(self, product):
@@ -542,6 +543,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         nproduct.attributes = tuple()
         nproduct.account_category = None
         nproduct.template = None
+        nproduct.product_suppliers = []
+
         return nproduct
 
     def get_field_name_from_attributes(self, attribute_set, name, record):
