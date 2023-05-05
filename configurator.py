@@ -184,16 +184,32 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             'invisible': Eval('type').in_(['option'])
         })
     childrens = fields.Function(fields.One2Many('configurator.property', None,
-        'Childrens'), 'get_childrens')
+        'Childrens'), 'get_childrens', searcher='search_childrens')
 
     option_price_property = fields.Many2One('configurator.property',
         'Option Price Property',
+        states={
+            'invisible': Eval('type') != 'purchase_product'
+        },
+        domain = [('id', 'in', Eval('childrens'))],
+        depends=['type', 'childrens'],
         help='Price for option when purchase_product is selected')
 
 
     @staticmethod
     def default_sequence():
         return 99
+
+    @classmethod
+    def search_childrens(cls, name, clause):
+        context = Transaction().context
+        print("search:", clause, context)
+        childrens = cls.search([('parent', '!=', None),
+            ('active', '=', True)])
+
+        print([('id', 'in', [x.id for x in childrens]), ('name', clause[-2:])])
+        return [('id', 'in', [x.id for x in childrens]),
+            ['OR', ('name', clause[-2], clause[-1]),('code', clause[-2], clause[-1])] ]
 
     def get_childrens(self, name):
         Property = Pool().get('configurator.property')
@@ -202,7 +218,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             parent = self.get_parent()
         childrens = Property.search([('parent', 'child_of', [parent.id])])
         childrens = [x for x in childrens if x.type in ('bom', 'product',
-            'purchase_product')]
+            'purchase_product', 'match')]
         childs = []
         for children in childrens:
             p = children.get_parent()
