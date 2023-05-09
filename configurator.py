@@ -477,14 +477,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         attribute = values.get(self)
         if attribute and attribute.option:
             res = attribute.option.create_prices(design, values)
-            if attribute.option and attribute.option.type == 'purchase_product':
-                res = attribute.option.get_purchase_product(design, values,
-                    created_obj)
-                # option = res.get(attribute.option, None)
-                # if option:
-                #     res = {self: (option[0].product, [])}
-                #     return res
-
             option = res.get(attribute.option, None)
             if option:
                 res.update({self: (option[0], [])})
@@ -1236,6 +1228,7 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('objects', None)
         default.setdefault('product', None)
         default.setdefault('product_codes', None)
+        default.setdefault('purchase_uom_category', None)
         return super(Design, cls).copy(designs, default=default)
 
     def get_product_exist(self, name=None):
