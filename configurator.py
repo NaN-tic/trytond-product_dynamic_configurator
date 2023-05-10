@@ -206,12 +206,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def search_childrens(cls, name, clause):
         context = Transaction().context
         print("search:", clause, context)
-        childrens = cls.search([('parent', '!=', None),
-            ('active', '=', True)])
-
-        print([('id', 'in', [x.id for x in childrens]), ('name', clause[-2:])])
+        childrens = cls.search([('parent', '!=', None)])
         return [('id', 'in', [x.id for x in childrens]),
-            ['OR', ('name', clause[-2], clause[-1]),('code', clause[-2], clause[-1])] ]
+            ['OR', ('name', clause[-2], clause[-1]),
+             ('code', clause[-2], clause[-1])] ]
 
     def get_childrens(self, name):
         Property = Pool().get('configurator.property')
