@@ -184,11 +184,32 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             'invisible': Eval('type').in_(['option'])
         })
     childrens = fields.Function(fields.One2Many('configurator.property', None,
-        'Childrens'), 'get_childrens')
+        'Childrens'), 'get_childrens', searcher='search_childrens')
+
+    option_price_property = fields.Many2One('configurator.property',
+        'Option Price Property',
+        states={
+            'invisible': Eval('type') != 'purchase_product'
+        },
+        domain = [('id', 'in', Eval('childrens'))],
+        depends=['type', 'childrens'],
+        help='Price for option when purchase_product is selected')
+
 
     @staticmethod
     def default_sequence():
         return 99
+
+    @classmethod
+    def search_childrens(cls, name, clause):
+        context = Transaction().context
+        print("search:", clause, context)
+        childrens = cls.search([('parent', '!=', None),
+            ('active', '=', True)])
+
+        print([('id', 'in', [x.id for x in childrens]), ('name', clause[-2:])])
+        return [('id', 'in', [x.id for x in childrens]),
+            ['OR', ('name', clause[-2], clause[-1]),('code', clause[-2], clause[-1])] ]
 
     def get_childrens(self, name):
         Property = Pool().get('configurator.property')
@@ -197,7 +218,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             parent = self.get_parent()
         childrens = Property.search([('parent', 'child_of', [parent.id])])
         childrens = [x for x in childrens if x.type in ('bom', 'product',
-            'purchase_product')]
+            'purchase_product', 'match')]
         childs = []
         for children in childrens:
             p = children.get_parent()
@@ -350,8 +371,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def create_prices(self, design, values):
         created_obj = {}
-        if self.type not in ('options', 'match'):
+        if self.type not in ('match'):
             for prop in self.childs:
+                if self.type == 'options' and prop.type != 'purchase_product':
+                    continue
                 parent = prop.get_parent()
                 val = values
                 if parent in values:
@@ -515,6 +538,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         ntemplate.configurator_template = False
         ntemplate.categories_all = None
         ntemplate.products = []
+        ntemplate.product_suppliers = []
         return ntemplate
 
     def get_product_product_object_copy(self, product):
@@ -527,6 +551,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         nproduct.attributes = tuple()
         nproduct.account_category = None
         nproduct.template = None
+        nproduct.product_suppliers = []
+
         return nproduct
 
     def get_field_name_from_attributes(self, attribute_set, name, record):
@@ -557,6 +583,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         Product = pool.get('product.product')
         Attribute = pool.get('product.product.attribute')
         exists = False
+
         if not self.product_template:
             return
 
@@ -640,7 +667,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         suppliers = dict((x.category, x.supplier) for x in design.suppliers)
         goods_supplier = None
         for category, supplier in suppliers.items():
-            if category.type_ == 'goods':
+            if (self.option_price_property and
+                    self.quotation_category == category):
+                goods_supplier = supplier
+                break
+            if not self.option_price_property and category.type_ == 'goods':
                 goods_supplier = supplier
                 break
 
@@ -656,7 +687,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             product.product_suppliers = []
         product_supplier = ProductSupplier()
         product_supplier.template = template
-        product_supplier.product = product
+        # product_supplier.product = product
         product_supplier.party = goods_supplier
         product_supplier.on_change_party()
         product_supplier.prices = ()
@@ -666,7 +697,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 supplier.active = False
         else:
             product.product_suppliers = []
-
 
         for quote in design.prices:
             if hasattr(quote, 'state') and quote.state != 'confirmed':
@@ -685,6 +715,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     cost_price += line.unit_price
                     uom = line.uom
 
+            if self.option_price_property:
+                for line in quote.prices:
+                    if line.property != self.option_price_property:
+                        continue
+                    cost_price = line.manual_unit_price or line.unit_price
+
             if cost_price:
                 price = Price()
                 price.uom = template.purchase_uom
@@ -693,10 +729,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 price.quantity = Uom.compute_qty(self.uom, qty,
                     self.product_template.purchase_uom)
                 if uom != self.uom:
-                    product.cost_price = template.get_unit_price(cost_price)
                     cost_price = Uom.compute_price(self.uom, cost_price,
                         self.product_template.purchase_uom)
-                    price.unit_price = template.get_unit_price(cost_price)
+                    price.unit_price = cost_price
+                    product.cost_price = cost_price
+                    if template.use_info_unit:
+                        product.cost_price = template.get_unit_price(cost_price)
+                        price.unit_price = template.get_unit_price(cost_price)
                 else:
                     product.cost_price = cost_price
                     price.unit_price = cost_price
@@ -707,7 +746,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     price.info_unit_price = (
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
-
         product.product_suppliers += (product_supplier,)
         self.update_product_values(template, design, values, created_obj, exists)
         self.update_variant_values(product, values)
@@ -1190,6 +1228,7 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('objects', None)
         default.setdefault('product', None)
         default.setdefault('product_codes', None)
+        default.setdefault('purchase_uom_category', None)
         return super(Design, cls).copy(designs, default=default)
 
     def get_product_exist(self, name=None):
