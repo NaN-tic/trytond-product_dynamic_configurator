@@ -51,6 +51,9 @@
     <field name="product_attribute_value"/>
     <label name="option_default"/>
     <field name="option_default"/>
+    <label name="option_price_property"/>
+    <field name="option_price_property"/>
+
 
     <notebook colspan="6">
         <page name="childs">
