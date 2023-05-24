@@ -23,6 +23,11 @@ class JinjaTemplate(ModelSQL, ModelView):
     full_content = fields.Function(fields.Text('Full Content'),
         'get_full_content')
 
+    @classmethod
+    def __setup__(cls):
+        super().__setup__()
+        cls._order.insert(0, ('name', 'ASC'))
+
 
     def get_full_content(self, name=None):
         text = [x.jinja for x in self.macros if x]
