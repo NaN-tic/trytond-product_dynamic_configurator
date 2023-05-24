@@ -1102,7 +1102,7 @@ class Design(Workflow, ModelSQL, ModelView):
             'company': Eval('company'),
         }, depends=['company'])
     suppliers = fields.One2Many('configurator.quotation.supplier', 'design',
-        'Suppliers')
+        'Suppliers', order=[('category', 'ASC')])
     quotation_uom = fields.Many2One('product.uom', 'Quotation Uom',
         states={
             'readonly': Bool(Eval('prices', [0])),
