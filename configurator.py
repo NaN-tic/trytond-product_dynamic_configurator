@@ -262,6 +262,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         else:
             default = default.copy()
 
+        default.setdefault('option_price_property', None)
         default.setdefault('option_default', None)
         return super().copy(properties, default=default)
 
