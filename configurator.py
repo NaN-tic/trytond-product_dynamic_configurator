@@ -259,6 +259,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         else:
             default = default.copy()
 
+        default.setdefault('option_price_property', None)
         default.setdefault('option_default', None)
         return super().copy(properties, default=default)
 
