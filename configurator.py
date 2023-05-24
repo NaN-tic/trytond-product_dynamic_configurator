@@ -202,14 +202,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     @classmethod
     def search_childrens(cls, name, clause):
-        context = Transaction().context
-        print("search:", clause, context)
         childrens = cls.search([('parent', '!=', None),
             ('active', '=', True)])
 
-        print([('id', 'in', [x.id for x in childrens]), ('name', clause[-2:])])
         return [('id', 'in', [x.id for x in childrens]),
-            ['OR', ('name', clause[-2], clause[-1]),('code', clause[-2], clause[-1])] ]
+            ['OR', ('name', clause[-2], clause[-1]),
+                ('code', clause[-2], clause[-1])] ]
 
     def get_childrens(self, name):
         Property = Pool().get('configurator.property')
@@ -475,7 +473,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def get_options(self, design, values, created_obj):
         attribute = values.get(self)
-        if attribute and attribute.option:
+        if attribute and attribute.option is not None:
             res = attribute.option.create_prices(design, values)
             option = res.get(attribute.option, None)
             if option:
@@ -582,7 +580,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         Uom = pool.get('product.uom')
         Product = pool.get('product.product')
         Attribute = pool.get('product.product.attribute')
+        DesignAttribute = pool.get('configurator.design.attribute')
         exists = False
+
+        if self.parent and self.parent.type == 'options':
+            attr = DesignAttribute.search([('property', '=', self.parent.id),
+                ('design', '=', design.id)])
+            if not attr or attr and attr[0] .option is None:
+                return
 
         if not self.product_template:
             return
