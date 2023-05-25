@@ -204,8 +204,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
     @classmethod
     def search_childrens(cls, name, clause):
-        childrens = cls.search([('parent', '!=', None),
-            ('active', '=', True)])
+        childrens = cls.search([('parent', '!=', None)])
 
         return [('id', 'in', [x.id for x in childrens]),
             ['OR', ('name', clause[-2], clause[-1]),
