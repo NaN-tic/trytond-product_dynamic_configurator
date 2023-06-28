@@ -374,9 +374,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         try:
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
-            if isinstance(res, str):
-                code = compile(res, "<string>", "eval")
-                res = eval(code, custom_locals)
+            # if isinstance(res, str):
+            #     code = compile(res, "<string>", "eval")
+            #     res = eval(code, custom_locals)
             return res
         except BaseException as e:
             logger.error('Prop ID:%s  CODE:%s  PARENT CODE:%s EXPR:%s', self.id,  self.code,
