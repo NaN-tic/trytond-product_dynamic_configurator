@@ -1676,6 +1676,14 @@ class QuotationLine(ModelSQL, ModelView):
     manual_list_price_on_sale_uom = fields.Function(
         fields.Numeric('Manual List Price On Sale Uome',
                        digits=price_digits), 'get_prices')
+    company = fields.Function(
+        fields.Many2One('company.company', "Company"),
+        'on_change_with_company')
+
+    @classmethod
+    def __setup__(cls):
+        super().__setup__()
+        cls.__access__.add('design')
 
     def get_rec_name(self, name):
         return '%s - %s' % (str(self.quantity),
@@ -1683,8 +1691,11 @@ class QuotationLine(ModelSQL, ModelView):
 
     @fields.depends('design', '_parent_design.state')
     def on_change_with_design_state(self, name=None):
-        if self.design:
-            return self.design.state
+        return self.design.state if self.design else None
+
+    @fields.depends('design', '_parent_design.company')
+    def on_change_with_company(self, name=None):
+        return self.design.company if self.design else None
 
     def get_product_uom_category(self, name=None):
         if self.design and self.design.template:
