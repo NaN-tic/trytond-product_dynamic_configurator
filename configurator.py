@@ -763,6 +763,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product.product_suppliers += (product_supplier,)
         self.update_product_values(template, design, values, created_obj, exists)
         self.update_variant_values(product, values)
+        template = self.template_update(template, None)
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
