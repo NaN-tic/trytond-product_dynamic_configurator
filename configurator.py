@@ -9,8 +9,13 @@ from trytond.modules.company.model import (
     employee_field, set_employee, reset_employee)
 from trytond.i18n import gettext
 from trytond.exceptions import UserError
+from collections import OrderedDict
 from copy import copy
 import math
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 try:
     from jinja2 import Template as Jinja2Template
@@ -354,7 +359,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def evaluate(self, expression, values):
         custom_locals = copy(locals())
         custom_locals['math'] = math
-        for prop, attr in values.items():
+        keys = [x for x in values.keys()]
+        keys.sort(key=lambda x: ( str(x.parent and x.parent.sequence or 0).zfill(5) +
+            str(x.sequence).zfill(6)))
+
+        for prop in keys:
+            attr = values[prop]
             if isinstance(attr, dict):
                 continue
             if prop.type == 'function':
@@ -364,9 +374,15 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         try:
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
+            # if isinstance(res, str):
+            #     code = compile(res, "<string>", "eval")
+            #     res = eval(code, custom_locals)
             return res
         except BaseException as e:
-            # print(expression, str(e))
+            logger.error('Prop ID:%s  CODE:%s  PARENT CODE:%s EXPR:%s', self.id,  self.code,
+                self.parent and self.parent.code,
+                expression)
+            logger.error(str(e))
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
@@ -1264,13 +1280,17 @@ class Design(Workflow, ModelSQL, ModelView):
     def as_dict(self):
         Function = Pool().get('configurator.property')
         functions = Function.search([('type', '=', 'function'),
-            ('parent', 'child_of', [self.template.id])])
+            ('parent', 'child_of', [self.template.id]) ])
         res = {}
         for attribute in self.attributes:
             parent = attribute.property.get_parent()
             if parent not in res:
                 res[parent] = {}
             res[parent][attribute.property] = attribute
+
+        functions.sort(key=lambda x: (
+                str(x.parent and x.parent.sequence or 0).zfill(5) +
+                str(x.sequence).zfill(6)))
 
         for function_ in functions:
             parent = function_.get_parent()
@@ -1448,12 +1468,16 @@ class Design(Workflow, ModelSQL, ModelView):
 
     def design_full_dict(self):
         record = self.as_dict()
-        custom_locals = {}
+        custom_locals = OrderedDict()
         all = {}
         Property = Pool().get('configurator.property')
         properties = Property.search([
-            ('parent', 'child_of', [self.template.id])])
+            ('parent', 'child_of', [self.template.id])], order=[('sequence','ASC')])
         custom_locals['design'] = self
+        properties.sort(key=lambda x: (
+            str(x.parent and x.parent.sequence or 0).zfill(5) +
+                str(x.sequence).zfill(6)))
+
         for property in properties:
             custom_locals[property.get_full_code()] = property
             parent = property.get_parent()
