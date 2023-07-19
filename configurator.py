@@ -753,14 +753,17 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     self.product_template.purchase_uom)
                 if uom != self.uom:
                     cost_price = Uom.compute_price(self.uom, cost_price,
+                        self.product_template.default_uom)
+                    cost_price_sup = Uom.compute_price(self.uom, cost_price,
                         self.product_template.purchase_uom)
                     price.unit_price = cost_price
-                    product.cost_price = cost_price
+                    product.cost_price = cost_price_sup
                     if template.use_info_unit:
                         product.cost_price = template.get_unit_price(cost_price)
-                        price.unit_price = template.get_unit_price(cost_price)
+                        price.unit_price = template.get_unit_price(cost_price_sup)
                 else:
-                    product.cost_price = cost_price
+                    product.cost_price = Uom.compute_price(self.uom, cost_price,
+                        self.product_template.default_uom)
                     price.unit_price = cost_price
 
                 product_supplier.prices += (price,)
@@ -1351,7 +1354,7 @@ class Design(Workflow, ModelSQL, ModelView):
             remove_lines = []
             for price in design.prices:
                 remove_lines += price.prices
-
+            product_codes = []
             design.quotation_date = Date.today()
             design.quoted_by = User(Transaction().user).employee
             design.product_codes = ''
