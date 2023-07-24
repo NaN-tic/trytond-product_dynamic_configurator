@@ -56,7 +56,8 @@
     <field name="option_default"/>
     <label name="option_price_property"/>
     <field name="option_price_property"/>
-
+    <label name="before_attribute"/>
+    <field name="before_attribute"/>
 
     <notebook colspan="6">
         <page name="childs">

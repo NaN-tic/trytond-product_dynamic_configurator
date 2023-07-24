@@ -200,10 +200,15 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         depends=['type', 'childrens'],
         help='Price for option when purchase_product is selected')
 
+    before_attribute = fields.Boolean('Evaluate Before Attributes')
 
     @staticmethod
     def default_sequence():
         return 99
+
+    @staticmethod
+    def default_before_attribute():
+        return False
 
     @classmethod
     def search_childrens(cls, name, clause):
@@ -355,18 +360,24 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     def evaluate(self, expression, values):
         custom_locals = copy(locals())
         custom_locals['math'] = math
-        keys = [x for x in values.keys()]
-        keys.sort(key=lambda x: ( str(x.parent and x.parent.sequence or 0).zfill(5) +
+        before = [x for x in values.keys() if x.before_attribute]
+        after = [x for x in values.keys() if not x.before_attribute]
+        attributes = [x for x in values.keys() if x.type != 'function']
+        before.sort(key=lambda x: ( str(x.parent and x.parent.sequence or 0).zfill(5) +
+            str(x.sequence).zfill(6)))
+        after.sort(key=lambda x: (str(x.parent and x.parent.sequence or 0).zfill(5) +
+            str(x.sequence).zfill(6)))
+        attributes.sort(key=lambda x: (str(x.parent and x.parent.sequence or 0).zfill(5) +
             str(x.sequence).zfill(6)))
 
-        for prop in keys:
+        for prop in before + attributes + after:
             attr = values[prop]
             if isinstance(attr, dict):
                 continue
             if prop.type == 'function':
                 custom_locals[prop.code] = attr
             else:
-                custom_locals[prop.code] = attr.number or attr.option
+                custom_locals[prop.code] = attr and attr.number or  attr and attr.option
         try:
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
@@ -387,8 +398,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def create_prices(self, design, values):
         created_obj = {}
+        print(self.code, self.type)
+        print("*"*20)
         if self.type not in ('match'):
             for prop in self.childs:
+                print("c:", prop.type, prop.code, prop.sequence)
                 if self.type == 'options' and prop.type != 'purchase_product':
                     continue
                 parent = prop.get_parent()
@@ -398,6 +412,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 res = prop.create_prices(design, val)
                 if res is None:
                     continue
+
+                if prop.type in ('function', 'options'):
+                    print(prop.code, "res:", res)
+                    if parent not in val:
+                        val[prop] = res[prop] and res[prop][0]
+                    else:
+                        val[parent][prop] = res[prop] and res[prop][0]
                 created_obj.update(res)
         parent = self.get_parent()
         val = values
@@ -530,13 +551,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def get_product_attribute_typed(self, prop, value):
         if prop.product_attribute.type_ == 'boolean':
-            return ('bool', bool(value))
+            return 'bool', bool(value)
         elif prop.product_attribute.type_ == 'integer':
-            return('integer', int(value))
+            return 'integer', int(value)
         elif prop.product_attribute.type_ == 'char':
-            return ('char', str(value))
+            return 'char', str(value)
         elif prop.product_attribute.type_ == 'numeric':
-            return ('numeric', Decimal(str(value)))
+            return 'numeric', Decimal(str(value))
         elif prop.product_attribute.type_ == 'date':
             raise 'Not Implemented'
         elif prop.product_attribute.type_ == 'datetime':
