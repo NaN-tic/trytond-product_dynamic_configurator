@@ -208,7 +208,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     @staticmethod
     def default_before_attribute():
-        return False
+        return True
 
     @classmethod
     def search_childrens(cls, name, clause):
@@ -398,11 +398,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def create_prices(self, design, values):
         created_obj = {}
-        print(self.code, self.type)
-        print("*"*20)
         if self.type not in ('match'):
             for prop in self.childs:
-                print("c:", prop.type, prop.code, prop.sequence)
                 if self.type == 'options' and prop.type != 'purchase_product':
                     continue
                 parent = prop.get_parent()
@@ -413,12 +410,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 if res is None:
                     continue
 
-                if prop.type in ('function', 'options'):
-                    print(prop.code, "res:", res)
-                    if parent not in val:
-                        val[prop] = res[prop] and res[prop][0]
-                    else:
-                        val[parent][prop] = res[prop] and res[prop][0]
+                # if prop.type in ('function', 'options'):
+                #     print(prop.code, "res:", res)
+                #     if parent not in val:
+                #         val[prop] = res[prop] and res[prop][0]
+                #         print("p:", prop, val[prop])
+                #     else:
+                #         val[parent][prop] = res[prop] and res[prop][0]
+                #         print("p:", prop, val[prop])
                 created_obj.update(res)
         parent = self.get_parent()
         val = values
@@ -512,7 +511,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def get_options(self, design, values, created_obj):
         attribute = values.get(self)
-        if attribute and attribute.option is not None:
+        if attribute and hasattr(attribute, 'option') and  attribute.option is not None:
             res = attribute.option.create_prices(design, values)
             option = res.get(attribute.option, None)
             if option:
