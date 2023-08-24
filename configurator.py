@@ -774,7 +774,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     price.info_quantity = price.on_change_with_info_quantity()
         product.product_suppliers += (product_supplier,)
         self.update_product_values(template, design, values, created_obj, exists)
-        self.update_variant_values(product, values)
+        self.update_variant_values(product, values, None)
         template = self.template_update(template, None)
         return {self: (bom_input, [])}
 
@@ -956,7 +956,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             product = exists_product[0]
 
         self.update_product_values(template, design, values, created_obj)
-        self.update_variant_values(product, values)
+        self.update_variant_values(product, values, bom)
         template = self.template_update(template, bom)
 
         quantity = self.bom_quantity or self.quantity
