@@ -49,6 +49,9 @@
         <page name="objects">
             <field name="objects" colspan="4"/>
         </page>
+        <page name="error_log">
+            <field name="error_log" colspan="4"/>
+        </page>
     </notebook>
     <label name="state"/>
     <field name="state"/>
