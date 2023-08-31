@@ -682,6 +682,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             template = product.template
             exists = True
 
+        template = self.update_product_values(template, design, values, created_obj, exists)
+        product = self.update_variant_values(product, values, None, design)
+        template = self.template_update(template, None, design)
+
         bom_input = BomInput()
         bom_input.product = product
         bom_input.on_change_product()
@@ -781,9 +785,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
         product.product_suppliers += (product_supplier,)
-        self.update_product_values(template, design, values, created_obj, exists)
-        self.update_variant_values(product, values, None, design)
+        template = self.update_product_values(template, design, values, created_obj, exists)
+        product = self.update_variant_values(product, values, None, design)
         template = self.template_update(template, None, design)
+
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
@@ -907,8 +912,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             return
         template = self.get_product_template_object_copy(self.product_template)
         template.name = "%s (%s)" % (self.name, 'Id' + str(design.id))
+
         product = self.get_product_product_object_copy(
             self.product_template.products[0])
+
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
@@ -923,6 +930,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         template_name = self.get_property_name(design, custom_locals)
         if template_name:
             template.name = template_name
+
+        template = self.update_product_values(template, design, values, created_obj)
+        template = self.template_update(template, bom, design)
+        product = self.update_variant_values(product, values, bom, design)
 
         bom.name = template.code
 
@@ -965,10 +976,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 ('template.code', '=', template.code)])
         if exists_product:
             product = exists_product[0]
-
-        self.update_product_values(template, design, values, created_obj, design, bom)
-        self.update_variant_values(product, values, bom, design)
-        template = self.template_update(template, bom, design)
 
         quantity = self.bom_quantity or self.quantity
         context = Transaction().context
