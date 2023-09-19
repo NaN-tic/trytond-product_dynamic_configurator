@@ -270,11 +270,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
         option_default = dict(((x.code, x.parent and x.parent.code),
             x.option_default and x.option_default.code) for x in properties
-                if x.option_default )
-
-
-        print("option_price", option_price)
-        print("option_default", option_default)
+                if x.option_default)
 
         default.setdefault('option_price_property', None)
         default.setdefault('option_default', None)
