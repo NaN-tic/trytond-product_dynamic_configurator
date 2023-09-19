@@ -426,7 +426,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
         design.error_log += "\nSearch: (%s) %s *************************************" % (self.code, self.name)
         suppliers = dict((x.category, x.supplier) for x in design.suppliers)
-        if self.quotation_category:
+        if self.quotation_category and self.quotation_category in suppliers:
             domain += [('product_suppliers.party', '=',
                 suppliers[self.quotation_category].id)]
 
