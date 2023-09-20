@@ -10,6 +10,7 @@ from trytond.modules.company.model import (
 from trytond.i18n import gettext
 from trytond.exceptions import UserError
 from jinja2 import Template as Jinja2Template
+from jinja2.exceptions import UndefinedError as Jinja2UndefinedError
 from collections import OrderedDict
 from copy import copy
 import math
@@ -250,8 +251,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         template = Jinja2Template(expression, trim_blocks=True)
         try:
             res = template.render(record)
-        except jinja2.exceptions.UndefinedError as e:
-            raise UserError(str(e))
+        except Jinja2UndefinedError as e:
+            raise UserError(gettext(
+                'product_dynamic_configurator.msg_expression_error',
+                property=self.rec_name,
+                expression=expression[:25]+('...' if len(expression) > 25 else ''),
+                invalid=str(e)))
         if res:
             res = res.replace('\t', '').replace('\n', '').strip()
         return res
