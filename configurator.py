@@ -6,19 +6,16 @@ from trytond.pool import Pool, PoolMeta
 from trytond.config import config
 from trytond.modules.company.model import employee_field
 from trytond.transaction import Transaction
+from trytond.i18n import gettext
+from trytond.exceptions import UserError
+from jinja2 import Template as Jinja2Template
+from jinja2.exceptions import UndefinedError as Jinja2UndefinedError
 from collections import OrderedDict
 from copy import copy
 import math
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-try:
-    from jinja2 import Template as Jinja2Template
-    jinja2_loaded = True
-except ImportError:
-    jinja2_loaded = False
 
 price_digits = (16, config.getint('product', 'price_decimal', default=4))
 _ZERO = Decimal(0)
@@ -252,7 +249,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def render_expression_record(self, expression, record):
         template = Jinja2Template(expression, trim_blocks=True)
-        res = template.render(record)
+        try:
+            res = template.render(record)
+        except Jinja2UndefinedError as e:
+            raise UserError(gettext(
+                'product_dynamic_configurator.msg_expression_error',
+                property=self.rec_name,
+                expression=expression[:25]+('...' if len(expression) > 25 else ''),
+                invalid=str(e)))
         if res:
             res = res.replace('\t', '').replace('\n', '').strip()
         return res
