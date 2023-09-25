@@ -264,13 +264,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         else:
             default = default.copy()
 
-        option_price = dict(((x.code, x.parent and x.parent.code),
-            x.option_price_property and x.option_price_property.code)
+        option_price = dict(((x.code, x.parent and x.parent.code or None),
+            x.option_price_property and x.option_price_property.get_full_code())
                 for x in properties if x.option_price_property)
 
         option_default = dict(((x.code, x.parent and x.parent.code),
-            x.option_default and x.option_default.code) for x in properties
-                if x.option_default)
+            x.option_default and x.option_default.get_full_code())
+                for x in properties if x.option_default)
 
         default.setdefault('option_price_property', None)
         default.setdefault('option_default', None)
@@ -281,27 +281,27 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         for prop in new_properties:
             key = (prop.code, prop.parent and prop.parent.code)
 
-            if key not in option_price or key not in option_default:
+            if key not in option_price and key not in option_default:
                continue
 
+            parent = prop.get_parent()
+            childs = parent.childrens
+            codes =  dict((x.get_full_code(),x) for x in childs)
+
+
             if key in option_price:
-                code, parent_code = option_price[key]
-                child = cls.search([('code', '=', code),
-                    ('parent.code', 'parent_of', parent_code)])
-                if not child:
-                    continue
-                prop.option_price_property = child[0]
-                to_save.append(prop)
+                value = option_price[key]
+                value = codes.get(value)
+                if value:
+                    prop.option_price_property = value
+                    to_save.append(prop)
 
             if key in option_default:
-                code, parent_code = option_default[key]
-                child = cls.search([('code', '=', code),
-                    ('parent.code', 'parent_of', parent_code)])
-                if not child:
-                    continue
-                prop.option_default = child[0]
-                to_save.append(prop)
-
+                value = option_default[key]
+                value = codes.get(value)
+                if value:
+                    prop.option_default = codes.get(value)
+                    to_save.append(prop)
         cls.save(to_save)
         return to_save
 
