@@ -359,9 +359,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         keys.sort(key=lambda x: ( str(x.parent and x.parent.sequence or 0).zfill(5) +
             str(x.sequence).zfill(6)))
 
-        if not design.error_log:
-            design.error_log = ''
-
         for prop in keys:
             attr = values[prop]
             if isinstance(attr, dict):
@@ -378,11 +375,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             #     res = eval(code, custom_locals)
             return res
         except BaseException as e:
-            # logger.error('Prop ID:%s  CODE:%s  PARENT CODE:%s EXPR:%s', self.id,  self.code,
-            #     self.parent and self.parent.code, expression)
-            design.error_log += '\n' + 'Prop ID:%s CODE:%s  PARENT CODE:%s EXPR:%s TRC:%s' % (self.id, self.code,
-                self.parent and self.parent.code, expression, str(e))
-            # logger.error(str(e))
+            logger.error(str(e))
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
@@ -424,7 +417,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         Uom = pool.get('product.uom')
         domain = []
 
-        design.error_log += "\nSearch: (%s) %s *************************************" % (self.code, self.name)
         suppliers = dict((x.category, x.supplier) for x in design.suppliers)
         if self.quotation_category and self.quotation_category in suppliers:
             domain += [('product_suppliers.party', '=',
@@ -486,7 +478,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         pass
 
     def get_function(self, design, values, created_obj):
-        design.error_log += "\nFucntion: (%s) %s *************************************" % (self.code, self.name)
         context = Transaction().context
         if context.get('prices', False):
             value = self.evaluate(self.quantity, values, design)
@@ -496,7 +487,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         return {self: (value, [])}
 
     def get_options(self, design, values, created_obj):
-        design.error_log += "\nOption: (%s) %s *************************************" % (self.code, self.name)
         attribute = values.get(self)
         if attribute and attribute.option is not None:
             res = attribute.option.create_prices(design, values)
@@ -608,7 +598,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         DesignAttribute = pool.get('configurator.design.attribute')
         exists = False
 
-        design.error_log += "\nPurchase Product: (%s) %s *************************************" % (self.code, self.name)
         if self.parent and self.parent.type == 'options':
             attr = DesignAttribute.search([('property', '=', self.parent.id),
                 ('design', '=', design.id)])
@@ -789,7 +778,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def get_group(self, design, values, created_obj):
         res = {}
-        design.error_log += "\nGroup: (%s) %s *************************************" % (self.code, self.name)
         for child in self.childs:
             r = getattr(child, 'get_%s' % child.type)(
                 design, values, created_obj)
@@ -803,7 +791,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
 
-        design.error_log +="\nProduct: (%s) %s *************************************" % (self.code, self.name)
         if not self.product:
             return
 
@@ -841,7 +828,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         Uom = pool.get('product.uom')
         Attribute = pool.get('product.product.attribute')
 
-        design.error_log += "\nBom: (%s) %s *************************************" % (self.code, self.name)
         def create_bom_input(property_):
             if property_.type == 'purchase_product':
                 return False
@@ -1171,7 +1157,6 @@ class Design(Workflow, ModelSQL, ModelView):
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'on_change_with_product_uom_category')
     product_codes = fields.Text('Product Codes', readonly=True)
-    error_log = fields.Text('Error Log', readonly=True)
 
     @classmethod
     def __setup__(cls):
@@ -1365,7 +1350,6 @@ class Design(Workflow, ModelSQL, ModelView):
         context['prices']  = True
 
         for design in designs:
-            design.error_log = ''
             prices = {}
             remove_lines = []
             for price in design.prices:
