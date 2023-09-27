@@ -269,9 +269,48 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         else:
             default = default.copy()
 
+        option_price = dict(((x.code, x.parent and x.parent.code or None),
+            x.option_price_property and x.option_price_property.get_full_code())
+                for x in properties if x.option_price_property)
+
+        option_default = dict(((x.code, x.parent and x.parent.code),
+            x.option_default and x.option_default.get_full_code())
+                for x in properties if x.option_default)
+
         default.setdefault('option_price_property', None)
         default.setdefault('option_default', None)
-        return super().copy(properties, default=default)
+
+        new_properties = super().copy(properties, default=default)
+
+        to_save = []
+        for prop in new_properties:
+            key = (prop.code, prop.parent and prop.parent.code)
+
+            if key not in option_price and key not in option_default:
+               continue
+
+            parent = prop.get_parent()
+            childs = parent.childrens
+            codes =  dict((x.get_full_code(),x) for x in childs)
+
+
+            if key in option_price:
+                value = option_price[key]
+                value = codes.get(value)
+                if value:
+                    prop.option_price_property = value
+                    to_save.append(prop)
+
+            if key in option_default:
+                value = option_default[key]
+                value = codes.get(value)
+                if value:
+                    prop.option_default = codes.get(value)
+                    to_save.append(prop)
+        cls.save(to_save)
+        return to_save
+
+
 
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
         'price_category', 'object_expression', 'attribute_set',
