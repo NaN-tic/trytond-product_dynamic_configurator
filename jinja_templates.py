@@ -1,6 +1,5 @@
-from trytond.model import (Workflow, ModelView, ModelSQL,
-    DeactivableMixin, fields, sequence_ordered)
-from trytond.pool import Pool, PoolMeta
+from trytond.model import (ModelView, ModelSQL,fields)
+
 try:
     from jinja2 import Template as Jinja2Template
     jinja2_loaded = True
