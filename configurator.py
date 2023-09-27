@@ -358,7 +358,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if to_create:
             CreatedObject.save(to_create)
 
-    def evaluate(self, expression, values):
+    def evaluate(self, expression, values, design):
         custom_locals = copy(locals())
         custom_locals['math'] = math
         keys = [x for x in values.keys()]
@@ -381,9 +381,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             #     res = eval(code, custom_locals)
             return res
         except BaseException as e:
-            logger.error('Prop ID:%s  CODE:%s  PARENT CODE:%s EXPR:%s', self.id,  self.code,
-                self.parent and self.parent.code,
-                expression)
             logger.error(str(e))
             pass
             # raise UserError(gettext(
@@ -427,13 +424,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         domain = []
 
         suppliers = dict((x.category, x.supplier) for x in design.suppliers)
-        if self.quotation_category:
+        if self.quotation_category and self.quotation_category in suppliers:
             domain += [('product_suppliers.party', '=',
                 suppliers[self.quotation_category].id)]
 
         for child in self.childs:
             attribute = child.product_attribute
-            value = self.evaluate(child.product_attribute_value, values)
+            value = self.evaluate(child.product_attribute_value, values, design)
 
             if isinstance(value, Product):
                 val = None
@@ -471,7 +468,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if context.get('prices', False):
             quantity = self.quantity
 
-        quantity = self.evaluate(quantity, values)
+        quantity = self.evaluate(quantity, values, design)
         quantity = Uom.compute_qty(self.uom, quantity,
              product.default_uom)
         bom_input = BomInput()
@@ -489,9 +486,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
     def get_function(self, design, values, created_obj):
         context = Transaction().context
         if context.get('prices', False):
-            value = self.evaluate(self.quantity, values)
+            value = self.evaluate(self.quantity, values, design)
         else:
-            value = self.evaluate(self.bom_quantity, values)
+            value = self.evaluate(self.bom_quantity, values, design)
 
         return {self: (value, [])}
 
@@ -530,7 +527,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             quantity = self.quantity
 
         operation.quantity = Uom.compute_qty(self.uom,
-            self.evaluate(quantity, values), self.uom)
+            self.evaluate(quantity, values, design), self.uom)
         operation.calculation = 'standard'
         return {self: (operation, [])}
 
@@ -641,7 +638,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if prop.type == 'attribute':
                 template.attribute_set = prop.attribute_set
                 type_, value = self.get_product_attribute_typed(prop,
-                    self.evaluate(prop.product_attribute_value, values))
+                    self.evaluate(prop.product_attribute_value, values, design))
                 setattr(child_res, 'value_' + type_, value)
                 setattr(child_res, 'value', value)
                 product.attributes += (child_res,)
@@ -658,7 +655,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if self.object_expression:
             expressions = eval(self.object_expression)
             for key, value in expressions.items():
-                val = self.evaluate(value, values)
+                val = self.evaluate(value, values, design)
                 quantize = Decimal(str(10.0 ** -4))
                 try:
                     val = float(Decimal(val or 0).quantize(quantize))
@@ -680,6 +677,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             template = product.template
             exists = True
 
+        template = self.update_product_values(template, design, values, created_obj, exists)
+        product = self.update_variant_values(product, values, None, design)
+        template = self.template_update(template, None, design)
+
         bom_input = BomInput()
         bom_input.product = product
         bom_input.on_change_product()
@@ -689,7 +690,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             quantity = self.quantity
 
         bom_input.quantity = Uom.compute_qty(self.uom,
-            self.evaluate(quantity, values), product.default_uom)
+            self.evaluate(quantity, values, design), product.default_uom)
 
         # Calculate cost_price for purchase_product
         cost_price = 0
@@ -720,7 +721,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         product_supplier.party = goods_supplier
         product_supplier.on_change_party()
         product_supplier.prices = ()
-        design_qty = self.evaluate(design.template.quantity, values)
+        design_qty = self.evaluate(design.template.quantity, values, design)
         if hasattr(product, 'product_suppliers') and product.product_suppliers:
             for supplier in product.product_suppliers:
                 supplier.active = False
@@ -779,9 +780,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                         price.on_change_with_info_unit_price())
                     price.info_quantity = price.on_change_with_info_quantity()
         product.product_suppliers += (product_supplier,)
-        self.update_product_values(template, design, values, created_obj, exists)
-        self.update_variant_values(product, values)
-        template = self.template_update(template, None)
         return {self: (bom_input, [])}
 
     def get_group(self, design, values, created_obj):
@@ -814,7 +812,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if attribute and attribute.number:
             quantity = attribute.number
         else:
-            quantity = self.evaluate(quantity, values)
+            quantity = self.evaluate(quantity, values, design)
 
         quantity = Uom.compute_qty(self.uom, quantity, product.default_uom)
         bom_input = BomInput()
@@ -900,9 +898,12 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
-        template.name = "%s (%s)" % (self.name, (design.code or str(design.id)))
+
+        template.name = "%s (%s)" % (self.name, 'Id' + str(design.id))
+
         product = self.get_product_product_object_copy(
             self.product_template.products[0])
+
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
@@ -918,6 +919,10 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if template_name:
             template.name = template_name
 
+        template = self.update_product_values(template, design, values, created_obj, bom=bom)
+        template = self.template_update(template, bom, design)
+        product = self.update_variant_values(product, values, bom, design)
+
         bom.name = template.code
 
         # Copy attributes
@@ -928,7 +933,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if prop.type == 'attribute':
                 template.attribute_set = prop.attribute_sets
                 type_, value = self.get_product_attribute_typed(prop,
-                    self.evaluate(prop.product_attribute_value, values))
+                    self.evaluate(prop.product_attribute_value, values, design))
                 setattr(child_res, 'value_' + type_, value)
                 setattr(child_res, 'value', value)
                 template.attributes += (child_res,)
@@ -947,7 +952,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if self.object_expression:
             expressions = eval(self.object_expression)
             for key, value in expressions.items():
-                val = self.evaluate(value, values)
+                val = self.evaluate(value, values, design)
                 quantize = Decimal(str(10.0 ** -4))
                 try:
                     val = float(Decimal(val or 0).quantize(quantize))
@@ -959,10 +964,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if exists_product:
             product = exists_product[0]
 
-        self.update_product_values(template, design, values, created_obj)
-        self.update_variant_values(product, values)
-        template = self.template_update(template, bom)
-
         quantity = self.bom_quantity or self.quantity
         context = Transaction().context
         if context.get('prices', False):
@@ -973,7 +974,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         output.product = product
         output.uom = product.default_uom
         output.quantity = Uom.compute_qty(self.uom,
-            self.evaluate(quantity, values), product.default_uom)
+            self.evaluate(quantity, values, design), product.default_uom)
         bom.outputs += (output,)
         bom.name = "(%s) %s" % (template.code, template.name)
         product_bom = ProductBom()
@@ -984,21 +985,20 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if route:
             product_bom.route = route
         res_obj.append(product_bom)
-
         return {self: (bom, res_obj)}
 
-    def template_update(self, template, bom):
+    def template_update(self, template, bom, design):
         return template
 
 
-    def get_ratio_for_prices(self, values, ratio):
+    def get_ratio_for_prices(self, values, ratio, design):
         quantity = self.bom_quantity or self.quantity
         context = Transaction().context
         if context.get('prices', False):
             quantity = self.quantity
 
         if not self.parent:
-            r = self.evaluate(quantity or '1.0', values) or 1.0
+            r = self.evaluate(quantity or '1.0', values, design) or 1.0
             return ratio / r
 
         parent = self.parent
@@ -1006,9 +1006,9 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if context.get('prices', False):
             parent_quantity = parent.quantity
 
-        ratio_parent = self.evaluate(parent_quantity or '1.0', values) or 1.0
+        ratio_parent = self.evaluate(parent_quantity or '1.0', values, design) or 1.0
         return parent.get_ratio_for_prices(values,
-            (ratio or 1.0) * ratio_parent)
+            (ratio or 1.0) * ratio_parent, design)
 
     def create_design_line(self, quantity, uom, unit_price, quote):
         DesignLine = Pool().get('configurator.design.line')
@@ -1297,7 +1297,7 @@ class Design(Workflow, ModelSQL, ModelView):
         for function_ in functions:
             parent = function_.get_parent()
             res[parent][function_] = function_.evaluate(function_.quantity,
-                    res[parent])
+                    res[parent], self)
         return res
 
     def create_object(self, object):
@@ -1405,7 +1405,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
                             quantity = prop.evaluate(prop.quantity,
-                                design.as_dict()[parent])
+                                design.as_dict()[parent], design)
                             quantity = quantity * quote_ratio
                             product = v
                     # if prop.type == 'operation':
@@ -1424,7 +1424,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         parent = prop.get_parent()
                         with Transaction().set_context(context):
                             qty_ratio = prop.get_ratio_for_prices(
-                                values.get(parent, {}), 1)
+                                values.get(parent, {}), 1, design)
                         if not product:
                             continue
                         cost_price = quote.get_unit_price(product,
@@ -1440,7 +1440,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         parent = prop.get_parent()
                         with Transaction().set_context(context):
                             qty_ratio = prop.get_ratio_for_prices(
-                                values.get(parent, {}), 1)
+                                values.get(parent, {}), 1, design)
                         cost_price = (Decimal(qty_ratio * quantity) / (
                                 dl.unit_price
                                 + Decimal(qty_ratio * quantity) * cost_price))
