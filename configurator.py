@@ -5,8 +5,7 @@ from trytond.pyson import Eval, Not, If, Bool
 from trytond.pool import Pool, PoolMeta
 from trytond.config import config
 from trytond.transaction import Transaction
-from trytond.modules.company.model import (
-    employee_field, set_employee, reset_employee)
+from trytond.modules.company.model import employee_field
 from trytond.i18n import gettext
 from trytond.exceptions import UserError
 from jinja2 import Template as Jinja2Template
@@ -1778,7 +1777,6 @@ class QuotationLine(ModelSQL, ModelView):
     def get_unit_price(self, product, quantity, uom, supplier):
         pool = Pool()
         Product = pool.get('product.product')
-        Uom = pool.get('product.uom')
 
         context = self._get_context_purchase_price()
         context.update(product.template.get_purchase_context())
