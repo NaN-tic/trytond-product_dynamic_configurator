@@ -251,6 +251,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         template = Jinja2Template(expression, trim_blocks=True)
         try:
             res = template.render(record)
+        except TypeError as e:
+            raise UserError(gettext(
+                'product_dynamic_configurator.msg_expression_error',
+                property=self.rec_name,
+                expression=expression[:25]+('...' if len(expression) > 25 else ''),
+                invalid=str(e)))
         except Jinja2UndefinedError as e:
             raise UserError(gettext(
                 'product_dynamic_configurator.msg_expression_error',
