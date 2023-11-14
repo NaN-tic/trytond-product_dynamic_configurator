@@ -275,13 +275,13 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         else:
             default = default.copy()
 
-        option_price = dict(((x.code, x.parent and x.parent.code or None),
-            x.option_price_property and x.option_price_property.get_full_code())
-                for x in properties if x.option_price_property)
+        option_default = (dict(
+            (x.get_full_code(), x.option_default.get_full_code())
+            for x in properties if x.option_default))
 
-        option_default = dict(((x.code, x.parent and x.parent.code),
-            x.option_default and x.option_default.get_full_code())
-                for x in properties if x.option_default)
+        option_price = (dict(
+            (x.get_full_code(), x.option_price_property.get_full_code())
+            for x in properties if x.option_price_property))
 
         default.setdefault('option_price_property', None)
         default.setdefault('option_default', None)
@@ -290,29 +290,24 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
 
         to_save = []
         for prop in new_properties:
-            key = (prop.code, prop.parent and prop.parent.code)
-
-            if key not in option_price and key not in option_default:
-               continue
+            code = prop.get_full_code()
+            if code not in option_price and code not in option_default:
+                continue
 
             parent = prop.get_parent()
             childs = parent.childrens
             codes =  dict((x.get_full_code(),x) for x in childs)
 
+            if code in option_price:
+                price_code = option_price.get(code)
+                prop.option_price_property = codes.get(price_code)
 
-            if key in option_price:
-                value = option_price[key]
-                value = codes.get(value)
-                if value:
-                    prop.option_price_property = value
-                    to_save.append(prop)
+            if code in option_default:
+                default_code = option_default.get(code)
+                prop.option_default = codes.get(default_code)
 
-            if key in option_default:
-                value = option_default[key]
-                value = codes.get(value)
-                if value:
-                    prop.option_default = codes.get(value)
-                    to_save.append(prop)
+            to_save.append(prop)
+
         cls.save(to_save)
         return to_save
 
