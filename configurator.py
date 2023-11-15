@@ -640,6 +640,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
         Product = pool.get('product.product')
+        ProductCostPrice = pool.get('product.cost_price')
         Attribute = pool.get('product.product.attribute')
         DesignAttribute = pool.get('configurator.design.attribute')
         exists = False
@@ -755,12 +756,14 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 supplier.active = False
         else:
             product.product_suppliers = []
+
         product_supplier = ProductSupplier()
         product_supplier.template = template
         # product_supplier.product = product
         product_supplier.party = goods_supplier
         product_supplier.on_change_party()
         product_supplier.prices = ()
+
         design_qty = self.evaluate(design.template.quantity, values, design)
         if hasattr(product, 'product_suppliers') and product.product_suppliers:
             for supplier in product.product_suppliers:
@@ -771,6 +774,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         for quote in design.prices:
             if hasattr(quote, 'state') and quote.state != 'confirmed':
                 continue
+
             cost_price = 0
             uom = None
             qty = Uom.compute_qty(design.template.uom, design_qty,
@@ -798,20 +802,29 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                 qty = ((quote.quantity / qty) * bom_input.quantity)
                 price.quantity = Uom.compute_qty(self.uom, qty,
                     self.product_template.purchase_uom)
+
                 if uom != self.uom:
                     cost_price = Uom.compute_price(self.uom, cost_price,
                         self.product_template.default_uom)
                     cost_price_sup = Uom.compute_price(self.uom, cost_price,
                         self.product_template.purchase_uom)
-                    price.unit_price = cost_price
-                    product.cost_price = cost_price_sup
+                    supplier_unit_price = cost_price
+                    product_cost_price = cost_price_sup
                     if template.use_info_unit:
-                        product.cost_price = template.get_unit_price(cost_price)
-                        price.unit_price = template.get_unit_price(cost_price_sup)
+                        product_cost_price = template.get_unit_price(cost_price)
+                        supplier_unit_price = template.get_unit_price(cost_price_sup)
                 else:
-                    product.cost_price = Uom.compute_price(self.uom, cost_price,
+                    product_cost_price = Uom.compute_price(self.uom, cost_price,
                         self.product_template.default_uom)
-                    price.unit_price = cost_price
+                    supplier_unit_price = cost_price
+
+                digits = ProductCostPrice.cost_price.digits[1]
+                product.cost_price = Decimal(product_cost_price).quantize(Decimal(
+                                            str(10.0 ** -digits)))
+
+                digits = Price.unit_price.digits[1]
+                price.unit_price = Decimal(supplier_unit_price).quantize(Decimal(
+                                            str(10.0 ** -digits)))
 
                 product_supplier.prices += (price,)
                 price.product = product
