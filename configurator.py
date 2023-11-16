@@ -1156,7 +1156,7 @@ class Design(Workflow, ModelSQL, ModelView):
         depends=['state', 'attributes'], translate=True)
     party = fields.Many2One('party.party', 'Party', states=READONLY_STATE,
         context={
-            'company': Eval('company'),
+            'company': Eval('company', -1),
         }, depends=['state', 'company'])
     template = fields.Many2One('configurator.property', 'Template',
         domain=[('template', '=', True)],
@@ -1176,7 +1176,7 @@ class Design(Workflow, ModelSQL, ModelView):
     state = fields.Selection(STATES, 'State', readonly=True, required=True)
     product = fields.Many2One('product.product', 'Product Designed',
         readonly=True,  context={
-            'company': Eval('company'),
+            'company': Eval('company', -1),
         }, depends=['company'])
     suppliers = fields.One2Many('configurator.quotation.supplier', 'design',
         'Suppliers', order=[('category', 'ASC')])
@@ -1204,7 +1204,7 @@ class Design(Workflow, ModelSQL, ModelView):
         depends=['prices', 'product_uom_category', 'state'])
     product_exists = fields.Function(fields.Many2One('product.product',
         'Searched Product',  context={
-            'company': Eval('company'),
+            'company': Eval('company', -1),
         }, depends=['company']), 'get_product_exist')
     quotation_date = fields.Date('Quotation Date', readonly=True)
     quoted_by = employee_field("Quoted By")
