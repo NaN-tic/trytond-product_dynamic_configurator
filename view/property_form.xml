@@ -5,12 +5,15 @@
     <field name="name"/>
     <label name="code"/>
     <field name="code"/>
+    <label name="active"/>
+    <field name="active"/>
+
     <newline/>
     <label name="type"/>
     <field name="type"/>
     <label name="parent"/>
     <field name="parent"/>
-    <group id="bools" colspan="2">
+    <group id="bools" colspan="2" col="6">
         <label name="user_input"/>
         <field name="user_input"/>
         <label name="template"/>
