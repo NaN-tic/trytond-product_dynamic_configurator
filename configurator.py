@@ -1335,6 +1335,7 @@ class Design(Workflow, ModelSQL, ModelView):
         Function = Pool().get('configurator.property')
         functions = Function.search([('type', '=', 'function'),
             ('parent', 'child_of', [self.template.id]) ])
+
         res = {}
         for attribute in self.attributes:
             parent = attribute.property.get_parent()
@@ -1348,8 +1349,9 @@ class Design(Workflow, ModelSQL, ModelView):
 
         for function_ in functions:
             parent = function_.get_parent()
-            res[parent][function_] = function_.evaluate(function_.quantity,
-                    res[parent], self)
+            if res.get(parent):
+                res[parent][function_] = function_.evaluate(function_.quantity,
+                        res[parent], self)
         return res
 
     def create_object(self, object):
@@ -1415,8 +1417,12 @@ class Design(Workflow, ModelSQL, ModelView):
             design.quoted_by = User(Transaction().user).employee
             design.product_codes = ''
             values = design.as_dict()
+            if not values:
+                continue
+
             with Transaction().set_context(context):
                 res = design.template.create_prices(design, values)
+
             design.custom_operations(res)
             suppliers = dict((x.category, x.supplier)
                 for x in design.suppliers)
