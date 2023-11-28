@@ -1,12 +1,11 @@
 from decimal import Decimal
-from trytond.model import (Workflow, ModelView, ModelSQL, fields,
-    sequence_ordered, tree)
+from trytond.model import (Workflow, ModelView, ModelSQL,
+    DeactivableMixin, fields, sequence_ordered, tree)
 from trytond.pyson import Eval, Not, If, Bool
 from trytond.pool import Pool, PoolMeta
 from trytond.config import config
+from trytond.modules.company.model import employee_field
 from trytond.transaction import Transaction
-from trytond.modules.company.model import (
-    employee_field, set_employee, reset_employee)
 from trytond.i18n import gettext
 from trytond.exceptions import UserError
 from jinja2 import Template as Jinja2Template
@@ -62,7 +61,8 @@ class Template(metaclass=PoolMeta):
         return {}
 
 
-class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
+class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
+         ModelSQL, ModelView):
     """ Property """
     __name__ = 'configurator.property'
     # Code may not contain spaces or special characters (usable in formulas)
@@ -181,7 +181,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             ('id', '!=', Eval('id', -1)),
             ('parent', 'child_of', Eval('id', -1))
             ],
-        depends=['id', 'parent', 'type',],
+        depends=['id', 'parent', 'type'],
         states={
             'invisible': Eval('type').in_(['option'])
         })
@@ -227,7 +227,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
             if p == parent:
                 childs.append(children.id)
         return childs
-
 
     def get_rec_name(self, name):
         res = ''
@@ -359,7 +358,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if self.parent:
             return self.get_root_parent(self.parent)
         return self
-
 
     def compute_attributes(self, design, attributes=None):
         Attribute = Pool().get('configurator.design.attribute')
@@ -920,8 +918,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     continue
                 if child_res in bom.inputs:
                     continue
-                if (child.type == 'product' and child.parent and
-                        child.parent.type != 'options'):
+                if (child.type == 'product' and child.parent
+                        and child.parent.type != 'options'):
                     bom.inputs += (child_res,)
                 elif child.type == 'purchase_product':
                     bom.inputs += (child_res,)
@@ -951,7 +949,6 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         if not self.product_template:
             return
         template = self.get_product_template_object_copy(self.product_template)
-
         template.name = "%s (%s)" % (self.name, 'Id' + str(design.id))
 
         product = self.get_product_product_object_copy(
@@ -966,7 +963,7 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
         # Generate code
         template.code = self.get_property_code(design, custom_locals)
         if not template.code:
-            template.code = "%s (%s)" % (self.code, design.code or str(design.id))
+            template.code = "%s (%s)" % (self.code, 'Id' + str(design.id))
 
         template_name = self.get_property_name(design, custom_locals)
         if template_name:
@@ -1013,7 +1010,8 @@ class Property(tree(separator=' / '), sequence_ordered(), ModelSQL, ModelView):
                     pass
                 setattr(template, key, val)
 
-        exists_product = Product.search([('template.code', '=', template.code)])
+        exists_product = Product.search([
+                ('template.code', '=', template.code)])
         if exists_product:
             product = exists_product[0]
 
@@ -1214,6 +1212,7 @@ class Design(Workflow, ModelSQL, ModelView):
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'on_change_with_product_uom_category')
+    product_codes = fields.Text('Product Codes', readonly=True)
 
     @classmethod
     def __setup__(cls):
@@ -1228,8 +1227,8 @@ class Design(Workflow, ModelSQL, ModelView):
                 'depends': ['state'],
                 },
             'update': {
-                'invisible': (~Eval('state').in_(['draft']) |
-                    Eval('attributes', [-1])),
+                'invisible': (~Eval('state').in_(['draft'])
+                    | Eval('attributes', [-1])),
                 'depends': ['state', 'attributes'],
             },
             'process': {
@@ -1292,8 +1291,8 @@ class Design(Workflow, ModelSQL, ModelView):
         if not self.template:
             return
         template = self.template.product_template
-        self.quotation_uom = (template.quotation_uom and template.quotation_uom.id or
-            template.default_uom.id)
+        self.quotation_uom = (template.quotation_uom
+            and template.quotation_uom.id or template.default_uom.id)
         self.sale_uom = self.template.product_template.sale_uom.id
 
     @classmethod
@@ -1386,7 +1385,6 @@ class Design(Workflow, ModelSQL, ModelView):
 
         cls.save(designs)
 
-
     def custom_operations(self, res):
         pass
 
@@ -1415,18 +1413,21 @@ class Design(Workflow, ModelSQL, ModelView):
             product_codes = []
             design.quotation_date = Date.today()
             design.quoted_by = User(Transaction().user).employee
+            design.product_codes = ''
             values = design.as_dict()
             with Transaction().set_context(context):
                 res = design.template.create_prices(design, values)
             design.custom_operations(res)
             suppliers = dict((x.category, x.supplier)
                 for x in design.suppliers)
+            product_codes = []
             for quote in design.prices:
                 quote_quantity = Uom.compute_qty(design.quotation_uom,
                     quote.quantity, design.template.uom, round=False)
                 bom_quantity = Uom.compute_qty(design.template.uom,
-                    eval(design.template.quantity), design.template.uom, round=False)
-                quote_ratio = quote_quantity/bom_quantity
+                    eval(design.template.quantity), design.template.uom,
+                    round=False)
+                quote_ratio = quote_quantity / bom_quantity
                 for prop, v in res.items():
                     v = v[0]
                     key = (prop.price_category or prop.id, quote)
@@ -1518,8 +1519,6 @@ class Design(Workflow, ModelSQL, ModelView):
                 ('translatable', '=', True)])
             for lang in langs:
                 design.render_design_fields(lang)
-
-
 
     def design_full_dict(self):
         record = self.as_dict()
@@ -1752,8 +1751,8 @@ class QuotationLine(ModelSQL, ModelView):
         'Cost Price No Manual', digits=price_digits), 'get_prices')
     unit_price_per_mil = fields.Function(fields.Numeric('Cost/Qty',
         digits=price_digits), 'get_prices')
-    unit_price_no_manual_per_mil = fields.Function(fields.Numeric('Cost(NoM)/Qty',
-        digits=price_digits), 'get_prices')
+    unit_price_no_manual_per_mil = fields.Function(fields.Numeric(
+        'Cost(NoM)/Qty', digits=price_digits), 'get_prices')
     manual_list_price_on_sale_uom = fields.Function(
         fields.Numeric('Manual List Price On Sale Uome',
                        digits=price_digits), 'get_prices')
@@ -1782,7 +1781,6 @@ class QuotationLine(ModelSQL, ModelView):
     def get_unit_price(self, product, quantity, uom, supplier):
         pool = Pool()
         Product = pool.get('product.product')
-        Uom = pool.get('product.uom')
 
         context = self._get_context_purchase_price()
         context.update(product.template.get_purchase_context())
@@ -1831,8 +1829,8 @@ class QuotationLine(ModelSQL, ModelView):
                 list_price += line.amount
                 material_cost_price += Decimal(line.property.quotation_category
                     and line.property.quotation_category.type_ == 'goods'
-                    and line.quantity or 0) * (line.manual_unit_price or
-                        line.unit_price)
+                    and line.quantity or 0) * (line.manual_unit_price
+                    or line.unit_price)
             list_price = (list_price
                 * Decimal(1 + ((quote.global_margin or 0)) or 0
                 )).quantize(quantize)
@@ -1855,7 +1853,7 @@ class QuotationLine(ModelSQL, ModelView):
             res['margin_w_manual'][quote.id] = (res['list_price'][quote.id]
                 - cost_price)
             res['unit_price_per_mil'][quote.id] = (
-                res['cost_price'][quote.id]/ Decimal(quote_quantity2))
+                res['cost_price'][quote.id] / Decimal(quote_quantity2))
             res['unit_price_no_manual_per_mil'][quote.id] = (
                 res['cost_price_no_manual'][quote.id] / Decimal(quote_quantity2))
             res['manual_list_price_on_sale_uom'][quote.id] = (

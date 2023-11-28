@@ -224,7 +224,7 @@ Create property template::
 
     >>> Property = Model.get('configurator.property')
     >>> bag = Property(name="Bossa Isotermica", code="iso_bag", type='bom',
-    ...    template=True, quantity='1')
+    ...    template=True, quantity='1', bom_quantity='1')
     >>> bag.uom = unit
     >>> bag.product_template = production_template
     >>> bag.save()
@@ -488,7 +488,7 @@ Bossa Interior:
 
 Material Base Interior:
 
-	>>> matA = interior.childs.new()
+    >>> matA = interior.childs.new()
     >>> matA.name = "Material Base Bossa Interior"
     >>> matA.code = "mat_int"
     >>> matA.type = "purchase_product"
@@ -578,7 +578,6 @@ Foam:
 
 Save property::
 
-    >>> bag.save()
     >>> bag.reload()
 
 Create Design::
@@ -623,7 +622,6 @@ Fill Design Exterior::
 	>>> option_ext, = Property.find([('code', '=', 'blanco_ext')])
 	>>> mat_ext.option = option_ext
 	>>> mat_ext.save()
-
 
 Fill Design Interior::
 
