@@ -7,8 +7,6 @@
     <field name="product_exists"/>
     <label name="manual_name"/>
     <field name="manual_name"/>
-    <label name="manual_code"/>
-    <field name="manual_code"/>
     <label name="product"/>
     <field name="product"/>
     <label name="design_date"/>
@@ -45,7 +43,9 @@
             <field name="quotation_date"/>
             <field name="prices" colspan="4"/>
         </page>
-
+        <page name="product_codes">
+            <field name="product_codes" colspan="4"/>
+        </page>
         <page name="objects">
             <field name="objects" colspan="4"/>
         </page>
