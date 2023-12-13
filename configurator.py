@@ -193,8 +193,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         states={
             'invisible': Eval('type') != 'purchase_product'
         },
-        domain = [('id', 'in', Eval('childrens'))],
-        depends=['type', 'childrens'],
+        domain = [('id', 'in', Eval('childrens', []))],
+        depends=['type'],
         help='Price for option when purchase_product is selected')
 
 
