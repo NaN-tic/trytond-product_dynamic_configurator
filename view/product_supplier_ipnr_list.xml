@@ -1,0 +1,6 @@
+<tree editable="1">
+    <field name="supplier"/>
+    <field name="product"/>
+    <field name="color"/>
+    <field name="ipnr"/>
+</tree>

@@ -33,12 +33,14 @@
     <field name="quotation_category"/>
     <newline/>
     <label name="quantity"/>
-    <field name="quantity"/>
+    <field name="quantity" colspan="5"/>
     <label name="bom_quantity"/>
-    <field name="bom_quantity"/>
+    <field name="bom_quantity" colspan="5"/>
     <label name="uom"/>
     <field name="uom"/>
     <newline/>
+    <label name="evaluate_2times"/>
+    <field name="evaluate_2times"/>
     <label name="product_template"/>
     <field name="product_template"/>
     <label name="object_expression"/>
@@ -59,9 +61,9 @@
 
 
     <notebook colspan="6">
-        <page name="childs">
+        <!-- <page name="childs">
             <field name="childs" colspan="4"/>
-        </page>
+        </page> -->
         <page id="descriptions" string="Descriptions">
             <label name="code_jinja"/>
             <field name="code_jinja"/>

@@ -18,6 +18,7 @@ def register():
         configurator.DesignAttribute,
         configurator.QuotationCategory,
         configurator.QuotationSupplier,
+        configurator.SupplierProductIpnr,
         jinja_templates.JinjaTemplateMacros,
         jinja_templates.JinjaTemplate,
         product.Template,
