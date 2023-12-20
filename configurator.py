@@ -37,6 +37,16 @@ TYPE = [
 ]
 
 
+class SupplierProductIpnr(ModelSQL, ModelView):
+    'Supplier Product IPNR'
+    __name__ = 'product_supplier.ipnr'
+
+    supplier = fields.Many2One('party.party', 'Supplier', required=True)
+    product = fields.Many2One('product.product', 'Product', required=True)
+    color = fields.Many2One('product.product', 'Color', required=True)
+    ipnr = fields.Float('IPNR', required=True)
+
+
 class PriceCategory(ModelSQL, ModelView):
     """ Price Category """
     __name__ = 'configurator.property.price_category'
@@ -197,10 +207,16 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         depends=['type', 'childrens'],
         help='Price for option when purchase_product is selected')
 
+    evaluate_2times = fields.Boolean('Evaluate 2 times')
+
 
     @staticmethod
     def default_sequence():
         return 99
+
+    @staticmethod
+    def default_evaluate_2times():
+        return False
 
     @classmethod
     def search_childrens(cls, name, clause):
@@ -397,15 +413,33 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             CreatedObject.save(to_create)
 
     def evaluate(self, expression, values, design):
+        pool = Pool()
+        SupplierIPNR = pool.get('product_supplier.ipnr')
+        supplierIpnr = SupplierIPNR.search([])
+
         custom_locals = copy(locals())
         custom_locals['math'] = math
+        keys = values.keys()
+        for sup in supplierIpnr:
+            code = sup.product.code + '_' + sup.color.code + '_' + str(
+                sup.supplier.code)
+            custom_locals[code] = sup.ipnr
+
+        for sup in design.suppliers:
+            code = sup.category.name
+            custom_locals[code] = sup.supplier
+
+
         keys = [x for x in values.keys()]
-        keys.sort(key=lambda x: ( str(x.parent and x.parent.sequence or 0).zfill(5) +
-            str(x.sequence).zfill(6)))
+        keys.sort(key=lambda x: ( str(x.parent and x.parent.sequence or 0
+            ).zfill(5) + str(x.sequence).zfill(6)))
 
         for prop in keys:
             attr = values[prop]
             if isinstance(attr, dict):
+                continue
+            elif isinstance(prop, str):
+                custom_locals[prop] = attr
                 continue
             if prop.type == 'function':
                 custom_locals[prop.code] = attr
@@ -414,12 +448,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         try:
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
-            # if isinstance(res, str):
-            #     code = compile(res, "<string>", "eval")
-            #     res = eval(code, custom_locals)
+            if self.evaluate_2times:
+                res = eval(res, custom_locals)
+                #code = compile(res, "<string>", "eval")
+                res = eval(code, custom_locals)
+                #res = custom_locals.get(res)
             return res
         except BaseException as e:
-            logger.error(str(e))
+         #   logger.error(str(e))
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
@@ -1333,7 +1369,10 @@ class Design(Workflow, ModelSQL, ModelView):
         pass
 
     def as_dict(self):
-        Function = Pool().get('configurator.property')
+        pool = Pool()
+        SupplierIPNR = pool.get('product_supplier.ipnr')
+
+        Function = pool.get('configurator.property')
         functions = Function.search([('type', '=', 'function'),
             ('parent', 'child_of', [self.template.id]) ])
         res = {}
@@ -1351,6 +1390,17 @@ class Design(Workflow, ModelSQL, ModelView):
             parent = function_.get_parent()
             res[parent][function_] = function_.evaluate(function_.quantity,
                     res[parent], self)
+
+        supplierIpnr = SupplierIPNR.search([])
+        ipnr = {}
+        for sup in supplierIpnr:
+            code = sup.product.code + '_' + sup.color.code + '_' + str(sup.supplier.code)
+            ipnr[code] = sup.ipnr
+
+        res['ipnr'] = ipnr
+        suppliers = dict((x.category, x.supplier) for x in self.suppliers)
+        res['suppliers'] = suppliers
+
         return res
 
     def create_object(self, object):
@@ -1545,14 +1595,22 @@ class Design(Workflow, ModelSQL, ModelView):
 
         for parent_prop, attributes in record.items():
             for prop, attr in attributes.items():
-                custom_locals[prop.get_full_code()] = attr
-                parent = prop.get_parent()
+                if isinstance(prop, str):
+                    custom_locals[prop] = attr
+                    parent = None
+                    code = prop
+                elif isinstance(prop, Property):
+                    custom_locals[prop.get_full_code()] = attr
+                    parent = prop.get_parent()
+                    code = prop.code
+                else:
+                    continue
                 if parent:
                     if parent.code not in all:
                         all[parent.code] = {}
                     all[parent.code][prop.code] = attr
                 else:
-                    all[prop.code] = attr
+                    all[code] = attr
 
         custom_locals['tree'] = all
         return custom_locals

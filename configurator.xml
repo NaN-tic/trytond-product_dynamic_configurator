@@ -28,8 +28,6 @@
             <field name="domain" eval="[('parent', '=', None)]" pyson="1"/>
         </record>
 
-
-
         <record model="ir.action.act_window.view" id="act_property_tree_view1">
             <field name="sequence" eval="10"/>
             <field name="view" ref="property_view_tree"/>
@@ -262,5 +260,25 @@
                 pyson="1"/>
             <field name="rule_group" ref="rule_group_configurator_design"/>
         </record>
+           <record model="ir.ui.view" id="supplier_product_ipnr_list">
+            <field name="model">product_supplier.ipnr</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="20"/>
+            <field name="name">product_supplier_ipnr_list</field>
+        </record>
+
+        <record model="ir.action.act_window" id="act_product_supplier_ipnr_list">
+            <field name="name">Product Supplier IPNR</field>
+            <field name="res_model">product_supplier.ipnr</field>
+        </record>
+
+        <record model="ir.action.act_window.view" id="act_supplier_product_ipnr_view">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="supplier_product_ipnr_list"/>
+            <field name="act_window" ref="act_product_supplier_ipnr_list"/>
+        </record>
+        <menuitem parent="product_dynamic_configurator.menu_property_form" sequence="1"
+            action="act_product_supplier_ipnr_list" id="supplier_product_ipnr"/>
+
     </data>
 </tryton>
