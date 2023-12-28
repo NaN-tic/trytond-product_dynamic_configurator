@@ -449,10 +449,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
             if self.evaluate_2times:
-                res = eval(res, custom_locals)
+                # res = eval(res, custom_locals)
                 #code = compile(res, "<string>", "eval")
-                res = eval(code, custom_locals)
-                #res = custom_locals.get(res)
+                # res = eval(code, custom_locals)
+                res = custom_locals.get(res, 0)
             return res
         except BaseException as e:
          #   logger.error(str(e))
