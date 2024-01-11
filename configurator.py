@@ -111,12 +111,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         'invisible': Not(Eval('type').in_(['purchase_product',
             'bom', 'product', 'function', 'match'])),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
-    }, depends=['type'])
+    })
     bom_quantity = fields.Char('Bom Quantity', states={
         'invisible': Not(Eval('type').in_(['purchase_product',
             'bom', 'product', 'function', 'match'])),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
-    }, depends=['type'])
+    })
     price_category = fields.Many2One('configurator.property.price_category',
         'Price Category',
         states={
@@ -132,12 +132,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         'Work Center Category', states={
             'invisible': Eval('type') != 'operation',
             'required': Eval('type').in_(['operation'])
-        }, depends=['type'])
+        })
     operation_type = fields.Many2One('production.operation.type',
         'Operation Type', states={
             'invisible': Eval('type') != 'operation',
             'required': Eval('type').in_(['operation'])
-        }, depends=['type'])
+        })
 
     attribute_set = fields.Many2One('product.attribute.set', 'Attribute Set',
         states={
@@ -164,7 +164,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         states={
             'invisible': Not(Eval('type').in_(['purchase_product', 'bom'])),
             'required': Eval('type').in_(['purchase_product', 'bom'])
-        }, depends=['type']
+        }
     )
     product_uom_category = fields.Function(
         fields.Many2One('product.uom.category', 'Product Uom Category'),
@@ -1170,8 +1170,8 @@ class Design(Workflow, ModelSQL, ModelView):
                 Eval('context', {}).get('company', -1)),
             ],
         depends=['state'])
-    code = fields.Char('Code', states=READONLY_STATE, depends=['state'])
-    name = fields.Char('Name', states=READONLY_STATE, depends=['state'],
+    code = fields.Char('Code', states=READONLY_STATE)
+    name = fields.Char('Name', states=READONLY_STATE,
         translate=True)
     manual_code = fields.Char('Manual Code',
         states={
@@ -1191,15 +1191,15 @@ class Design(Workflow, ModelSQL, ModelView):
         domain=[('template', '=', True)],
         states={
             'readonly': Eval('attributes', [0]) | (Eval('state') != 'draft'),
-        }, depends=['state', 'template', 'attributes'])
+        })
     design_date = fields.Date('Design Date', states=READONLY_STATE,
         depends=['state'])
     currency = fields.Many2One('currency.currency', 'Currency',
-        states=READONLY_STATE, depends=['state'])
+        states=READONLY_STATE)
     attributes = fields.One2Many('configurator.design.attribute', 'design',
-        'Attributes', states=READONLY_STATE, depends=['state'])
+        'Attributes', states=READONLY_STATE)
     prices = fields.One2Many('configurator.quotation.line', 'design',
-        'Quotations', states=READONLY_STATE, depends=['state'])
+        'Quotations', states=READONLY_STATE)
     objects = fields.One2Many('configurator.object', 'design', 'Objects',
         readonly=True)
     state = fields.Selection(STATES, 'State', readonly=True, required=True)
@@ -1778,7 +1778,7 @@ class QuotationLine(ModelSQL, ModelView):
         states={
             'required': True,
             'readonly': Bool(Eval('unit_price'))
-        }, depends=['unit_price'])
+        })
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
     global_margin = fields.Float('Global Margin', digits=(16, 4),
         states={'readonly':  Eval('design_state') != 'draft'},
@@ -2002,15 +2002,15 @@ class DesignAttribute(sequence_ordered(), ModelSQL, ModelView):
     ], states={
         'invisible': Eval('property_type') != 'options',
         'readonly': Eval('design_state') != 'draft',
-    }, depends=['property_type', 'property_options', 'design_state'])
+    })
     number = fields.Float('Number', states={
         'invisible': Eval('property_type') != 'number',
         'readonly': Eval('design_state') != 'draft',
-    }, depends=['property_type', 'design_state'])
+    })
     text = fields.Char('Text', states={
         'invisible': Eval('property_type') != 'text',
         'readonly': Eval('design_state') != 'draft',
-    }, depends=['property_type', 'design_state'])
+    })
     design_state = fields.Function(fields.Selection(STATES, 'Design State'),
         'on_change_with_design_state')
 
