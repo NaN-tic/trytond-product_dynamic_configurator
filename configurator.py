@@ -98,8 +98,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         'required': Eval('type').in_(['bom', 'product', 'purchase_product'])
         },
         domain=[If(Bool(Eval('product_uom_category')),
-            ('category', '=', Eval('product_uom_category', -1)), ())],
-        depends=['product_uom_category', 'type'])
+            ('category', '=', Eval('product_uom_category', -1)), ())])
     childs = fields.One2Many('configurator.property', 'parent', 'childs',
         states={
             'invisible': Not(Eval('type').in_(['bom', 'purchase_product',
@@ -147,7 +146,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     product_attribute = fields.Many2One('product.attribute',
         'Product Attribute',
         domain=[('sets', '=', Eval('attribute_set'))],
-        depends=['attribute_set'],
         states={
             'invisible': Eval('type') != 'attribute',
             'required': Eval('type') == 'attribute',
@@ -191,7 +189,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             ('id', '!=', Eval('id', -1)),
             ('parent', 'child_of', Eval('id', -1))
             ],
-        depends=['id', 'parent', 'type'],
         states={
             'invisible': Eval('type').in_(['option'])
         })
@@ -204,7 +201,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             'invisible': Eval('type') != 'purchase_product'
         },
         domain = [('id', 'in', Eval('childrens', []))],
-        depends=['type'],
         help='Price for option when purchase_product is selected')
 
     evaluate_2times = fields.Boolean('Evaluate 2 times')
@@ -1168,32 +1164,28 @@ class Design(Workflow, ModelSQL, ModelView):
         domain=[
             ('id', If(Eval('context', {}).contains('company'), '=', '!='),
                 Eval('context', {}).get('company', -1)),
-            ],
-        depends=['state'])
+            ])
     code = fields.Char('Code', states=READONLY_STATE)
     name = fields.Char('Name', states=READONLY_STATE,
         translate=True)
     manual_code = fields.Char('Manual Code',
         states={
             'readonly': ~Eval('attributes', [0]) & READONLY_STATE,
-        },
-        depends=['state', 'attributes'])
+        })
     manual_name = fields.Char('Manual Name',
         states={
             'readonly': ~Eval('attributes', [0]) & READONLY_STATE,
-        },
-        depends=['state', 'attributes'], translate=True)
+        }, translate=True)
     party = fields.Many2One('party.party', 'Party', states=READONLY_STATE,
         context={
             'company': Eval('company', -1),
-        }, depends=['state', 'company'])
+        }, depends=['company'])
     template = fields.Many2One('configurator.property', 'Template',
         domain=[('template', '=', True)],
         states={
             'readonly': Eval('attributes', [0]) | (Eval('state') != 'draft'),
         })
-    design_date = fields.Date('Design Date', states=READONLY_STATE,
-        depends=['state'])
+    design_date = fields.Date('Design Date', states=READONLY_STATE)
     currency = fields.Many2One('currency.currency', 'Currency',
         states=READONLY_STATE)
     attributes = fields.One2Many('configurator.design.attribute', 'design',
@@ -1218,8 +1210,7 @@ class Design(Workflow, ModelSQL, ModelView):
             If(Bool(Eval('product_uom_category')),
                 ('category', '=', Eval('product_uom_category')),
                 ('category', '!=', -1)),
-            ],
-        depends=['prices', 'product_uom_category', 'state'])
+            ])
     sale_uom = fields.Many2One('product.uom', 'Sale Uom',
         states={
             'readonly': Bool(Eval('prices', [0])),
@@ -1229,8 +1220,7 @@ class Design(Workflow, ModelSQL, ModelView):
             If(Bool(Eval('product_uom_category')),
                 ('category', '=', Eval('product_uom_category')),
                 ('category', '!=', -1)),
-            ],
-        depends=['prices', 'product_uom_category', 'state'])
+            ])
     product_exists = fields.Function(fields.Many2One('product.product',
         'Searched Product',  context={
             'company': Eval('company', -1),
@@ -1781,15 +1771,14 @@ class QuotationLine(ModelSQL, ModelView):
         })
     prices = fields.One2Many('configurator.design.line', 'quotation', 'Prices')
     global_margin = fields.Float('Global Margin', digits=(16, 4),
-        states={'readonly':  Eval('design_state') != 'draft'},
-        depends=['design_state'])
+        states={'readonly':  Eval('design_state') != 'draft'})
     cost_price = fields.Function(fields.Numeric('Cost Price',
         digits=price_digits), 'get_prices')
     list_price = fields.Function(fields.Numeric('Total Price',
         digits=price_digits), 'get_prices')
     manual_list_price = fields.Numeric('Manual List Price',
-        digits=price_digits, states={'readonly':  Eval('design_state') != 'draft'},
-        depends=['design_state'])
+        digits=price_digits, states={
+            'readonly':  Eval('design_state') != 'draft'})
     margin = fields.Function(fields.Numeric('Margin', digits=(16, 4)),
         'get_prices')
     margin_w_manual = fields.Function(fields.Numeric('Margin', digits=(16, 4)),
