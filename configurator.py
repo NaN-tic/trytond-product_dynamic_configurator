@@ -208,7 +208,16 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         help='Price for option when purchase_product is selected')
 
     evaluate_2times = fields.Boolean('Evaluate 2 times')
-
+    
+    hidden = fields.Boolean('Add',
+        states={
+            'invisible': Eval('type') == 'options',
+        },
+    )
+    
+    @staticmethod
+    def default_hidden():
+        return False
 
     @staticmethod
     def default_sequence():
