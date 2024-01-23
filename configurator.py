@@ -208,13 +208,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         help='Price for option when purchase_product is selected')
 
     evaluate_2times = fields.Boolean('Evaluate 2 times')
-    
+
     hidden = fields.Boolean('Add',
         states={
             'invisible': Eval('type') == 'options',
         },
     )
-    
+
     @staticmethod
     def default_hidden():
         return False
@@ -1259,7 +1259,15 @@ class Design(Workflow, ModelSQL, ModelView):
         fields.Many2One('product.uom.category', 'Product Uom Category'),
         'on_change_with_product_uom_category')
     product_codes = fields.Text('Product Codes', readonly=True)
-
+    hidden = fields.Boolean("Hide extra properties",
+        states ={
+            'invisible': Bool(Eval(('type', '=', 'options')))                
+                })
+    
+    @staticmethod
+    def default_hidden():
+        return False
+    
     @classmethod
     def __setup__(cls):
         super(Design, cls).__setup__()
@@ -1495,6 +1503,8 @@ class Design(Workflow, ModelSQL, ModelView):
                     quantity = 0
                     cost_price = None
                     product = None
+                    if prop.hidden:
+                        continue
                     if prop.type == 'bom':
                         for output in v.outputs:
                             code = '%s - %s' % (
