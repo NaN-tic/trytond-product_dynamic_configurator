@@ -417,6 +417,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         SupplierIPNR = pool.get('product_supplier.ipnr')
         supplierIpnr = SupplierIPNR.search([])
 
+        if 'FX_2A_PES_PLASTIC' in expression:
+            return
         custom_locals = copy(locals())
         custom_locals['math'] = math
         keys = values.keys()
@@ -495,6 +497,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         Product = pool.get('product.product')
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
+        ProductAttribute = pool.get('product.product.attribute')
         domain = []
 
         suppliers = dict((x.category, x.supplier) for x in design.suppliers)
@@ -502,10 +505,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             domain += [('product_suppliers.party', '=',
                 suppliers[self.quotation_category].id)]
 
+        products_filter = None
         for child in self.childs:
             attribute = child.product_attribute
             value = self.evaluate(child.product_attribute_value, values, design)
-
+            if self.code == 'Cost_Cremallera':
+                print("attribute:", attribute.name, child.product_attribute_value, value)
             if isinstance(value, Product):
                 val = None
                 for attr in value.attributes:
@@ -517,17 +522,35 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 value = val
             op = child.attribute_search_op or '='
             type_ = attribute.type_
-            domain += [
-                ('type', '=', 'service'),
-                ('template.attribute_set', '=', child.attribute_set.id),
-                ('attributes.attribute.id', '=', attribute.id),
-                ('attributes.value_%s' % type_, op, value),
-                ]
-        domain += self.get_match_domain(design)
-        products = Product.search(domain)
+            domain = [
+                ('attribute_set', '=', child.attribute_set.id),
+                ('attribute.id', '=', attribute.id),
+                ('value_%s' % type_, op, value),
+               ]
+            if products_filter is not None:
+                domain += [('product', 'in', [x.product.id for x in products_filter if x.product])]
+            if self.code == 'Cost_Cremallera':
+                print("d:", domain)
+            products_filter = ProductAttribute.search(domain)
+            if self.code == 'Cost_Cremallera':
+                print("P:", [x.product.code for x in products_filter])
+
+
+        #domain += self.get_match_domain(design)
+        # domain = list(set(domain))
+        #products = Product.search(domain)
+        products = products_filter
+        if self.code == 'Cost_Cremallera':
+            print("domain:", domain)
+            print("products:", products)
+            #import pdb; pdb.set_trace()
+
         if not products:
             return {self: (None, [])}
 
+        products = [x.product for x in products_filter if x.product and x.product.type == 'service']
+
+        print("products:", self.code, len(products))
         product = None
         for prod in products:
             if len(prod.attributes) > len(self.childs):
@@ -543,6 +566,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             quantity = self.quantity
 
         quantity = self.evaluate(quantity, values, design)
+        print(self.code, product.id, product.code, "quantity:", quantity, self.uom.name, product.default_uom.name)
         quantity = Uom.compute_qty(self.uom, quantity,
              product.default_uom)
         bom_input = BomInput()
