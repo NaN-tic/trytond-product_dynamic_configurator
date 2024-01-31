@@ -32,11 +32,6 @@ msgctxt "field:configurator.design,design_date:"
 msgid "Design Date"
 msgstr "Fecha Diseño"
 
-#, fuzzy
-msgctxt "field:configurator.design,hidden:"
-msgid "Hide extra properties"
-msgstr "Ocultar propiedades adicionales"
-
 msgctxt "field:configurator.design,manual_code:"
 msgid "Manual Code"
 msgstr "Código manual"
@@ -262,8 +257,8 @@ msgid "Evaluate 2 times"
 msgstr "Evaluar 2 veces"
 
 msgctxt "field:configurator.property,hidden:"
-msgid "Add"
-msgstr "Agregar"
+msgid "Hidden"
+msgstr "Oculto"
 
 msgctxt "field:configurator.property,name:"
 msgid "Name"
@@ -537,7 +532,6 @@ msgctxt "model:ir.action,name:act_design_form"
 msgid "Designs"
 msgstr "Diseños"
 
-#, fuzzy
 msgctxt "model:ir.action,name:act_jinja_template_tree"
 msgid "Jinja Templates"
 msgstr "Plantillas de Jinja"
@@ -546,7 +540,6 @@ msgctxt "model:ir.action,name:act_object_form"
 msgid "Objects"
 msgstr "Objetos"
 
-#, fuzzy
 msgctxt "model:ir.action,name:act_product_supplier_ipnr_list"
 msgid "Product Supplier IPNR"
 msgstr "Proveedor de productos IPNR"
@@ -603,7 +596,6 @@ msgctxt "model:ir.model.button,string:design_update_button"
 msgid "Update"
 msgstr "Actualizar"
 
-#, fuzzy
 msgctxt "model:ir.rule.group,name:rule_group_configurator_design"
 msgid "User in company"
 msgstr "Usuario en empresa"
@@ -616,7 +608,6 @@ msgctxt "model:ir.ui.menu,name:menu_design"
 msgid "Designs"
 msgstr "Diseños"
 
-#, fuzzy
 msgctxt "model:ir.ui.menu,name:menu_jinja_template_form"
 msgid "Jinja Templates"
 msgstr "Plantillas de Jinja"
@@ -633,17 +624,14 @@ msgctxt "model:ir.ui.menu,name:menu_property_quotation_category"
 msgid "Quotation Category"
 msgstr "Categoria cotización"
 
-#, fuzzy
 msgctxt "model:ir.ui.menu,name:supplier_product_ipnr"
 msgid "Product Supplier IPNR"
 msgstr "Proveedor de productos IPNR"
 
-#, fuzzy
 msgctxt "model:jinja_template-jinja_template_macro,name:"
 msgid "Jinja template - Jinja template macros"
 msgstr "Plantilla Jinja - Macros de plantilla Jinja"
 
-#, fuzzy
 msgctxt "model:product_supplier.ipnr,name:"
 msgid "Supplier Product IPNR"
 msgstr "Proveedor Producto IPNR"
@@ -712,12 +700,10 @@ msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "Text"
 msgstr "Texto"
 
-#, fuzzy
 msgctxt "selection:configurator.jinja_template,type_:"
 msgid "Base"
 msgstr "Base"
 
-#, fuzzy
 msgctxt "selection:configurator.jinja_template,type_:"
 msgid "Macro"
 msgstr "Macro"
@@ -786,7 +772,6 @@ msgctxt "selection:configurator.quotation.line,design_state:"
 msgid "draft"
 msgstr "Borrador"
 
-#, fuzzy
 msgctxt "view:configurator.property:"
 msgid "Descriptions"
 msgstr "Descripciones"

@@ -32,10 +32,6 @@ msgctxt "field:configurator.design,design_date:"
 msgid "Design Date"
 msgstr "Data disseny"
 
-msgctxt "field:configurator.design,hidden:"
-msgid "Hide extra properties"
-msgstr "Amaga propietats addicionals"
-
 msgctxt "field:configurator.design,manual_code:"
 msgid "Manual Code"
 msgstr "Codi Manual"
@@ -261,8 +257,8 @@ msgid "Evaluate 2 times"
 msgstr "Evaluar 2 vegades"
 
 msgctxt "field:configurator.property,hidden:"
-msgid "Add"
-msgstr "Afegeix"
+msgid "Hidden"
+msgstr "Ocult"
 
 msgctxt "field:configurator.property,name:"
 msgid "Name"
