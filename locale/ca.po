@@ -10,11 +10,11 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.4\n"
+"X-Generator: Poedit 3.2.2\n"
 
 msgctxt "field:configurator.design,attributes:"
 msgid "Attributes"
-msgstr "Attributs"
+msgstr "borrador"
 
 msgctxt "field:configurator.design,code:"
 msgid "Code"
@@ -31,6 +31,10 @@ msgstr "Moneda"
 msgctxt "field:configurator.design,design_date:"
 msgid "Design Date"
 msgstr "Data disseny"
+
+msgctxt "field:configurator.design,hidden:"
+msgid "Hide extra properties"
+msgstr "Amaga propietats addicionals"
 
 msgctxt "field:configurator.design,manual_code:"
 msgid "Manual Code"
@@ -158,11 +162,11 @@ msgstr "Moneda"
 
 msgctxt "field:configurator.design.line,debug_amount:"
 msgid "Debug Amount"
-msgstr ""
+msgstr "Import de depuració"
 
 msgctxt "field:configurator.design.line,debug_quantity:"
 msgid "Debug Qty"
-msgstr ""
+msgstr "Quantitat de depuració"
 
 msgctxt "field:configurator.design.line,manual_unit_price:"
 msgid "Manual Unit Price"
@@ -242,7 +246,7 @@ msgstr "Fills"
 
 msgctxt "field:configurator.property,childs:"
 msgid "childs"
-msgstr "Fills"
+msgstr "fills"
 
 msgctxt "field:configurator.property,code:"
 msgid "Code"
@@ -255,6 +259,10 @@ msgstr "Codi Plantilla"
 msgctxt "field:configurator.property,evaluate_2times:"
 msgid "Evaluate 2 times"
 msgstr "Evaluar 2 vegades"
+
+msgctxt "field:configurator.property,hidden:"
+msgid "Add"
+msgstr "Afegeix"
 
 msgctxt "field:configurator.property,name:"
 msgid "Name"
@@ -278,7 +286,7 @@ msgstr "Opció per defecte"
 
 msgctxt "field:configurator.property,option_price_property:"
 msgid "Option Price Property"
-msgstr ""
+msgstr "Opció Preu Propietat"
 
 msgctxt "field:configurator.property,parent:"
 msgid "Parent"
@@ -382,7 +390,7 @@ msgstr "Preu Manual"
 
 msgctxt "field:configurator.quotation.line,manual_list_price_on_sale_uom:"
 msgid "Manual List Price On Sale Uome"
-msgstr ""
+msgstr "Preu de llista manual a la venda Uome"
 
 msgctxt "field:configurator.quotation.line,margin:"
 msgid "Margin"
@@ -626,7 +634,7 @@ msgstr "IPNR per proveidor"
 
 msgctxt "model:jinja_template-jinja_template_macro,name:"
 msgid "Jinja template - Jinja template macros"
-msgstr ""
+msgstr "Plantilla Jinja: macros de plantilla Jinja"
 
 msgctxt "model:product_supplier.ipnr,name:"
 msgid "Supplier Product IPNR"
@@ -642,7 +650,7 @@ msgstr "Finalizat"
 
 msgctxt "selection:configurator.design,state:"
 msgid "draft"
-msgstr "Borrador"
+msgstr "borrador"
 
 msgctxt "selection:configurator.design.attribute,design_state:"
 msgid "Cancel"
@@ -654,7 +662,7 @@ msgstr "Realitzat"
 
 msgctxt "selection:configurator.design.attribute,design_state:"
 msgid "draft"
-msgstr "Borrador"
+msgstr "borrador"
 
 msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "BoM"
@@ -766,7 +774,7 @@ msgstr "Realitzat"
 
 msgctxt "selection:configurator.quotation.line,design_state:"
 msgid "draft"
-msgstr "Borrador"
+msgstr "borrador"
 
 msgctxt "view:configurator.property:"
 msgid "Descriptions"

@@ -1261,13 +1261,13 @@ class Design(Workflow, ModelSQL, ModelView):
     product_codes = fields.Text('Product Codes', readonly=True)
     hidden = fields.Boolean("Hide extra properties",
         states ={
-            'invisible': Bool(Eval(('type', '=', 'options')))                
+            'invisible': Bool(Eval(('type', '=', 'options')))
                 })
-    
+
     @staticmethod
     def default_hidden():
         return False
-    
+
     @classmethod
     def __setup__(cls):
         super(Design, cls).__setup__()
