@@ -1259,11 +1259,6 @@ class Design(Workflow, ModelSQL, ModelView):
         'on_change_with_product_uom_category')
     product_codes = fields.Text('Product Codes', readonly=True)
 
-
-    @staticmethod
-    def default_hidden():
-        return False
-
     @classmethod
     def __setup__(cls):
         super(Design, cls).__setup__()
