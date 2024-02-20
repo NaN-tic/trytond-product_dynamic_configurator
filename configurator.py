@@ -207,7 +207,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     hidden = fields.Boolean("Hidden",
             states ={
-            'invisible': Bool(Eval(('type', '=', 'options')))
+            'invisible': Eval('type') == 'options',
                 })
 
     @staticmethod
