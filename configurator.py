@@ -456,13 +456,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 # res = eval(code, custom_locals)
                 res = custom_locals.get(res, 0)
             return res
-        except BaseException as e:
-         #   logger.error(str(e))
+        except BaseException:
             pass
-            # raise UserError(gettext(
-            #     'product_dynamic_configurator.msg_expression_error',
-            #     property=self.name, expression=self.quantity,
-            #     invalid=str(e)))
 
     def create_prices(self, design, values):
         created_obj = {}
