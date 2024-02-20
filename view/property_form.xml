@@ -58,7 +58,8 @@
     <field name="option_default"/>
     <label name="option_price_property"/>
     <field name="option_price_property"/>
-
+    <label name="hidden"/>
+    <field name="hidden"/>
 
     <notebook colspan="6">
         <!-- <page name="childs">
@@ -75,4 +76,3 @@
         </page>
     </notebook>
 </form>
-

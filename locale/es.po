@@ -1,6 +1,16 @@
 #
 msgid ""
-msgstr "Content-Type: text/plain; charset=utf-8\n"
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.2.2\n"
 
 msgctxt "field:configurator.design,attributes:"
 msgid "Attributes"
@@ -57,6 +67,10 @@ msgstr "Fecha cotización"
 msgctxt "field:configurator.design,product:"
 msgid "Product Designed"
 msgstr "Producto diseñado"
+
+msgctxt "field:configurator.design,product_codes:"
+msgid "Product Codes"
+msgstr "Códigos de producto"
 
 msgctxt "field:configurator.design,product_exists:"
 msgid "Searched Product"
@@ -144,11 +158,11 @@ msgstr "Moneda"
 
 msgctxt "field:configurator.design.line,debug_amount:"
 msgid "Debug Amount"
-msgstr ""
+msgstr "Cantidad de depuración"
 
 msgctxt "field:configurator.design.line,debug_quantity:"
 msgid "Debug Qty"
-msgstr ""
+msgstr "Cantidad de depuración"
 
 msgctxt "field:configurator.design.line,manual_unit_price:"
 msgid "Manual Unit Price"
@@ -164,7 +178,7 @@ msgstr "Propiedad"
 
 msgctxt "field:configurator.design.line,qty_ratio:"
 msgid "Quantity Ratio"
-msgstr ""
+msgstr "Relación de cantidad"
 
 msgctxt "field:configurator.design.line,quantity:"
 msgid "Quantity"
@@ -182,6 +196,26 @@ msgctxt "field:configurator.design.line,uom:"
 msgid "UoM"
 msgstr "Unidad de medida"
 
+msgctxt "field:configurator.jinja_template,full_content:"
+msgid "Full Content"
+msgstr "Contenido completo"
+
+msgctxt "field:configurator.jinja_template,jinja:"
+msgid "Jinja Expression"
+msgstr "Expresión Jinja"
+
+msgctxt "field:configurator.jinja_template,macros:"
+msgid "Macros"
+msgstr "Macros"
+
+msgctxt "field:configurator.jinja_template,name:"
+msgid "Name"
+msgstr "Nombre"
+
+msgctxt "field:configurator.jinja_template,type_:"
+msgid "Type"
+msgstr "Tipo"
+
 msgctxt "field:configurator.object,design:"
 msgid "Design"
 msgstr "Diseño"
@@ -198,6 +232,10 @@ msgctxt "field:configurator.property,attribute_set:"
 msgid "Attribute Set"
 msgstr "Conjunto de atributos"
 
+msgctxt "field:configurator.property,bom_quantity:"
+msgid "Bom Quantity"
+msgstr "Cantidad de origen"
+
 msgctxt "field:configurator.property,childrens:"
 msgid "Childrens"
 msgstr "Hijos"
@@ -210,17 +248,25 @@ msgctxt "field:configurator.property,code:"
 msgid "Code"
 msgstr "Código"
 
-msgctxt "field:configurator.property,code_template:"
+msgctxt "field:configurator.property,code_jinja:"
 msgid "Code Template"
-msgstr "Codigo plantilla"
+msgstr "Plantilla de código"
+
+msgctxt "field:configurator.property,evaluate_2times:"
+msgid "Evaluate 2 times"
+msgstr "Evaluar 2 veces"
+
+msgctxt "field:configurator.property,hidden:"
+msgid "Hidden"
+msgstr "Oculto"
 
 msgctxt "field:configurator.property,name:"
 msgid "Name"
 msgstr "Nombre"
 
-msgctxt "field:configurator.property,name_template:"
+msgctxt "field:configurator.property,name_jinja:"
 msgid "Name Template"
-msgstr "Nombre plantilla"
+msgstr "Plantilla de nombre"
 
 msgctxt "field:configurator.property,object_expression:"
 msgid "Object Expression"
@@ -232,7 +278,11 @@ msgstr "Tipo de operación"
 
 msgctxt "field:configurator.property,option_default:"
 msgid "Default Option"
-msgstr ""
+msgstr "Opción por defecto"
+
+msgctxt "field:configurator.property,option_price_property:"
+msgid "Option Price Property"
+msgstr "Propiedad de precio de opción"
 
 msgctxt "field:configurator.property,parent:"
 msgid "Parent"
@@ -334,6 +384,10 @@ msgctxt "field:configurator.quotation.line,manual_list_price:"
 msgid "Manual List Price"
 msgstr "Precio Manual"
 
+msgctxt "field:configurator.quotation.line,manual_list_price_on_sale_uom:"
+msgid "Manual List Price On Sale Uome"
+msgstr "Precio de lista manual en venta Uome"
+
 msgctxt "field:configurator.quotation.line,margin:"
 msgid "Margin"
 msgstr "Margen"
@@ -366,6 +420,14 @@ msgctxt "field:configurator.quotation.line,unit_price:"
 msgid "Unit Price"
 msgstr "Precio Unitario"
 
+msgctxt "field:configurator.quotation.line,unit_price_no_manual_per_mil:"
+msgid "Cost(NoM)/Qty"
+msgstr "Costo (NoM)/Cantidad"
+
+msgctxt "field:configurator.quotation.line,unit_price_per_mil:"
+msgid "Cost/Qty"
+msgstr "Costo/Cantidad"
+
 msgctxt "field:configurator.quotation.supplier,category:"
 msgid "Category"
 msgstr "Categoría"
@@ -378,9 +440,49 @@ msgctxt "field:configurator.quotation.supplier,supplier:"
 msgid "Supplier"
 msgstr "Proveedor"
 
+msgctxt "field:jinja_template-jinja_template_macro,macro:"
+msgid "Macro"
+msgstr "Macro"
+
+msgctxt "field:jinja_template-jinja_template_macro,template:"
+msgid "Template"
+msgstr "Plantilla"
+
+msgctxt "field:product.product,configurator_template:"
+msgid "Template for Configurator"
+msgstr "Plantilla para configurador"
+
+msgctxt "field:product.product,quotation_uom:"
+msgid "Quotation UOM"
+msgstr "Unidad de medida de cotización"
+
 msgctxt "field:product.template,configurator_template:"
 msgid "Template for Configurator"
 msgstr "Plantilla para configurador"
+
+msgctxt "field:product.template,quotation_uom:"
+msgid "Quotation UOM"
+msgstr "Unidad de medida de cotización"
+
+msgctxt "field:product_supplier.ipnr,color:"
+msgid "Color"
+msgstr "Color"
+
+msgctxt "field:product_supplier.ipnr,ipnr:"
+msgid "IPNR"
+msgstr "IPNR"
+
+msgctxt "field:product_supplier.ipnr,product:"
+msgid "Product"
+msgstr "Producto"
+
+msgctxt "field:product_supplier.ipnr,supplier:"
+msgid "Supplier"
+msgstr "Proveedor"
+
+msgctxt "help:configurator.property,option_price_property:"
+msgid "Price for option when purchase_product is selected"
+msgstr "Precio de la opción cuando se selecciona compra_producto"
 
 msgctxt "model:configurator.design,name:"
 msgid "Design"
@@ -393,6 +495,10 @@ msgstr "Atributo de diseño"
 msgctxt "model:configurator.design.line,name:"
 msgid "Design Line"
 msgstr "Línea de diseño"
+
+msgctxt "model:configurator.jinja_template,name:"
+msgid "Jinja Template"
+msgstr "Plantilla Jinja"
 
 msgctxt "model:configurator.object,name:"
 msgid "Created Object"
@@ -426,9 +532,17 @@ msgctxt "model:ir.action,name:act_design_form"
 msgid "Designs"
 msgstr "Diseños"
 
+msgctxt "model:ir.action,name:act_jinja_template_tree"
+msgid "Jinja Templates"
+msgstr "Plantillas de Jinja"
+
 msgctxt "model:ir.action,name:act_object_form"
 msgid "Objects"
 msgstr "Objetos"
+
+msgctxt "model:ir.action,name:act_product_supplier_ipnr_list"
+msgid "Product Supplier IPNR"
+msgstr "Proveedor de productos IPNR"
 
 msgctxt "model:ir.action,name:act_property_form"
 msgid "Properties"
@@ -482,6 +596,10 @@ msgctxt "model:ir.model.button,string:design_update_button"
 msgid "Update"
 msgstr "Actualizar"
 
+msgctxt "model:ir.rule.group,name:rule_group_configurator_design"
+msgid "User in company"
+msgstr "Usuario en empresa"
+
 msgctxt "model:ir.ui.menu,name:menu_configurator"
 msgid "Configurator"
 msgstr "Configurador"
@@ -489,6 +607,10 @@ msgstr "Configurador"
 msgctxt "model:ir.ui.menu,name:menu_design"
 msgid "Designs"
 msgstr "Diseños"
+
+msgctxt "model:ir.ui.menu,name:menu_jinja_template_form"
+msgid "Jinja Templates"
+msgstr "Plantillas de Jinja"
 
 msgctxt "model:ir.ui.menu,name:menu_property_form"
 msgid "Properties"
@@ -501,6 +623,18 @@ msgstr "Propiedades"
 msgctxt "model:ir.ui.menu,name:menu_property_quotation_category"
 msgid "Quotation Category"
 msgstr "Categoria cotización"
+
+msgctxt "model:ir.ui.menu,name:supplier_product_ipnr"
+msgid "Product Supplier IPNR"
+msgstr "Proveedor de productos IPNR"
+
+msgctxt "model:jinja_template-jinja_template_macro,name:"
+msgid "Jinja template - Jinja template macros"
+msgstr "Plantilla Jinja - Macros de plantilla Jinja"
+
+msgctxt "model:product_supplier.ipnr,name:"
+msgid "Supplier Product IPNR"
+msgstr "Proveedor Producto IPNR"
 
 msgctxt "selection:configurator.design,state:"
 msgid "Cancel"
@@ -566,6 +700,14 @@ msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "Text"
 msgstr "Texto"
 
+msgctxt "selection:configurator.jinja_template,type_:"
+msgid "Base"
+msgstr "Base"
+
+msgctxt "selection:configurator.jinja_template,type_:"
+msgid "Macro"
+msgstr "Macro"
+
 msgctxt "selection:configurator.property,type:"
 msgid "BoM"
 msgstr "Lista de materiales"
@@ -629,3 +771,7 @@ msgstr "Realizado"
 msgctxt "selection:configurator.quotation.line,design_state:"
 msgid "draft"
 msgstr "Borrador"
+
+msgctxt "view:configurator.property:"
+msgid "Descriptions"
+msgstr "Descripciones"

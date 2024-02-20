@@ -205,6 +205,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     evaluate_2times = fields.Boolean('Evaluate 2 times')
 
+    hidden = fields.Boolean("Hidden",
+            states ={
+            'invisible': Bool(Eval(('type', '=', 'options')))
+                })
+
+    @staticmethod
+    def default_hidden():
+        return False
 
     @staticmethod
     def default_sequence():
@@ -1475,6 +1483,8 @@ class Design(Workflow, ModelSQL, ModelView):
                     quantity = 0
                     cost_price = None
                     product = None
+                    if prop.hidden:
+                        continue
                     if prop.type == 'bom':
                         for output in v.outputs:
                             code = '%s - %s' % (
