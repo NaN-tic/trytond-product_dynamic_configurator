@@ -1548,6 +1548,8 @@ class Design(Workflow, ModelSQL, ModelView):
                         dl.debug_quantity = quantity
                         if not prop.price_category:
                             dl.property = prop
+                        if cost_price == 0:
+                            continue
                         prices[key] = dl
                     else:
                         parent = prop.get_parent()
