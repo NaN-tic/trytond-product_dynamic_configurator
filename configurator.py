@@ -370,11 +370,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             return self
         return self.parent.get_parent()
 
-    def get_root_parent(self):
-        if self.parent:
-            return self.get_root_parent(self.parent)
-        return self
-
     def compute_attributes(self, design, attributes=None):
         Attribute = Pool().get('configurator.design.attribute')
         if not attributes:
@@ -417,7 +412,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         SupplierIPNR = pool.get('product_supplier.ipnr')
         supplierIpnr = SupplierIPNR.search([])
 
+        flat = {}
         custom_locals = copy(locals())
+        custom_locals.update(flat)
         custom_locals['math'] = math
         keys = values.keys()
         for sup in supplierIpnr:
@@ -429,12 +426,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             code = sup.category.name
             custom_locals[code] = sup.supplier
 
-
-        keys = [x for x in values.keys()]
-        keys.sort(key=lambda x: ( str(x.parent and x.parent.sequence or 0
-            ).zfill(5) + str(x.sequence).zfill(6)))
-
-        for prop in keys:
+        att_keys = [x for x in values.keys() if not isinstance(x, str)]
+        str_keys = [x for x in keys if isinstance(x, str)]
+        att_keys.sort(key=lambda x: (str(x.parent and x.parent.sequence or 0
+             ).zfill(5) + str(x.sequence).zfill(6)))
+        att_keys += str_keys
+        for prop in att_keys:
             attr = values[prop]
             if isinstance(attr, dict):
                 continue
@@ -462,7 +459,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             #     property=self.name, expression=self.quantity,
             #     invalid=str(e)))
 
-    def create_prices(self, design, values):
+    def create_prices(self, design, values, full):
         created_obj = {}
         if self.type not in ('match'):
             for prop in self.childs:
@@ -472,16 +469,19 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 val = values
                 if parent in values:
                     val = values[parent]
-                res = prop.create_prices(design, val)
+                res = prop.create_prices(design, val, full)
                 if res is None:
                     continue
                 created_obj.update(res)
         parent = self.get_parent()
         val = values
+
         if parent in values:
             val = values[parent]
+        enviroment = full.copy()
+        enviroment.update(val)
         res = getattr(self, 'get_%s' % self.type)(
-            design, val, created_obj)
+            design, enviroment, created_obj, full)
         if res is None:
             return created_obj
         created_obj.update(res)
@@ -490,7 +490,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     def get_match_domain(self, design):
         return []
 
-    def get_match(self, design, values, created_obj):
+    def get_match(self, design, values, created_obj, full):
         pool = Pool()
         Product = pool.get('product.product')
         BomInput = pool.get('production.bom.input')
@@ -559,13 +559,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         bom_input.quantity = quantity
         return {self: (bom_input, [])}
 
-    def get_number(self, design, values, created_obj):
+    def get_number(self, design, values, created_obj, full):
         pass
 
-    def get_text(self, design, values, created_obj):
+    def get_text(self, design, values, created_obj, full):
         pass
 
-    def get_function(self, design, values, created_obj):
+    def get_function(self, design, values, created_obj, full):
         context = Transaction().context
         if context.get('prices', False):
             value = self.evaluate(self.quantity, values, design)
@@ -574,17 +574,17 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
         return {self: (value, [])}
 
-    def get_options(self, design, values, created_obj):
+    def get_options(self, design, values, created_obj, full):
         attribute = values.get(self)
         if attribute and attribute.option is not None:
-            res = attribute.option.create_prices(design, values)
+            res = attribute.option.create_prices(design, values, full)
             option = res.get(attribute.option, None)
             if option:
                 res.update({self: (option[0], [])})
                 return res
         return {self: (None, [])}
 
-    def get_attribute(self, design, values, created_obj):
+    def get_attribute(self, design, values, created_obj, full):
         pool = Pool()
         ProductAttribute = pool.get('product.product.attribute')
         product_attribute = ProductAttribute()
@@ -592,7 +592,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product_attribute.value = self.product_attribute_value
         return {self: (product_attribute, [])}
 
-    def get_operation(self, design, values, created_obj):
+    def get_operation(self, design, values, created_obj, full):
         pool = Pool()
         Uom = pool.get('product.uom')
         Operation = pool.get('production.route.operation')
@@ -677,7 +677,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         code = code and code.strip() or '' + self.name.strip()
         return code
 
-    def get_purchase_product(self, design, values, created_obj):
+    def get_purchase_product(self, design, values, created_obj, full):
         pool = Pool()
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
@@ -696,7 +696,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if not self.product_template:
             return
 
-        custom_locals = design.design_full_dict()
+        custom_locals =  full # design.design_full_dict()
         template = self.get_product_template_object_copy(self.product_template)
         template.name = self.name + "(" + design.name + ")"
         template.list_price = 0
@@ -877,17 +877,17 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product.product_suppliers += (product_supplier,)
         return {self: (bom_input, [])}
 
-    def get_group(self, design, values, created_obj):
+    def get_group(self, design, values, created_obj, full):
         res = {}
         for child in self.childs:
             r = getattr(child, 'get_%s' % child.type)(
-                design, values, created_obj)
+                design, values, created_obj, full)
             if not r:
                 continue
             res.update(r)
         return res
 
-    def get_product(self, design, values, created_obj):
+    def get_product(self, design, values, created_obj, full):
         pool = Pool()
         BomInput = pool.get('production.bom.input')
         Uom = pool.get('product.uom')
@@ -917,7 +917,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         return {self: (bom_input, [])}
 
 
-    def get_bom(self, design, values, created_obj):
+    def get_bom(self, design, values, created_obj, full):
         pool = Pool()
         Product = pool.get('product.product')
         Bom = pool.get('production.bom')
@@ -1004,7 +1004,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product.list_price = 0
 
         # Generate code
-        custom_locals = design.design_full_dict()
+        custom_locals = full #design.design_full_dict()
         # Generate code
         template.code = self.get_property_code(design, custom_locals)
         if not template.code:
@@ -1389,6 +1389,8 @@ class Design(Workflow, ModelSQL, ModelView):
             if parent not in res:
                 res[parent] = {}
             res[parent][attribute.property] = attribute
+            code = attribute.property.get_full_code()
+            res[code] = attribute
 
         functions.sort(key=lambda x: (
                 str(x.parent and x.parent.sequence or 0).zfill(5) +
@@ -1398,11 +1400,14 @@ class Design(Workflow, ModelSQL, ModelView):
             parent = function_.get_parent()
             res[parent][function_] = function_.evaluate(function_.quantity,
                     res[parent], self)
+            code = attribute.property.get_full_code()
+            res[code] = attribute
 
         supplierIpnr = SupplierIPNR.search([])
         ipnr = {}
         for sup in supplierIpnr:
-            code = sup.product.code + '_' + sup.color.code + '_' + str(sup.supplier.code)
+            code = sup.product.code + '_' + sup.color.code + '_' + str(
+                sup.supplier.code)
             ipnr[code] = sup.ipnr
 
         res['ipnr'] = ipnr
@@ -1473,9 +1478,11 @@ class Design(Workflow, ModelSQL, ModelView):
             design.quotation_date = Date.today()
             design.quoted_by = User(Transaction().user).employee
             design.product_codes = ''
+
             values = design.as_dict()
+            full = design.design_full_dict()
             with Transaction().set_context(context):
-                res = design.template.create_prices(design, values)
+                res = design.template.create_prices(design, values, full)
             design.custom_operations(res)
             suppliers = dict((x.category, x.supplier)
                 for x in design.suppliers)
@@ -1518,7 +1525,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         elif isinstance(v, Product):
                             parent = prop.get_parent()
                             quantity = prop.evaluate(prop.quantity,
-                                design.as_dict()[parent], design)
+                                values[parent], design)
                             quantity = quantity * quote_ratio
                             product = v
                     # if prop.type == 'operation':
@@ -1579,9 +1586,11 @@ class Design(Workflow, ModelSQL, ModelView):
             langs = Lang.search([('active', '=', True),
                 ('translatable', '=', True)])
             for lang in langs:
-                design.render_design_fields(lang)
+                design.render_design_fields(lang, custom_locals)
+
 
     def design_full_dict(self):
+
         record = self.as_dict()
         custom_locals = OrderedDict()
         all = {}
@@ -1602,8 +1611,10 @@ class Design(Workflow, ModelSQL, ModelView):
                 all[parent.code][property.code] = property
             else:
                 all[property.code] = property
-
         for parent_prop, attributes in record.items():
+            if not isinstance(attributes, dict):
+                all[parent_prop] = attributes
+                continue
             for prop, attr in attributes.items():
                 if isinstance(prop, str):
                     custom_locals[prop] = attr
@@ -1628,7 +1639,7 @@ class Design(Workflow, ModelSQL, ModelView):
     def get_design_render_fields(self):
         return [('name_jinja', 'name')]
 
-    def render_design_fields(self, lang):
+    def render_design_fields(self, lang, full):
         pool = Pool()
         Design = pool.get('configurator.design')
         JinjaField = pool.get('configurator.jinja_template')
@@ -1636,7 +1647,7 @@ class Design(Workflow, ModelSQL, ModelView):
 
         with Transaction().set_context(language=lang.code):
             design = Design(self.id)
-            custom_locals = design.design_full_dict()
+            custom_locals =  full #design.design_full_dict()
             ptemplate = design.template
             for tmpl_field, field in design_fields:
                 f = getattr(ptemplate, tmpl_field)
@@ -1650,7 +1661,7 @@ class Design(Workflow, ModelSQL, ModelView):
             design.save()
 
 
-    def render_product_fields(self, lang, product, pproperty=None):
+    def render_product_fields(self, lang, product, pproperty=None, full=None):
         pool = Pool()
         Design = pool.get('configurator.design')
         Product = pool.get('product.product')
@@ -1659,7 +1670,7 @@ class Design(Workflow, ModelSQL, ModelView):
         with Transaction().set_context(language=lang.code):
             design = Design(self.id)
             product = Product(product.id)
-            custom_locals = design.design_full_dict()
+            custom_locals = full #design.design_full_dict()
             template = product.template
             property = pproperty or design.template
             for tmpl_field, field in product_fields:
@@ -1728,7 +1739,8 @@ class Design(Workflow, ModelSQL, ModelView):
                             design.product = product
                             design.save()
                         for lang in langs:
-                            design.render_product_fields(lang, product, prop)
+                            design.render_product_fields(lang, product, prop,
+                                full= custom_locals)
                 if prop.type == 'purchase_product':
                     product = obj.product
                     product.save()
@@ -1736,7 +1748,8 @@ class Design(Workflow, ModelSQL, ModelView):
                         design.product = product
                         design.save()
                     for lang in langs:
-                        design.render_product_fields(lang, product, prop)
+                        design.render_product_fields(lang, product, prop,
+                            full=custom_locals)
 
                 for obj in additional:
                     obj.save()
