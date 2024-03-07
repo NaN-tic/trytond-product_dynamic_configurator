@@ -499,9 +499,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         domain = []
 
         suppliers = dict((x.category, x.supplier) for x in design.suppliers)
+        main_products_filter = []
         if self.quotation_category and self.quotation_category in suppliers:
-            domain += [('product_suppliers.party', '=',
-                suppliers[self.quotation_category].id)]
+            domain += [
+                ('type', '=', 'service'),
+                ('product_suppliers.party', '=',
+                    suppliers[self.quotation_category].id)]
+            main_products_filter = [x.id for x in Product.search(domain)]
 
         products_filter = None
         for child in self.childs:
@@ -524,12 +528,15 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 ('value_%s' % type_, op, value),
                ]
             if products_filter is not None:
-                domain += [('product', 'in',
-                    [x.product.id for x in products_filter if x.product])]
+                pfilter = ([x.product.id for x in products_filter if x.product] +
+                    main_products_filter)
+                domain += [('product', 'in', pfilter)]
+            else:
+                domain += [('product', 'in', main_products_filter)]
+
             products_filter = ProductAttribute.search(domain)
 
         products = products_filter
-
         if not products:
             return {self: (None, [])}
 
