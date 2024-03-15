@@ -452,7 +452,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 res = custom_locals.get(res, 0)
             return res
         except BaseException as e:
-         #   logger.error(str(e))
             pass
             # raise UserError(gettext(
             #     'product_dynamic_configurator.msg_expression_error',
@@ -507,6 +506,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     suppliers[self.quotation_category].id)]
             main_products_filter = [x.id for x in Product.search(domain)]
 
+        print("id:", self.id)
         products_filter = None
         for child in self.childs:
             attribute = child.product_attribute
@@ -528,13 +528,15 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 ('value_%s' % type_, op, value),
                ]
             if products_filter is not None:
-                pfilter = ([x.product.id for x in products_filter if x.product] +
-                    main_products_filter)
+                pfilter = ([x.product.id for x in products_filter if x.product
+                    and x.product in main_products_filter])
                 domain += [('product', 'in', pfilter)]
             else:
                 domain += [('product', 'in', main_products_filter)]
 
             products_filter = ProductAttribute.search(domain)
+            if products_filter is None:
+                return {self: (None, [])}
 
         products = products_filter
         if not products:
@@ -574,6 +576,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def get_function(self, design, values, created_obj, full):
         context = Transaction().context
+        values.update(full)
         if context.get('prices', False):
             value = self.evaluate(self.quantity, values, design)
         else:
@@ -1389,7 +1392,7 @@ class Design(Workflow, ModelSQL, ModelView):
 
         Function = pool.get('configurator.property')
         functions = Function.search([('type', '=', 'function'),
-            ('parent', 'child_of', [self.template.id]) ])
+            ('parent', 'child_of', [self.template.id])])
         res = {}
         for attribute in self.attributes:
             parent = attribute.property.get_parent()
@@ -1403,12 +1406,18 @@ class Design(Workflow, ModelSQL, ModelView):
                 str(x.parent and x.parent.sequence or 0).zfill(5) +
                 str(x.sequence).zfill(6)))
 
+        root = self.template
         for function_ in functions:
             parent = function_.get_parent()
-            res[parent][function_] = function_.evaluate(function_.quantity,
+            if parent == root:
+                value = function_.evaluate(function_.quantity,
+                    res, self)
+            else:
+                value = function_.evaluate(function_.quantity,
                     res[parent], self)
-            code = attribute.property.get_full_code()
-            res[code] = attribute
+            res[parent][function_] = value
+            code = function_.get_full_code()
+            res[code] = value
 
         supplierIpnr = SupplierIPNR.search([])
         ipnr = {}
