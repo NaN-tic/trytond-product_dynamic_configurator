@@ -506,7 +506,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     suppliers[self.quotation_category].id)]
             main_products_filter = [x.id for x in Product.search(domain)]
 
-        print("id:", self.id)
         products_filter = None
         for child in self.childs:
             attribute = child.product_attribute
@@ -522,6 +521,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 value = val
             op = child.attribute_search_op or '='
             type_ = attribute.type_
+            if type_ == 'integer' and isinstance(value, bool):
+                value = value and 1 or 0
             domain = [
                 ('attribute_set', '=', child.attribute_set.id),
                 ('attribute.id', '=', attribute.id),
@@ -529,7 +530,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                ]
             if products_filter is not None:
                 pfilter = ([x.product.id for x in products_filter if x.product
-                    and x.product in main_products_filter])
+                    and x.product.id in main_products_filter])
                 domain += [('product', 'in', pfilter)]
             else:
                 domain += [('product', 'in', main_products_filter)]
