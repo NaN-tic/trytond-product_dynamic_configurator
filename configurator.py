@@ -265,9 +265,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def render_expression_record(self, expression, record, field=None):
         template = Jinja2Template(expression, trim_blocks=True)
-        # res = template.render(record)
-        # return res
-
         try:
             res = template.render(record)
         except TypeError as e:
@@ -598,10 +595,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             ('design', '=', design.id)])
         attribute = values.get(self.code)
 
-        #print("attr:", attr)
         attr = attr and attr[0]
         if attribute is not None and attr and attr.option is not None:
-         #   print("attr:", attr, attr.property.code, attr.property.type, attr.option)
             res = attr.option.create_prices(design, values, full)
             option = res.get(attribute, None)
             if option:
@@ -1658,15 +1653,11 @@ class Design(Workflow, ModelSQL, ModelView):
                 all[property.code] = property
 
         for parent_prop, attributes in record.items():
-            print("parent_prop:", parent_prop)
-            print("attributes:", attributes)
             if not isinstance(attributes, dict):
-                print("alllaaaaaa")
                 all[parent_prop] = attributes
                 continue
             for prop, attr in attributes.items():
                 if isinstance(prop, str):
-                    print("prop:", prop, attr)
                     custom_locals[prop] = attr
                     parent = self.template
                     all[prop] = attr
@@ -1729,7 +1720,6 @@ class Design(Workflow, ModelSQL, ModelView):
             template = product.template
             property = pproperty or design.template
             for tmpl_field, field in product_fields:
-                #print("tmpl_field:", tmpl_field)
                 val = ''
                 if tmpl_field == 'name' and pproperty:
                     parent = pproperty.get_parent()
@@ -1755,7 +1745,6 @@ class Design(Workflow, ModelSQL, ModelView):
             return ''
         if isinstance(f, JinjaField):
             f = f.full_content
-        print("field:", field)
         res = property.render_expression_record(f, custom_locals, field)
         return res or ''
 
