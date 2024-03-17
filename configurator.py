@@ -263,8 +263,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             res = '%s_%s' % (parent.code, self.code)
         return res
 
-    def render_expression_record(self, expression, record):
+    def render_expression_record(self, expression, record, field=None):
         template = Jinja2Template(expression, trim_blocks=True)
+        # res = template.render(record)
+        # return res
+
         try:
             res = template.render(record)
         except TypeError as e:
@@ -441,7 +444,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             if prop.type == 'function':
                 custom_locals[prop.code] = attr
             else:
-                custom_locals[prop.code] = attr.number or attr.option
+                custom_locals[prop.code] = attr
         try:
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
@@ -507,6 +510,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             main_products_filter = [x.id for x in Product.search(domain)]
 
         products_filter = None
+
         for child in self.childs:
             attribute = child.product_attribute
             value = self.evaluate(child.product_attribute_value, values, design)
@@ -519,6 +523,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 if not val:
                     return {self: (None, [])}
                 value = val
+
             op = child.attribute_search_op or '='
             type_ = attribute.type_
             if type_ == 'integer' and isinstance(value, bool):
@@ -586,10 +591,19 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         return {self: (value, [])}
 
     def get_options(self, design, values, created_obj, full):
-        attribute = values.get(self)
-        if attribute and attribute.option is not None:
-            res = attribute.option.create_prices(design, values, full)
-            option = res.get(attribute.option, None)
+        pool = Pool()
+        Attribute = pool.get('configurator.design.attribute')
+
+        attr = Attribute.search([('property', '=', self.id),
+            ('design', '=', design.id)])
+        attribute = values.get(self.code)
+
+        #print("attr:", attr)
+        attr = attr and attr[0]
+        if attribute is not None and attr and attr.option is not None:
+         #   print("attr:", attr, attr.property.code, attr.property.type, attr.option)
+            res = attr.option.create_prices(design, values, full)
+            option = res.get(attribute, None)
             if option:
                 res.update({self: (option[0], [])})
                 return res
@@ -1390,18 +1404,31 @@ class Design(Workflow, ModelSQL, ModelView):
     def as_dict(self):
         pool = Pool()
         SupplierIPNR = pool.get('product_supplier.ipnr')
-
         Function = pool.get('configurator.property')
+
+        boms = Function.search([('type', '=', 'bom'),
+            ('id' , '!=', self.template.id),
+            ('parent', 'child_of', [self.template.id])])
+
         functions = Function.search([('type', '=', 'function'),
             ('parent', 'child_of', [self.template.id])])
         res = {}
+
         for attribute in self.attributes:
             parent = attribute.property.get_parent()
             if parent not in res:
                 res[parent] = {}
-            res[parent][attribute.property] = attribute
-            code = attribute.property.get_full_code()
-            res[code] = attribute
+            if attribute.property.type == 'number':
+                res[parent][attribute.property.code] = attribute.number
+            elif attribute.property.type == 'options':
+                res[parent][attribute.property.code] = attribute.option
+            elif attribute.property.type == 'text':
+                res[parent][attribute.property.code] = attribute.text
+            #res[parent][attribute.property] = attribute.number or attribute.option or attribute.text
+            if boms:
+                code = attribute.property.get_full_code()
+                res[code] = attribute.number or attribute.option or attribute.text
+
 
         functions.sort(key=lambda x: (
                 str(x.parent and x.parent.sequence or 0).zfill(5) +
@@ -1410,15 +1437,16 @@ class Design(Workflow, ModelSQL, ModelView):
         root = self.template
         for function_ in functions:
             parent = function_.get_parent()
-            if parent == root:
+            if parent == root and boms:
                 value = function_.evaluate(function_.quantity,
                     res, self)
             else:
                 value = function_.evaluate(function_.quantity,
                     res[parent], self)
             res[parent][function_] = value
-            code = function_.get_full_code()
-            res[code] = value
+            if boms:
+                code = function_.get_full_code()
+                res[code] = value
 
         supplierIpnr = SupplierIPNR.search([])
         ipnr = {}
@@ -1628,27 +1656,37 @@ class Design(Workflow, ModelSQL, ModelView):
                 all[parent.code][property.code] = property
             else:
                 all[property.code] = property
+
         for parent_prop, attributes in record.items():
+            print("parent_prop:", parent_prop)
+            print("attributes:", attributes)
             if not isinstance(attributes, dict):
+                print("alllaaaaaa")
                 all[parent_prop] = attributes
                 continue
             for prop, attr in attributes.items():
                 if isinstance(prop, str):
+                    print("prop:", prop, attr)
                     custom_locals[prop] = attr
-                    parent = None
-                    code = prop
+                    parent = self.template
+                    all[prop] = attr
+                    if parent.code not in all:
+                        all[parent.code] = {}
+                    all[parent.code][prop] = attr
                 elif isinstance(prop, Property):
                     custom_locals[prop.get_full_code()] = attr
                     parent = prop.get_parent()
-                    code = prop.code
-                else:
-                    continue
-                if parent:
                     if parent.code not in all:
                         all[parent.code] = {}
                     all[parent.code][prop.code] = attr
                 else:
-                    all[code] = attr
+                    continue
+                # if parent:
+                #     if parent.code not in all:
+                #         all[parent.code] = {}
+                #     all[parent.code][prop.code] = attr
+                # else:
+                #     all[code] = attr
 
         custom_locals['tree'] = all
         return custom_locals
@@ -1664,7 +1702,7 @@ class Design(Workflow, ModelSQL, ModelView):
 
         with Transaction().set_context(language=lang.code):
             design = Design(self.id)
-            custom_locals =  full #design.design_full_dict()
+            custom_locals =  full
             ptemplate = design.template
             for tmpl_field, field in design_fields:
                 f = getattr(ptemplate, tmpl_field)
@@ -1691,6 +1729,7 @@ class Design(Workflow, ModelSQL, ModelView):
             template = product.template
             property = pproperty or design.template
             for tmpl_field, field in product_fields:
+                #print("tmpl_field:", tmpl_field)
                 val = ''
                 if tmpl_field == 'name' and pproperty:
                     parent = pproperty.get_parent()
@@ -1716,8 +1755,8 @@ class Design(Workflow, ModelSQL, ModelView):
             return ''
         if isinstance(f, JinjaField):
             f = f.full_content
-
-        res = property.render_expression_record(f, custom_locals)
+        print("field:", field)
+        res = property.render_expression_record(f, custom_locals, field)
         return res or ''
 
     def get_product_render_fields(self):
