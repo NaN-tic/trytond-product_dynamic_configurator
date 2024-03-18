@@ -278,7 +278,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 'product_dynamic_configurator.msg_expression_error',
                 property=self.rec_name,
                 expression=expression[:25]+('...' if len(expression) > 25 else ''),
-                invalid=str(e)))
+                invalid=repr(e)))
         if res:
             res = res.replace('\t', '').replace('\n', '').strip()
         return res
@@ -1422,7 +1422,13 @@ class Design(Workflow, ModelSQL, ModelView):
             #res[parent][attribute.property] = attribute.number or attribute.option or attribute.text
             if boms:
                 code = attribute.property.get_full_code()
-                res[code] = attribute.number or attribute.option or attribute.text
+                if attribute.property.type == 'number':
+                    res[code] = attribute.number
+                elif attribute.property.type == 'options':
+                    res[code] = attribute.option
+                elif attribute.property.type == 'text':
+                    res[code] = attribute.text
+                #res[code] = attribute.number or attribute.option or attribute.text
 
 
         functions.sort(key=lambda x: (
