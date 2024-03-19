@@ -265,6 +265,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def render_expression_record(self, expression, record, field=None):
         template = Jinja2Template(expression, trim_blocks=True)
+        # if 'PR_CO_6B_MTS_ROLLO' in expression:
+        #     import pdb; pdb.set_trace()
+
+        res = template.render(record)
+
         try:
             res = template.render(record)
         except TypeError as e:
@@ -1410,6 +1415,8 @@ class Design(Workflow, ModelSQL, ModelView):
         res = {}
 
         for attribute in self.attributes:
+            # if attribute.property.id == 177770:
+            #     import pdb; pdb.set_trace()
             parent = attribute.property.get_parent()
             if parent not in res:
                 res[parent] = {}
@@ -1640,7 +1647,9 @@ class Design(Workflow, ModelSQL, ModelView):
         record = self.as_dict()
         custom_locals = OrderedDict()
         all = {}
+        info = {}
         Property = Pool().get('configurator.property')
+
         properties = Property.search([
             ('parent', 'child_of', [self.template.id])], order=[('sequence','ASC')])
         custom_locals['design'] = self
@@ -1654,15 +1663,24 @@ class Design(Workflow, ModelSQL, ModelView):
             if parent:
                 if parent.code not in all:
                     all[parent.code] = {}
+                    info[parent.code] = {}
                 all[parent.code][property.code] = property
+                info[parent.code][property.code] = property
             else:
                 all[property.code] = property
+                info[property.code] = property
 
         for parent_prop, attributes in record.items():
             if not isinstance(attributes, dict):
                 all[parent_prop] = attributes
                 continue
             for prop, attr in attributes.items():
+                if prop == 'PR_CO_6B_MTS_ROLLO':
+                    print("prop:", prop, attr)
+                    # import pdb; pdb.set_trace()
+
+                Attribute = Pool().get('configurator.design.attribute')
+
                 if isinstance(prop, str):
                     custom_locals[prop] = attr
                     parent = self.template
@@ -1670,6 +1688,7 @@ class Design(Workflow, ModelSQL, ModelView):
                     if parent.code not in all:
                         all[parent.code] = {}
                     all[parent.code][prop] = attr
+
                 elif isinstance(prop, Property):
                     custom_locals[prop.get_full_code()] = attr
                     parent = prop.get_parent()
@@ -1685,7 +1704,22 @@ class Design(Workflow, ModelSQL, ModelView):
                 # else:
                 #     all[code] = attr
 
+        boms = Property.search([('type', '=', 'bom'),
+            ('id' , '!=', self.template.id),
+            ('parent', 'child_of', [self.template.id])])
+
+
+        for attribute in self.attributes:
+            parent = attribute.property.get_parent()
+            if parent not in info:
+                info[parent.code] = {}
+            info[parent.code][attribute.property.code] = attribute
+            if boms:
+                code = attribute.property.get_full_code()
+                info[code] = attribute
+
         custom_locals['tree'] = all
+        custom_locals['info'] = info
         return custom_locals
 
     def get_design_render_fields(self):
