@@ -1710,10 +1710,12 @@ class Design(Workflow, ModelSQL, ModelView):
 
 
         for attribute in self.attributes:
+
             parent = attribute.property.get_parent()
-            if parent not in info:
+            if parent.code not in info:
                 info[parent.code] = {}
             info[parent.code][attribute.property.code] = attribute
+            print("attribute:", parent.code, attribute.property.code, attribute)
             if boms:
                 code = attribute.property.get_full_code()
                 info[code] = attribute
