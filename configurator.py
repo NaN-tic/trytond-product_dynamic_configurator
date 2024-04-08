@@ -1350,7 +1350,6 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('objects', None)
         default.setdefault('product', None)
         default.setdefault('product_codes', None)
-        default.setdefault('purchase_uom_category', None)
         return super(Design, cls).copy(designs, default=default)
 
     def get_product_exist(self, name=None):
