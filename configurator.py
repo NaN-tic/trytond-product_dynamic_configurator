@@ -1351,7 +1351,9 @@ class Design(Workflow, ModelSQL, ModelView):
         Product = Pool().get('product.product')
         with Transaction().set_context(active_test=False):
             products = Product.search([
-                ('code', '=', self.code)], limit=1)
+                ('code', '=', self.code),
+                ], limit=1,
+                order=[('active', 'DESC')])
         if not products:
             return None
         product, = products
