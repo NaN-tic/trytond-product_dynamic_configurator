@@ -265,8 +265,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def render_expression_record(self, expression, record, field=None):
         template = Jinja2Template(expression, trim_blocks=True)
-        # if 'PR_CO_6B_MTS_ROLLO' in expression:
-        #     import pdb; pdb.set_trace()
 
         res = template.render(record)
 
@@ -1415,8 +1413,6 @@ class Design(Workflow, ModelSQL, ModelView):
         res = {}
 
         for attribute in self.attributes:
-            # if attribute.property.id == 177770:
-            #     import pdb; pdb.set_trace()
             parent = attribute.property.get_parent()
             if parent not in res:
                 res[parent] = {}
@@ -1649,6 +1645,7 @@ class Design(Workflow, ModelSQL, ModelView):
         all = {}
         info = {}
         Property = Pool().get('configurator.property')
+        Attribute = Pool().get('configurator.design.attribute')
 
         properties = Property.search([
             ('parent', 'child_of', [self.template.id])], order=[('sequence','ASC')])
@@ -1674,35 +1671,26 @@ class Design(Workflow, ModelSQL, ModelView):
             if not isinstance(attributes, dict):
                 all[parent_prop] = attributes
                 continue
+            if isinstance(parent_prop, str):
+                parent_code = parent_prop
+            elif isinstance(parent_prop, Property):
+                parent_code = parent_prop.code
+
             for prop, attr in attributes.items():
-                if prop == 'PR_CO_6B_MTS_ROLLO':
-                    print("prop:", prop, attr)
-                    # import pdb; pdb.set_trace()
-
-                Attribute = Pool().get('configurator.design.attribute')
-
                 if isinstance(prop, str):
                     custom_locals[prop] = attr
-                    parent = self.template
+                    #parent = self.template
                     all[prop] = attr
-                    if parent.code not in all:
-                        all[parent.code] = {}
-                    all[parent.code][prop] = attr
-
+                    if parent_code not in all:
+                        all[parent_code] = {}
+                    all[parent_code][prop] = attr
                 elif isinstance(prop, Property):
                     custom_locals[prop.get_full_code()] = attr
-                    parent = prop.get_parent()
-                    if parent.code not in all:
-                        all[parent.code] = {}
-                    all[parent.code][prop.code] = attr
+                    if parent_prop not in all:
+                        all[parent_prop] = {}
+                    all[parent_prop.code][prop.code] = attr
                 else:
                     continue
-                # if parent:
-                #     if parent.code not in all:
-                #         all[parent.code] = {}
-                #     all[parent.code][prop.code] = attr
-                # else:
-                #     all[code] = attr
 
         boms = Property.search([('type', '=', 'bom'),
             ('id' , '!=', self.template.id),
