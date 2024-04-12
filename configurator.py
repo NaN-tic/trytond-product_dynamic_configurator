@@ -1635,7 +1635,7 @@ class Design(Workflow, ModelSQL, ModelView):
             langs = Lang.search([('active', '=', True),
                 ('translatable', '=', True)])
             for lang in langs:
-                design.render_design_fields(lang, custom_locals)
+                design.render_design_fields(lang)
 
 
     def design_full_dict(self):
@@ -1715,7 +1715,7 @@ class Design(Workflow, ModelSQL, ModelView):
     def get_design_render_fields(self):
         return [('name_jinja', 'name')]
 
-    def render_design_fields(self, lang, full):
+    def render_design_fields(self, lang):
         pool = Pool()
         Design = pool.get('configurator.design')
         JinjaField = pool.get('configurator.jinja_template')
@@ -1723,7 +1723,7 @@ class Design(Workflow, ModelSQL, ModelView):
 
         with Transaction().set_context(language=lang.code):
             design = Design(self.id)
-            custom_locals =  full
+            custom_locals = design.design_full_dict()
             ptemplate = design.template
             for tmpl_field, field in design_fields:
                 f = getattr(ptemplate, tmpl_field)
@@ -1746,7 +1746,8 @@ class Design(Workflow, ModelSQL, ModelView):
         with Transaction().set_context(language=lang.code):
             design = Design(self.id)
             product = Product(product.id)
-            custom_locals = full #design.design_full_dict()
+            custom_locals = design.design_full_dict()
+
             template = product.template
             property = pproperty or design.template
             for tmpl_field, field in product_fields:
