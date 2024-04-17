@@ -143,18 +143,18 @@
         <record model="ir.model.button" id="design_update_button">
             <field name="name">update</field>
             <field name="string">Update</field>
-            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+            <field name="model">configurator.design</field>
         </record>
         <record model="ir.model.button" id="design_process_button">
             <field name="name">process</field>
             <field name="string">Process</field>
-            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+            <field name="model">configurator.design</field>
         </record>
 
         <record model="ir.model.button" id="design_create_button">
             <field name="name">create_prices</field>
             <field name="string">Create Prices</field>
-            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+            <field name="model">configurator.design</field>
         </record>
 
         <record model="ir.ui.view" id="design_line_view_form">
@@ -194,7 +194,7 @@
         <record model="ir.model.button" id="design_cancel_button">
             <field name="name">cancel</field>
             <field name="string">Cancel</field>
-            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+            <field name="model">configurator.design</field>
         </record>
 
 
@@ -251,7 +251,7 @@
         <!-- Rules -->
         <record model="ir.rule.group" id="rule_group_configurator_design">
             <field name="name">User in company</field>
-            <field name="model" search="[('model', '=', 'configurator.design')]"/>
+            <field name="model">configurator.design</field>
             <field name="global_p" eval="True"/>
         </record>
         <record model="ir.rule" id="rule_configurator_design1">
