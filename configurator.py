@@ -1797,7 +1797,7 @@ class Design(Workflow, ModelSQL, ModelView):
             design.code = design.render_field(design.template, 'code_jinja',
                 custom_locals)
             to_delete += [x for x in design.objects]
-            res = design.template.create_prices(design, design.as_dict())
+            res = design.template.create_prices(design, design.as_dict(), custom_locals)
             for prop, objs in res.items():
                 obj, additional = objs
                 if prop.type == 'bom':
