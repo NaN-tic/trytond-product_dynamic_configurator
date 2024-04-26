@@ -448,6 +448,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         try:
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
+
             if self.evaluate_2times:
                 # res = eval(res, custom_locals)
                 #code = compile(res, "<string>", "eval")
@@ -478,8 +479,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         parent = self.get_parent()
         val = values
 
+
         if parent in values:
             val = values[parent]
+
         enviroment = full.copy()
         enviroment.update(val)
         res = getattr(self, 'get_%s' % self.type)(
@@ -581,14 +584,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         pass
 
     def get_function(self, design, values, created_obj, full):
-        context = Transaction().context
-        values.update(full)
-        if context.get('prices', False):
-            value = self.evaluate(self.quantity, values, design)
-        else:
-            value = self.evaluate(self.bom_quantity, values, design)
-
+        parent = self.get_parent()
+        value = full['tree'][parent.code][self.code]
         return {self: (value, [])}
+
 
     def get_options(self, design, values, created_obj, full):
         pool = Pool()
@@ -1703,7 +1702,6 @@ class Design(Workflow, ModelSQL, ModelView):
             if parent.code not in info:
                 info[parent.code] = {}
             info[parent.code][attribute.property.code] = attribute
-            print("attribute:", parent.code, attribute.property.code, attribute)
             if boms:
                 code = attribute.property.get_full_code()
                 info[code] = attribute
