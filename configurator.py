@@ -1054,6 +1054,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 ('template.code', '=', template.code)])
         if exists_product:
             product = exists_product[0]
+            template = product.template
+            exists = True
+
+        template = self.update_product_values(template, design, values,
+            created_obj, exists=exists, bom=bom)
+        product = self.update_variant_values(product, values, bom, design)
+        template = self.template_update(template, bom, design)
+        template.save()
 
         quantity = self.bom_quantity or self.quantity
         context = Transaction().context
