@@ -209,6 +209,14 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     evaluate_2times = fields.Boolean('Evaluate 2 times')
 
+    hidden = fields.Boolean("Hidden",
+            states ={
+            'invisible': Eval('type') == 'options',
+                })
+
+    @staticmethod
+    def default_hidden():
+        return False
 
     @staticmethod
     def default_sequence():
@@ -457,10 +465,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             return res
         except BaseException as e:
             pass
-            # raise UserError(gettext(
-            #     'product_dynamic_configurator.msg_expression_error',
-            #     property=self.name, expression=self.quantity,
-            #     invalid=str(e)))
 
     def create_prices(self, design, values, full):
         created_obj = {}
@@ -1377,7 +1381,6 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('objects', None)
         default.setdefault('product', None)
         default.setdefault('product_codes', None)
-        default.setdefault('purchase_uom_category', None)
         return super(Design, cls).copy(designs, default=default)
 
     def get_product_exist(self, name=None):
@@ -1386,7 +1389,9 @@ class Design(Workflow, ModelSQL, ModelView):
         Product = Pool().get('product.product')
         with Transaction().set_context(active_test=False):
             products = Product.search([
-                ('code', '=', self.code)], limit=1)
+                ('code', '=', self.code),
+                ], limit=1,
+                order=[('active', 'DESC')])
         if not products:
             return None
         product, = products
@@ -1549,6 +1554,8 @@ class Design(Workflow, ModelSQL, ModelView):
                     quantity = 0
                     cost_price = None
                     product = None
+                    if prop.hidden:
+                        continue
                     if prop.type == 'bom':
                         for output in v.outputs:
                             code = '%s - %s' % (
