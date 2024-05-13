@@ -1329,7 +1329,6 @@ class Design(Workflow, ModelSQL, ModelView):
         default.setdefault('process_by', None)
         default.setdefault('process_date', None)
         default.setdefault('quoted_by', None)
-        default.setdefault('quotion_date', None)
         default.setdefault('objects', None)
         default.setdefault('product', None)
         default.setdefault('product_codes', None)
