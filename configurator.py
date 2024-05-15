@@ -468,7 +468,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     def create_prices(self, design, values, full):
         created_obj = {}
-        if self.type not in ('match'):
+        if self.type not in ('match',):
             for prop in self.childs:
                 if self.type == 'options' and prop.type != 'purchase_product':
                     continue
@@ -487,8 +487,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if parent in values:
             val = values[parent]
 
-        enviroment = full.copy()
-        enviroment.update(val)
+        if self.type != 'match':
+            enviroment = full.copy()
+            enviroment.update(val)
+        else:
+            enviroment = val
+
         res = getattr(self, 'get_%s' % self.type)(
             design, enviroment, created_obj, full)
         if res is None:
@@ -550,6 +554,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             products_filter = ProductAttribute.search(domain)
             if products_filter is None:
                 return {self: (None, [])}
+
 
         products = products_filter
         if not products:
@@ -906,6 +911,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     def get_group(self, design, values, created_obj, full):
         res = {}
         for child in self.childs:
+            if child.type == 'match':
+                continue
             r = getattr(child, 'get_%s' % child.type)(
                 design, values, created_obj, full)
             if not r:
@@ -961,10 +968,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             if property_.parent:
                 return create_bom_input(property_.parent)
             return True
-
-        bom, = Bom.search([('name', '=', self.name)]) or [None]
-        if bom:
-            return {self: bom}
 
         res_obj = []
         bom = Bom()
@@ -1040,10 +1043,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if template_name:
             template.name = template_name
 
-        template = self.update_product_values(template, design, values, created_obj, bom=bom)
-        template = self.template_update(template, bom, design)
-        product = self.update_variant_values(product, values, bom, design)
-
         bom.name = template.code
 
         # Copy attributes
@@ -1085,6 +1084,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 ('template.code', '=', template.code)])
         if exists_product:
             product = exists_product[0]
+            template = product.template
+
+        template = self.update_product_values(template, design, values, created_obj, bom=bom)
+        template = self.template_update(template, bom, design)
+        product = self.update_variant_values(product, values, bom, design)
 
         quantity = self.bom_quantity or self.quantity
         context = Transaction().context
@@ -1816,14 +1820,20 @@ class Design(Workflow, ModelSQL, ModelView):
                         ref = design.create_object(output_)
                         ref.save()
                         product = output_.product
+                        template = product.template
+                        template.save()
+                        product.save()
                         if prop.parent is None:
                             design.product = product
                             design.save()
                         for lang in langs:
                             design.render_product_fields(lang, product, prop,
                                 full= custom_locals)
+
                 if prop.type == 'purchase_product':
                     product = obj.product
+                    template = product.template
+                    template.save()
                     product.save()
                     if prop.parent is None:
                         design.product = product
