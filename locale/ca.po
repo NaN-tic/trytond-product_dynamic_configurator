@@ -14,7 +14,7 @@ msgstr ""
 
 msgctxt "field:configurator.design,attributes:"
 msgid "Attributes"
-msgstr "borrador"
+msgstr "Atributs"
 
 msgctxt "field:configurator.design,code:"
 msgid "Code"
