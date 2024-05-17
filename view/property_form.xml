@@ -62,9 +62,9 @@
     <field name="hidden"/>
 
     <notebook colspan="6">
-        <!-- <page name="childs">
+        <page name="childs">
             <field name="childs" colspan="4"/>
-        </page> -->
+        </page>
         <page id="descriptions" string="Descriptions">
             <label name="code_jinja"/>
             <field name="code_jinja"/>
