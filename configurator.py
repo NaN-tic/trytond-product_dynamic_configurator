@@ -1054,8 +1054,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     attr.template = template
                     attr.attribute = attribute.attribute
                     attr.attribute_type = attribute.attribute_type
-                    setattr(attr, 'value_' + attribute.attribute_type,
-                        attribute.value)
+                    if attribute.value:
+                        setattr(attr, 'value_' + attribute.attribute_type,
+                            attribute.value)
                     product.attributes += (attr,)
 
         template._update_attributes_values()
