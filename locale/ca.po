@@ -238,11 +238,11 @@ msgstr "Quantitat Bom"
 
 msgctxt "field:configurator.property,childrens:"
 msgid "Childrens"
-msgstr "Fills"
+msgstr "Descendents"
 
 msgctxt "field:configurator.property,childs:"
-msgid "childs"
-msgstr "fills"
+msgid "Childs"
+msgstr "Fills"
 
 msgctxt "field:configurator.property,code:"
 msgid "Code"
@@ -270,7 +270,7 @@ msgstr "Nom Plantilla"
 
 msgctxt "field:configurator.property,object_expression:"
 msgid "Object Expression"
-msgstr "Expressió del objecte"
+msgstr "Expressió de l'objecte"
 
 msgctxt "field:configurator.property,operation_type:"
 msgid "Operation Type"
