@@ -100,7 +100,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         domain=[If(Bool(Eval('product_uom_category')),
             ('category', '=', Eval('product_uom_category', -1)), ())],
         depends=['product_uom_category', 'type'])
-    childs = fields.One2Many('configurator.property', 'parent', 'childs',
+    childs = fields.One2Many('configurator.property', 'parent', 'Childs',
         states={
             'invisible': Not(Eval('type').in_(['bom', 'purchase_product',
                 'options', 'group', 'match']))
@@ -451,15 +451,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         try:
             code = compile(expression, "<string>", "eval")
             res = eval(code, custom_locals)
-
             if self.evaluate_2times:
-                # res = eval(res, custom_locals)
-                #code = compile(res, "<string>", "eval")
-                # res = eval(code, custom_locals)
                 res = custom_locals.get(res, 0)
             return res
         except BaseException as e:
-            pass
+            logger.warning('Error evaluating expression %s: %s', expression, e)
 
     def create_prices(self, design, values, full):
         created_obj = {}
@@ -1650,7 +1646,6 @@ class Design(Workflow, ModelSQL, ModelView):
         all = {}
         info = {}
         Property = Pool().get('configurator.property')
-        Attribute = Pool().get('configurator.design.attribute')
 
         properties = Property.search([
             ('parent', 'child_of', [self.template.id])], order=[('sequence','ASC')])
