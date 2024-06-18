@@ -782,6 +782,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product = self.update_variant_values(product, values, None, design)
         template = self.template_update(template, None, design)
 
+        update = Transaction().context.get('update', False)
+        if update and exists:
+            product.save()
+            template.save()
+
         bom_input = BomInput()
         bom_input.product = product
         bom_input.on_change_product()
@@ -1077,6 +1082,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         template = self.update_product_values(template, design, values, created_obj, bom=bom)
         template = self.template_update(template, bom, design)
         product = self.update_variant_values(product, values, bom, design)
+        update = Transaction().context. get('update', False)
+        if exists_product and update:
+            template.save()
+            product.save()
 
         quantity = self.bom_quantity or self.quantity
         context = Transaction().context
@@ -1094,6 +1103,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product_bom = ProductBom()
         product_bom.product = product
         product_bom.bom = bom
+        product_bom.sequence = 1
         if 'phantom' in Product._fields:
             product.phantom = True
         if route:
@@ -1786,7 +1796,8 @@ class Design(Workflow, ModelSQL, ModelView):
             design.code = design.render_field(design.template, 'code_jinja',
                 custom_locals)
             to_delete += [x for x in design.objects]
-            res = design.template.create_prices(design, design.as_dict(), custom_locals)
+            with Transaction().set_context(update=True):
+                res = design.template.create_prices(design, design.as_dict(), custom_locals)
             for prop, objs in res.items():
                 obj, additional = objs
                 if prop.type == 'bom':
