@@ -1092,6 +1092,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if context.get('prices', False):
             quantity = self.quantity
 
+        to_delete = [x for x in product.boms]
+        if update:
+            ProductBom.delete(to_delete)
+
         output = BomOutput()
         output.bom = bom
         output.product = product
