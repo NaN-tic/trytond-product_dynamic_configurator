@@ -1023,6 +1023,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         product.template = template
         product.default_uom = self.uom
         product.list_price = 0
+        product.boms = None
 
         # Generate code
         custom_locals = full #design.design_full_dict()
