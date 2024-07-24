@@ -868,8 +868,19 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 price = Price()
                 price.uom = template.purchase_uom
                 price.info_unit = template.info_unit
-                qty = ((quote.quantity / qty) * bom_input.quantity)
-                price.quantity = Uom.compute_qty(self.uom, qty,
+                price_qty = ((quote.quantity / qty) * bom_input.quantity)
+                if price_qty < 0:
+                    raise UserError(gettext(
+                        'product_dynamic_configurator.msg_product_supplier_price',
+                        name=self.rec_name,
+                        quote=quote.rec_name,
+                        product=template.rec_name,
+                        price_qty=price_qty,
+                        quote_quantity=quote.quantity,
+                        qty=qty,
+                        bom_input_quantity=bom_input.quantity,
+                        ))
+                price.quantity = Uom.compute_qty(self.uom, price_qty,
                     self.product_template.purchase_uom)
 
                 if uom != self.uom:
