@@ -4,5 +4,15 @@
         <record model="ir.message" id="msg_expression_error">
             <field name="text">The Property "%(property)s" has invalid formula "%(expression)s with invalid: "%(invalid)s"</field>
         </record>
+        <record model="ir.message" id="msg_product_supplier_price">
+          <field name="text">"%(name)s" can not create a product supplier price that quantity less than 0 from the quote "%(quote)s":
+Product: %(product)s
+Price Qty: %(price_qty)s
+Quote Qty: %(quote_quantity)s
+Qty: %(qty)s
+Bom Input Qty: %(bom_input_quantity)s
+
+Formula: ((quote quantity / qty) * bom input quantity)</field>
+        </record>
     </data>
 </tryton>
