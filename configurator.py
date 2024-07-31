@@ -811,9 +811,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     self.quotation_category == category):
                 goods_supplier = supplier
                 break
-            if not self.option_price_property and category.type_ == 'goods':
+            if (not self.option_price_property and category.type_ == 'goods'
+                    and self.quotation_category == category):
                 goods_supplier = supplier
                 break
+            elif not self.option_price_property and category.type_ == 'goods':
+                goods_supplier = supplier
 
         if not goods_supplier:
             return {self: (bom_input, [])}
