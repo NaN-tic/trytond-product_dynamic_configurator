@@ -1547,6 +1547,9 @@ class Design(Workflow, ModelSQL, ModelView):
         context['prices']  = True
 
         for design in designs:
+            if not design.attributes:
+                continue
+
             prices = {}
             remove_lines = []
             for price in design.prices:
@@ -1755,12 +1758,14 @@ class Design(Workflow, ModelSQL, ModelView):
             ptemplate = design.template
             for tmpl_field, field in design_fields:
                 f = getattr(ptemplate, tmpl_field)
+                # in case has not value, set field to None
                 if not f or f is None or f == '':
-                    continue
-                if isinstance(f, JinjaField):
-                    f = f.full_content
-                val = ptemplate.render_expression_record(f, custom_locals)
-                val = val.replace('\n', '').replace('\t', '')
+                    val = None
+                else:
+                    if isinstance(f, JinjaField):
+                        f = f.full_content
+                    val = ptemplate.render_expression_record(f, custom_locals)
+                    val = val.replace('\n', '').replace('\t', '')
                 setattr(design, field, val)
             design.save()
 

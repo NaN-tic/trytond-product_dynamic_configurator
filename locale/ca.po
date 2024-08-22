@@ -660,7 +660,7 @@ msgstr "Finalizat"
 
 msgctxt "selection:configurator.design,state:"
 msgid "draft"
-msgstr "borrador"
+msgstr "Esborrany"
 
 msgctxt "selection:configurator.design.attribute,design_state:"
 msgid "Cancel"
@@ -672,7 +672,7 @@ msgstr "Realitzat"
 
 msgctxt "selection:configurator.design.attribute,design_state:"
 msgid "draft"
-msgstr "borrador"
+msgstr "Esborrany"
 
 msgctxt "selection:configurator.design.attribute,property_type:"
 msgid "BoM"
@@ -784,7 +784,7 @@ msgstr "Realitzat"
 
 msgctxt "selection:configurator.quotation.line,design_state:"
 msgid "draft"
-msgstr "borrador"
+msgstr "Esborrany"
 
 msgctxt "view:configurator.property:"
 msgid "Descriptions"
