@@ -1667,6 +1667,7 @@ class Design(Workflow, ModelSQL, ModelView):
         custom_locals = OrderedDict()
         all = {}
         info = {}
+        boms = {}
         Property = Pool().get('configurator.property')
 
         properties = Property.search([
@@ -1676,9 +1677,16 @@ class Design(Workflow, ModelSQL, ModelView):
             str(x.parent and x.parent.sequence or 0).zfill(5) +
                 str(x.sequence).zfill(6)))
 
+
+        boms = {}
+        boms[self.template.code] = self.template
+
         for property in properties:
             custom_locals[property.get_full_code()] = property
             parent = property.get_parent()
+            if parent and parent.code not in boms:
+                boms[parent.code] = parent
+
             if parent:
                 if parent.code not in all:
                     all[parent.code] = {}
@@ -1731,6 +1739,8 @@ class Design(Workflow, ModelSQL, ModelView):
 
         custom_locals['tree'] = all
         custom_locals['info'] = info
+        custom_locals['boms'] = boms
+
         return custom_locals
 
     def get_design_render_fields(self):
