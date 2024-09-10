@@ -1688,14 +1688,14 @@ class Design(Workflow, ModelSQL, ModelView):
                 str(x.sequence).zfill(6)))
 
 
-        boms = {}
-        boms[self.template.code] = self.template
+        boms_dict = {}
+        boms_dict[self.template.code] = self.template
 
         for property in properties:
             custom_locals[property.get_full_code()] = property
             parent = property.get_parent()
-            if parent and parent.code not in boms:
-                boms[parent.code] = parent
+            if parent and parent.code not in boms_dict:
+                boms_dict[parent.code] = parent
 
             if parent:
                 if parent.code not in all:
@@ -1749,7 +1749,7 @@ class Design(Workflow, ModelSQL, ModelView):
 
         custom_locals['tree'] = all
         custom_locals['info'] = info
-        custom_locals['boms'] = boms
+        custom_locals['boms'] = boms_dict
 
         return custom_locals
 
