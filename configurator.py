@@ -1694,8 +1694,8 @@ class Design(Workflow, ModelSQL, ModelView):
         for property in properties:
             custom_locals[property.get_full_code()] = property
             parent = property.get_parent()
-            if parent and parent.code not in boms_dict:
-                boms_dict[parent.code] = parent
+            if property.type == 'bom':
+                boms_dict[property.code] = property
 
             if parent:
                 if parent.code not in all:
@@ -1746,6 +1746,7 @@ class Design(Workflow, ModelSQL, ModelView):
             if boms:
                 code = attribute.property.get_full_code()
                 info[code] = attribute
+
 
         custom_locals['tree'] = all
         custom_locals['info'] = info
