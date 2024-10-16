@@ -712,8 +712,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if self.parent and self.parent.type == 'options':
             attr = DesignAttribute.search([('property', '=', self.parent.id),
                 ('design', '=', design.id)])
-            if not attr or attr and attr[0] .option is None:
+            if not attr or attr and attr[0].option is None:
                 return
+
+        if values.get('PR_MB_0A', False) and values['PR_MB_0A'] != None:
+            return
 
         if not self.product_template:
             return
