@@ -1,4 +1,5 @@
-<tree>
+<tree editable="1" sequence="sequence">
+    <field name="sequence"/>
     <field name="code" expand="2"/>
     <field name="name" expand="2"/>
     <field name="type" expand="2"/>
@@ -12,4 +13,3 @@
     <field name="parent" tree_invisible="1"/>
     <field name="childs" tree_invisible="1"/>
 </tree>
-
