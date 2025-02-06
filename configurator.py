@@ -1206,7 +1206,7 @@ class CreatedObject(ModelSQL, ModelView):
         models = IrModel.search([
             ('name', 'in', models),
         ])
-        return [(None, '')] + [(m.model, m.name) for m in models]
+        return [(None, '')] + [(m.name, m.string) for m in models]
 
     def get_rec_name(self, name):
         return self.object and self.object.rec_name
