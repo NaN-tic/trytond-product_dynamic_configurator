@@ -1204,7 +1204,7 @@ class CreatedObject(ModelSQL, ModelView):
         IrModel = Pool().get('ir.model')
         models = cls._get_created_object_type()
         models = IrModel.search([
-            ('model', 'in', models),
+            ('name', 'in', models),
         ])
         return [(None, '')] + [(m.model, m.name) for m in models]
 
