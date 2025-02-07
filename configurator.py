@@ -326,9 +326,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             to_save.append(prop)
 
         cls.save(to_save)
-        return to_save
-
-
+        return new_properties
 
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
         'price_category', 'object_expression', 'attribute_set',
