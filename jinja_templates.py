@@ -1,4 +1,4 @@
-from trytond.model import (ModelView, ModelSQL,fields)
+from trytond.model import DeactivableMixin, ModelSQL, ModelView, fields
 
 try:
     from jinja2 import Template as Jinja2Template
@@ -8,7 +8,7 @@ except ImportError:
 
 
 
-class JinjaTemplate(ModelSQL, ModelView):
+class JinjaTemplate(DeactivableMixin, ModelSQL, ModelView):
     'Jinja Template'
     __name__ = 'configurator.jinja_template'
 
@@ -41,7 +41,7 @@ class JinjaTemplate(ModelSQL, ModelView):
         return res
 
 
-class JinjaTemplateMacros(ModelSQL):
+class JinjaTemplateMacros(DeactivableMixin, ModelSQL):
     'Jinja template - Jinja template macros'
     __name__ = 'jinja_template-jinja_template_macro'
 
