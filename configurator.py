@@ -1401,6 +1401,8 @@ class Design(Workflow, ModelSQL, ModelView):
     def get_product_exist(self, name=None):
         if self.product:
             return self.product.id
+        if not self.code:
+            return None
         Product = Pool().get('product.product')
         with Transaction().set_context(active_test=False):
             products = Product.search([
