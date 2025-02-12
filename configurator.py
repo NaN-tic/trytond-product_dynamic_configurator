@@ -330,9 +330,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             to_save.append(prop)
 
         cls.save(to_save)
-        return to_save
-
-
+        return new_properties
 
     @fields.depends('user_input', 'quantity', 'uom', 'template', 'product',
         'price_category', 'object_expression', 'attribute_set',
@@ -712,8 +710,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if self.parent and self.parent.type == 'options':
             attr = DesignAttribute.search([('property', '=', self.parent.id),
                 ('design', '=', design.id)])
-            if not attr or attr and attr[0] .option is None:
+            if not attr or attr and attr[0].option is None:
                 return
+
+        if values.get('PR_MB_0A') and values['PR_MB_0A'].code == 'PR_MB_0A_SI':
+            return
 
         if not self.product_template:
             return
