@@ -717,7 +717,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
         custom_locals =  full # design.design_full_dict()
         template = self.get_product_template_object_copy(self.product_template)
-        template.name = self.name + "(" + design.name + ")"
+        template.name = self.name + "(" + design.name or '' + ")"
         template.list_price = 0
         template.info_ratio = Decimal('1.0')
         product = self.get_product_product_object_copy(
