@@ -2,7 +2,10 @@
 <tryton>
     <data grouped="1">
         <record model="ir.message" id="msg_expression_error">
-            <field name="text">The Property "%(property)s" has invalid formula "%(expression)s with invalid: "%(invalid)s"</field>
+            <field name="text">The Property "%(property)s" has invalid formula:
+%(expression)s
+
+%(invalid)s</field>
         </record>
         <record model="ir.message" id="msg_product_supplier_price">
           <field name="text">"%(name)s" can not create a product supplier price that quantity less than 0 from the quote "%(quote)s":

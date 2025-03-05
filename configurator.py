@@ -274,8 +274,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         except (TypeError, TemplateSyntaxError, Jinja2UndefinedError) as e:
             raise UserError(gettext(
                 'product_dynamic_configurator.msg_expression_error',
-                property=self.rec_name,
-                expression=expression[:25]+('...' if len(expression) > 25 else ''),
+                property='%s (%s)' % (self.rec_name, self.id),
+                expression=expression or '',
                 invalid=repr(e)))
         if res:
             res = res.replace('\t', '').replace('\n', '').strip()
@@ -1997,7 +1997,7 @@ class QuotationLine(ModelSQL, ModelView):
         elif context.get('supplier'):
             del context['supplier']
 
-        context[uom] = uom and uom.id
+        context['uom'] = uom and uom.id
         with Transaction().set_context(context):
             unit_price = Product.get_purchase_price(
                 [product], abs(quantity or 0))[product.id]
