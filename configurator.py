@@ -272,10 +272,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         return res
 
     def render_expression_record(self, expression, record, field=None):
-        template = Jinja2Template(expression, trim_blocks=True)
-
-        res = template.render(record)
-
         try:
             template = Jinja2Template(expression, trim_blocks=True)
             res = template.render(record)
