@@ -697,6 +697,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         ProductCostPrice = pool.get('product.cost_price')
         Attribute = pool.get('product.product.attribute')
         DesignAttribute = pool.get('configurator.design.attribute')
+        ProductSupplier = pool.get('purchase.product_supplier')
+        Price = pool.get('purchase.product_supplier.price')
+
         exists = False
 
         if self.parent and self.parent.type == 'options':
@@ -814,8 +817,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if not goods_supplier:
             return {self: (bom_input, [])}
 
-        ProductSupplier = pool.get('purchase.product_supplier')
-        Price = pool.get('purchase.product_supplier.price')
         if hasattr(product, 'product_suppliers') and product.product_suppliers:
             for supplier in product.product_suppliers:
                 supplier.active = False
@@ -862,7 +863,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
             if cost_price:
                 price = Price()
-                price.uom = template.purchase_uom
                 price.info_unit = template.info_unit
                 price_qty = ((quote.quantity / qty) * bom_input.quantity)
                 if price_qty < 0:
