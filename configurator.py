@@ -1115,7 +1115,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         output = BomOutput()
         output.bom = bom
         output.product = product
-        output.uom = product.default_uom
+        output.unit = product.default_uom
         output.quantity = Uom.compute_qty(self.uom,
             self.evaluate(quantity, values, design), product.default_uom)
         bom.outputs += (output,)
