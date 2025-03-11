@@ -1009,7 +1009,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 bom_input.product = child_output.product
                 bom_input.on_change_product()
                 bom_input.quantity = child_output.quantity
-                bom_input.uom = child_output.uom
+                bom_input.unit = child_output.unit
                 bom.inputs += (bom_input,)
             elif isinstance(child_res, Operation):
                 operations_route += (child_res,)
