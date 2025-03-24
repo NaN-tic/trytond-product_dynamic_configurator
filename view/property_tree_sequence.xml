@@ -1,0 +1,13 @@
+<tree>
+    <field name="code" expand="2"/>
+    <field name="name" expand="2"/>
+    <field name="type" expand="2"/>
+    <field name="template"/>
+    <field name="product"/>
+    <field name="quantity" expand="2"/>
+    <field name="bom_quantity" expand="2"/>
+    <field name="option_price_property"/>
+    <field name="option_default"/>
+    <field name="uom"/>
+    <field name="user_input"/>
+</tree>
