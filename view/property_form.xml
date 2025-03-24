@@ -72,7 +72,7 @@
             <field name="name_jinja"/>
         </page>
         <page name="childrens">
-            <field name="childrens"/>
+            <field name="childrens" view_ids="product_dynamic_configurator.property_view_tree_sequence"/>
         </page>
     </notebook>
 </form>
