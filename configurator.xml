@@ -22,6 +22,14 @@
             <field name="field_childs">childs</field>
             <field name="name">property_tree</field>
         </record>
+
+        <record model="ir.ui.view" id="property_view_tree_sequence">
+            <field name="model">configurator.property</field>
+            <field name="type">tree</field>
+            <field name="priority" eval="30"/>
+            <field name="name">property_tree_sequence</field>
+        </record>
+
         <record model="ir.action.act_window" id="act_property_tree">
             <field name="name">Properties</field>
             <field name="res_model">configurator.property</field>
