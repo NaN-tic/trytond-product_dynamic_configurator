@@ -267,6 +267,17 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             res = '%s_%s' % (parent.code, self.code)
         return res
 
+    def get_full_path(self):
+        res = ''
+        parent = self.parent
+        if self.code:
+            res = '%s' % self.code
+        while parent:
+            res = '%s_%s' % (parent.code, res)
+            parent = parent.parent
+        return res
+
+
     def render_expression_record(self, expression, record, field=None):
         try:
             template = Jinja2Template(expression, trim_blocks=True)
@@ -289,11 +300,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             default = default.copy()
 
         option_default = (dict(
-            (x.get_full_code(), x.option_default.get_full_code())
+            (x.get_full_path(), x.option_default.get_full_path())
             for x in properties if x.option_default))
 
         option_price = (dict(
-            (x.get_full_code(), x.option_price_property.get_full_code())
+            (x.get_full_path(), x.option_price_property.get_full_path())
             for x in properties if x.option_price_property))
 
         default.setdefault('option_price_property', None)
@@ -303,13 +314,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
         to_save = []
         for prop in new_properties:
-            code = prop.get_full_code()
+            code = prop.get_full_path()
             if code not in option_price and code not in option_default:
                 continue
 
             parent = prop.get_parent()
             childs = parent.childrens
-            codes =  dict((x.get_full_code(),x) for x in childs)
+            codes =  dict((x.get_full_path(),x) for x in childs)
 
             if code in option_price:
                 price_code = option_price.get(code)
