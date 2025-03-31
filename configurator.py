@@ -1,19 +1,21 @@
-from decimal import Decimal
-from trytond.model import (Workflow, ModelView, ModelSQL,
-    DeactivableMixin, fields, sequence_ordered, tree)
-from trytond.pyson import Eval, Not, If, Bool
-from trytond.pool import Pool, PoolMeta
-from trytond.config import config
-from trytond.modules.company.model import employee_field
-from trytond.transaction import Transaction
-from trytond.i18n import gettext
-from trytond.exceptions import UserError
-from jinja2 import Template as Jinja2Template
-from jinja2.exceptions import TemplateSyntaxError, UndefinedError as Jinja2UndefinedError
+import logging
+import math
 from collections import OrderedDict
 from copy import copy
-import math
-import logging
+from decimal import Decimal
+
+from jinja2 import Template as Jinja2Template
+from jinja2.exceptions import TemplateSyntaxError
+from jinja2.exceptions import UndefinedError as Jinja2UndefinedError
+from trytond.config import config
+from trytond.exceptions import UserError
+from trytond.i18n import gettext
+from trytond.model import (DeactivableMixin, ModelSQL, ModelView, Workflow,
+                           fields, sequence_ordered, tree)
+from trytond.modules.company.model import employee_field
+from trytond.pool import Pool, PoolMeta
+from trytond.pyson import Bool, Eval, If, Not
+from trytond.transaction import Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -205,10 +207,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
 
     evaluate_2times = fields.Boolean('Evaluate 2 times')
 
-    hidden = fields.Boolean("Hidden",
-            states ={
-            'invisible': Eval('type') == 'options',
-                })
+    hidden = fields.Boolean("Hidden", states ={
+        'invisible': Eval('type') == 'options',
+        })
+    parent_bom = fields.Function(fields.Many2One('configurator.property',
+        'Parent BOM'),
+        'get_parent_bom')
 
     @staticmethod
     def default_hidden():
@@ -221,6 +225,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     @staticmethod
     def default_evaluate_2times():
         return False
+
+    def get_parent_bom(self):
+        return self.get_parent()
 
     @classmethod
     def search_childrens(cls, name, clause):
