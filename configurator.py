@@ -715,7 +715,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             if not attr or attr and attr[0].option is None:
                 return
 
-        if values.get('PR_MB_0A') and values['PR_MB_0A'].code == 'PR_MB_0A_SI':
+        if (values.get('PR_MB_0A') and values['PR_MB_0A'].code == 'PR_MB_0A_SI'
+                and self.product_template and
+                94 in [x.id for x in self.product_template.categories]):
             return
 
         if not self.product_template:
