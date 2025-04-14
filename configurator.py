@@ -270,9 +270,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     def get_full_path(self):
         res = ''
         parent = self.parent
-        if self.code:
+        if self.code and self.parent:
             res = '%s' % self.code
-        while parent:
+        while parent and parent.parent:
             res = '%s_%s' % (parent.code, res)
             parent = parent.parent
         return res
@@ -325,7 +325,6 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             if code in option_price:
                 price_code = option_price.get(code)
                 prop.option_price_property = codes.get(price_code)
-
             if code in option_default:
                 default_code = option_default.get(code)
                 prop.option_default = codes.get(default_code)
