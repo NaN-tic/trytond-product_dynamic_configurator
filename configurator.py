@@ -1,5 +1,6 @@
 import logging
 import math
+import traceback
 from collections import OrderedDict
 from copy import copy
 from decimal import Decimal
@@ -289,12 +290,12 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         try:
             template = Jinja2Template(expression, trim_blocks=True)
             res = template.render(record)
-        except (TypeError, TemplateSyntaxError, Jinja2UndefinedError) as e:
+        except (TypeError, TemplateSyntaxError, Jinja2UndefinedError):
             raise UserError(gettext(
                 'product_dynamic_configurator.msg_expression_error',
                 property='%s (%s)' % (self.rec_name, self.id),
                 expression=expression or '',
-                invalid=repr(e)))
+                invalid=traceback.format_exc()))
         if res:
             res = res.replace('\t', '').replace('\n', '').strip()
         return res
