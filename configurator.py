@@ -227,7 +227,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
     def default_evaluate_2times():
         return False
 
-    def get_parent_bom(self):
+    def get_parent_bom(self, name=None):
         return self.get_parent()
 
     @classmethod
@@ -377,7 +377,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         if self.product_template:
             return self.product_template.default_uom_category.id
 
-    def get_parent(self):
+    def get_parent(self, name=None):
         if self.type == 'bom':
             return self
         if not self.parent:
