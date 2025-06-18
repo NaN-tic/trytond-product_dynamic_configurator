@@ -10,11 +10,11 @@ from configparser import ConfigParser
 MODULE = 'product_dynamic_configurator'
 PREFIX = 'nantic'
 MODULE2PREFIX = {
-    'aeat_non_reusable_plastic_containers',
-    'product_attribute_strict',
-    'purchase_information_uom',
-    'production_operation',
-    'sale_customer_product_restrict',
+    'aeat_non_reusable_plastic_containers': 'nantic',
+    'product_attribute_strict': 'nantic',
+    'purchase_information_uom': 'nantic',
+    'production_operation': 'nantic',
+    'sale_customer_product_restrict': 'nantic',
 }
 
 
@@ -83,7 +83,7 @@ setup(name='%s_%s' % (PREFIX, MODULE),
         ],
     package_data={
         'trytond.modules.%s' % MODULE: (info.get('xml', [])
-            + ['tryton.cfg', 'locale/*.po', 'tests/*.rst']),
+            + ['tryton.cfg', 'view/*.xml', 'locale/*.po', 'tests/*.rst']),
         },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
