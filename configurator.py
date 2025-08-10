@@ -195,8 +195,8 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         states={
             'invisible': Eval('type').in_(['option'])
         })
-    childrens = fields.Function(fields.One2Many('configurator.property', None,
-        'Childrens'), 'get_childrens', searcher='search_childrens')
+    childrens = fields.Function(fields.Many2Many('configurator.property', None,
+        None, 'Childrens'), 'get_childrens', searcher='search_childrens')
 
     option_price_property = fields.Many2One('configurator.property',
         'Option Price Property',
