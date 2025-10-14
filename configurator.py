@@ -1047,13 +1047,13 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             return
         template = self.get_product_template_object_copy(self.product_template)
         template.name = "%s (%s)" % (self.name, 'Id' + str(design.id))
+        template.list_price = 0
 
         product = self.get_product_product_object_copy(
             self.product_template.products[0])
 
         product.template = template
         product.default_uom = self.uom
-        product.list_price = 0
         product.boms = None
 
         # Generate code
