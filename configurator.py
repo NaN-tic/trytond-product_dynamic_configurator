@@ -1525,6 +1525,8 @@ class Design(Workflow, ModelSQL, ModelView):
             'configurator.quotation.supplier')
         for design in designs:
             design.attributes = design.get_attributes()
+            if not design.template:
+                continue
             categories = design.template.get_quotation_categories()
             suppliers = []
             for category in set(categories):
