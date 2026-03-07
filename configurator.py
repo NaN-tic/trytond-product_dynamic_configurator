@@ -551,9 +551,9 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 domain += [('product', 'in', main_products_filter)]
 
             products_filter = ProductAttribute.search(domain)
+
             if products_filter is None:
                 return {self: (None, [])}
-
 
         products = products_filter
         if not products:
@@ -2001,9 +2001,15 @@ class QuotationLine(ModelSQL, ModelView):
             return self.design.template.uom.category.id
 
     def _get_context_purchase_price(self, uom=None):
+        pool = Pool()
+        Date = pool.get('ir.date')
+        today = Date.today()
         context = {}
         context['currency'] = self.design.currency and self.design.currency.id
-        context['purchase_date'] = self.design.design_date
+
+        to_date = (self.design.design_date < today
+            and self.design.design_date or today)
+        context['purchase_date'] = to_date
         if uom:
             context['uom'] = uom and uom.id
         return context
