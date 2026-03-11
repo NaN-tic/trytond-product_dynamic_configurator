@@ -2007,8 +2007,10 @@ class QuotationLine(ModelSQL, ModelView):
         context = {}
         context['currency'] = self.design.currency and self.design.currency.id
 
-        to_date = (self.design.design_date < today
-            and self.design.design_date or today)
+        to_date = today
+        if self.desing.design_date:
+            to_date = (self.design.design_date < today
+                and self.design.design_date or today)
         context['purchase_date'] = to_date
         if uom:
             context['uom'] = uom and uom.id
