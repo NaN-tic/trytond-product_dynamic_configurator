@@ -1588,6 +1588,7 @@ class Design(Workflow, ModelSQL, ModelView):
                 for prop, v in res.items():
                     v = v[0]
                     key = (prop.price_category or prop.id, quote)
+
                     dl = prices.get(key)
                     quantity = 0
                     cost_price = None
@@ -1621,12 +1622,6 @@ class Design(Workflow, ModelSQL, ModelView):
                                 values[parent], design)
                             quantity = quantity * quote_ratio
                             product = v
-                    # if prop.type == 'operation':
-                    #     quantity = prop.evaluate(prop.quantity,
-                    #                      design.as_dict())
-                    #     quantity = quantity * quote.quantity
-                    #     quantity = v.compute_time(quantity, v.time_uom)
-                    #     cost_price = prop.work_center_category.cost_price
                     dl = prices.get(key)
                     if quantity == 0:
                         continue
@@ -1638,6 +1633,7 @@ class Design(Workflow, ModelSQL, ModelView):
                         with Transaction().set_context(context):
                             qty_ratio = prop.get_ratio_for_prices(
                                 values.get(parent, {}), 1, design)
+
                         if not product:
                             continue
                         cost_price = quote.get_unit_price(product,
@@ -2010,7 +2006,7 @@ class QuotationLine(ModelSQL, ModelView):
         to_date = today
         if self.design.design_date:
             to_date = (self.design.design_date < today
-                and self.design.design_date or today)
+                and today or self.design.design_date)
         context['purchase_date'] = to_date
         if uom:
             context['uom'] = uom and uom.id
