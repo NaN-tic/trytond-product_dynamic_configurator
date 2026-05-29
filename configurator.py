@@ -1,6 +1,7 @@
 import logging
 import math
 import traceback
+from ast import literal_eval
 from collections import OrderedDict
 from copy import copy
 from decimal import Decimal
@@ -8,6 +9,7 @@ from decimal import Decimal
 from jinja2 import Template as Jinja2Template
 from jinja2.exceptions import TemplateSyntaxError
 from jinja2.exceptions import UndefinedError as Jinja2UndefinedError
+from simpleeval import simple_eval
 from trytond.config import config
 from trytond.exceptions import UserError
 from trytond.i18n import gettext
@@ -457,8 +459,20 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             else:
                 custom_locals[prop.code] = attr
         try:
-            code = compile(expression, "<string>", "eval")
-            res = eval(code, custom_locals)
+            res = simple_eval(expression, names=custom_locals, functions={
+                    'Decimal': Decimal,
+                    'abs': abs,
+                    'bool': bool,
+                    'float': float,
+                    'int': int,
+                    'len': len,
+                    'max': max,
+                    'min': min,
+                    'pow': pow,
+                    'round': round,
+                    'str': str,
+                    'sum': sum,
+                    })
             if self.evaluate_2times:
                 res = custom_locals.get(res, 0)
             return res
@@ -774,7 +788,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                     product.attributes += (attr,)
 
         if self.object_expression:
-            expressions = eval(self.object_expression)
+            expressions = literal_eval(self.object_expression)
             for key, value in expressions.items():
                 val = self.evaluate(value, values, design)
                 quantize = Decimal(str(10.0 ** -4))
@@ -1095,7 +1109,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
         template._update_attributes_values()
 
         if self.object_expression:
-            expressions = eval(self.object_expression)
+            expressions = literal_eval(self.object_expression)
             for key, value in expressions.items():
                 val = self.evaluate(value, values, design)
                 quantize = Decimal(str(10.0 ** -4))
@@ -1582,7 +1596,9 @@ class Design(Workflow, ModelSQL, ModelView):
                 quote_quantity = Uom.compute_qty(design.quotation_uom,
                     quote.quantity, design.template.uom, round=False)
                 bom_quantity = Uom.compute_qty(design.template.uom,
-                    eval(design.template.quantity), design.template.uom,
+                    design.template.evaluate(
+                        design.template.quantity, values, design),
+                    design.template.uom,
                     round=False)
                 quote_ratio = quote_quantity / bom_quantity
                 for prop, v in res.items():
