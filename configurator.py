@@ -8,7 +8,7 @@ from decimal import Decimal
 from jinja2 import Template as Jinja2Template
 from jinja2.exceptions import TemplateSyntaxError
 from jinja2.exceptions import UndefinedError as Jinja2UndefinedError
-from trytond.config import config
+import trytond.config as config
 from trytond.exceptions import UserError
 from trytond.i18n import gettext
 from trytond.model import (DeactivableMixin, ModelSQL, ModelView, Workflow,
