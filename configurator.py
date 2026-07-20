@@ -10,7 +10,7 @@ from jinja2 import Template as Jinja2Template
 from jinja2.exceptions import TemplateSyntaxError
 from jinja2.exceptions import UndefinedError as Jinja2UndefinedError
 from simpleeval import simple_eval
-from trytond.config import config
+import trytond.config as config_
 from trytond.exceptions import UserError
 from trytond.i18n import gettext
 from trytond.model import (DeactivableMixin, ModelSQL, ModelView, Workflow,
@@ -22,7 +22,8 @@ from trytond.transaction import Transaction
 
 logger = logging.getLogger(__name__)
 
-price_digits = (16, config.getint('product', 'price_decimal', default=4))
+price_digits = (16, config_.config.getint('product', 'price_decimal',
+        default=4))
 _ZERO = Decimal(0)
 _ROUND = Decimal('.0001')
 
