@@ -2,11 +2,16 @@
 # The COPYRIGHT file at the top level of this repository contains
 # the full copyright notices and license terms.
 from trytond.pool import Pool
+from . import check
 from . import configurator
 from . import product
 from . import jinja_templates
 
 def register():
+    Pool.register(
+        check.Cron,
+        module='product_dynamic_configurator', type_='model',
+        depends=['nantic_connection'])
     Pool.register(
         configurator.CreatedObject,
         configurator.Template,
