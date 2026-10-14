@@ -9,7 +9,7 @@ from decimal import Decimal
 from jinja2 import Template as Jinja2Template
 from jinja2.exceptions import TemplateSyntaxError
 from jinja2.exceptions import UndefinedError as Jinja2UndefinedError
-from simpleeval import simple_eval
+from simpleeval import EvalWithCompoundTypes, ModuleWrapper
 import trytond.config as config_
 from trytond.exceptions import UserError
 from trytond.i18n import gettext
@@ -26,6 +26,33 @@ price_digits = (16, config_.config.getint('product', 'price_decimal',
         default=4))
 _ZERO = Decimal(0)
 _ROUND = Decimal('.0001')
+
+
+def _get_expression_evaluator(names):
+    if names.get('math') is math:
+        names = names.copy()
+        names['math'] = ModuleWrapper(math)
+    functions = {
+        'Decimal': Decimal,
+        'abs': abs,
+        'bool': bool,
+        'float': float,
+        'int': int,
+        'len': len,
+        'locals': lambda: names,
+        'max': max,
+        'min': min,
+        'pow': pow,
+        'round': round,
+        'str': str,
+        'sum': sum,
+        }
+    return EvalWithCompoundTypes(names=names, functions=functions)
+
+
+def _evaluate_expression(expression, names):
+    return _get_expression_evaluator(names).eval(expression)
+
 
 TYPE = [
     (None, ''),
@@ -81,6 +108,11 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
          ModelSQL, ModelView):
     """ Property """
     __name__ = 'configurator.property'
+
+    @classmethod
+    def get_expression_literals(cls):
+        """Return application-specific expressions and their literal value."""
+        return {}
     # Code may not contain spaces or special characters (usable in formulas)
     code = fields.Char('Code', required=True)
     name = fields.Char('Name', required=True, translate=True)
@@ -425,6 +457,10 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             CreatedObject.save(to_create)
 
     def evaluate(self, expression, values, design):
+        expression_literals = self.get_expression_literals()
+        if expression in expression_literals:
+            return expression_literals[expression]
+
         pool = Pool()
         SupplierIPNR = pool.get('product_supplier.ipnr')
         supplierIpnr = SupplierIPNR.search([])
@@ -460,20 +496,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
             else:
                 custom_locals[prop.code] = attr
         try:
-            res = simple_eval(expression, names=custom_locals, functions={
-                    'Decimal': Decimal,
-                    'abs': abs,
-                    'bool': bool,
-                    'float': float,
-                    'int': int,
-                    'len': len,
-                    'max': max,
-                    'min': min,
-                    'pow': pow,
-                    'round': round,
-                    'str': str,
-                    'sum': sum,
-                    })
+            res = _evaluate_expression(expression, custom_locals)
             if self.evaluate_2times:
                 res = custom_locals.get(res, 0)
             return res
