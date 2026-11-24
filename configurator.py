@@ -965,7 +965,7 @@ class Property(DeactivableMixin, tree(separator=' / '), sequence_ordered(),
                 if getattr(template, 'use_info_unit'):
                     price.info_unit_price = (
                         price.on_change_with_info_unit_price())
-                    price.info_quantity = price.on_change_with_info_quantity()
+                    price.on_change_quantity()
         product.product_suppliers += (product_supplier,)
         return {self: (bom_input, [])}
 
